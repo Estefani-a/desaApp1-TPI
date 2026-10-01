@@ -1,4 +1,4 @@
-# UniRide - Carpool Universitario 🚗🎓
+# UniRide - Carpool Universitario
 
 **UniRide** es una plataforma móvil nativa diseñada para conectar a estudiantes universitarios que viajan en auto con compañeros que comparten rutas y horarios similares hacia y desde la facultad, optimizando costos, tiempos de traslado y seguridad.
 
@@ -6,7 +6,7 @@ Trabajo Práctico Obligatorio para la materia **Desarrollo de Aplicaciones I** �
 
 ---
 
-## 👥 Integrantes del Equipo
+## Integrantes del Equipo
 
 | Integrante | Legajo | Rol Principal | Áreas Técnicas |
 | :--- | :--- | :--- | :--- |
@@ -19,7 +19,7 @@ Trabajo Práctico Obligatorio para la materia **Desarrollo de Aplicaciones I** �
 
 ---
 
-## 🏗️ Arquitectura y Organización del Proyecto
+## Arquitectura y Organización del Proyecto
 
 El proyecto sigue una arquitectura **MVVM (Model-View-ViewModel)** fundamentada en los principios de **Clean Architecture**, dividiendo el código en tres capas principales con flujo unidireccional de datos (UDF):
 
@@ -56,7 +56,7 @@ app/src/main/java/com/example/uniride/
 
 ---
 
-## 🛠️ Tecnologías Previstas
+## Tecnologías Previstas
 
 * **Lenguaje:** Kotlin
 * **UI:** Jetpack Compose + Material Design 3
@@ -70,7 +70,7 @@ app/src/main/java/com/example/uniride/
 
 ---
 
-## 🌿 Flujo de Trabajo y Ramas (Git Flow)
+## Flujo de Trabajo y Ramas (Git Flow)
 
 Seguimos una metodología de **Git Flow simplificado**:
 
@@ -89,7 +89,7 @@ Se utiliza la convención de [Conventional Commits](https://www.conventionalcomm
 
 ---
 
-## 🚀 Requisitos y Configuración del Entorno
+## Requisitos y Configuración del Entorno
 
 * **IDE:** Android Studio (versión compatible con Gradle 9+)
 * **Java / JDK:** OpenJDK 17 o superior
