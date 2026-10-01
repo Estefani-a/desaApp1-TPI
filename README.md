@@ -89,15 +89,20 @@ Se utiliza la convención de [Conventional Commits](https://www.conventionalcomm
 
 ---
 
-## 🚀 Requisitos y Ejecución
+## 🚀 Requisitos y Configuración del Entorno
 
-1. **Android Studio:** Ladybug (o superior recomendado)
-2. **JDK:** OpenJDK 17 o 21
-3. **Android SDK:**
-   * `minSdk`: 24 (Android 7.0 Nougat)
-   * `targetSdk`: 34 o 35
-4. Clonar el repositorio y sincronizar Gradle:
+* **IDE:** Android Studio (versión compatible con Gradle 9+)
+* **Java / JDK:** OpenJDK 17 o superior
+* **Android SDK:**
+  * `minSdk`: 30 (Android 11.0)
+  * `compileSdk` / `targetSdk`: 37
+  * **Kotlin:** 2.2.10
+  * **Jetpack Compose:** Compose BOM 2026.02.01
+
+### Ejecución
+1. Clonar el repositorio:
    ```bash
    git clone https://github.com/Estefani-a/desaApp1-TPI.git
    ```
-5. Abrir la carpeta `UniRide` en Android Studio y ejecutar en un emulador o dispositivo físico.
+2. Abrir la carpeta `UniRide` en Android Studio.
+3. Permitir la sincronización de Gradle y ejecutar en un emulador con API 30+ o dispositivo físico.
