@@ -1,6 +1,6 @@
 # UniRide · Reglas del proyecto para revisión con IA
 
-App Android de viajes compartidos para estudiantes de UADE (Kotlin, Jetpack Compose, MVVM + Clean Architecture, Offline First) con un backend REST en Spring Boot (`backend/`). Las reglas completas están en `docs/CONVENCIONES.md` y la división del trabajo en `docs/DIVISION_TRABAJO.md`. El contrato de la API va a estar en `docs/API.md`, que se escribe en la tarea A0; mientras no exista, el contrato de referencia es CONVENCIONES §10.3 y §10.4. Al revisar un cambio, marcar como problema todo lo que viole estas reglas:
+App Android de viajes compartidos para estudiantes de UADE (Kotlin, Jetpack Compose, MVVM + Clean Architecture, Offline First) con un backend REST en Spring Boot (`backend/`). Las reglas completas están en `docs/CONVENCIONES.md` y la división del trabajo en `docs/DIVISION_TRABAJO.md`. El contrato de la API está en `docs/API.md` (borrador hasta que se apruebe en la tarea A0). Al revisar un cambio, marcar como problema todo lo que viole estas reglas:
 
 ## App: capas
 

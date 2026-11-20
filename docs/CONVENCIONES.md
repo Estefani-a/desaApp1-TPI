@@ -426,6 +426,7 @@ backend/src/main/java/com/example/uniride/backend/
 │   └── error/           // ApiError, ErrorCode, GlobalExceptionHandler, excepciones de negocio
 ├── auth/                // registro, activación, login, recuperación de contraseña
 ├── user/                // perfil, vehículo, token FCM
+├── campus/              // sedes y puntos de encuentro
 ├── trip/                // publicar, listar, finalizar, cancelar
 ├── reservation/         // solicitar, aceptar/rechazar, cancelar
 └── notification/        // envío por FCM y bandeja
@@ -451,7 +452,7 @@ Cada funcionalidad tiene `XxxController`, `XxxService`, `XxxRepository` (Spring 
 - JSON en camelCase, con los mismos nombres de campo que los Dtos de la app. Fechas en ISO-8601 (`2026-11-20`, `22:15`, `2026-11-20T22:15:00-03:00`); zona `America/Argentina/Buenos_Aires`.
 - Los ids de viajes y reservas son UUID **generados por el cliente**. Crear es `PUT /api/v1/trips/{tripId}` y es **idempotente**: si WorkManager reintenta, el segundo envío no duplica nada y devuelve el mismo resultado.
 - `GET /api/v1/trips` acepta los filtros de RF03 como query params (`campus`, `direction`, `date`, `shift`) y `updatedSince` para refrescos parciales.
-- Autenticación: `Authorization: Bearer <jwt>` en todo salvo `/api/v1/auth/**`. El JWT lleva el id del usuario en `sub`.
+- Autenticación: `Authorization: Bearer <jwt>` en todo salvo `/api/v1/auth/**`, `/api/v1/campuses` y `/api/v1/links/**` (enlaces de los correos). El JWT lleva el id del usuario en `sub`.
 - El contrato se escribe primero en `docs/API.md` y se acuerda antes de programar. Swagger (`/swagger-ui.html`) sirve para probar, pero el que manda es `docs/API.md`.
 
 ### 10.4 Errores
