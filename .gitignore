@@ -1,15 +1,8 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+# Raíz del monorepo: lo propio de cada proyecto está en frontend/.gitignore y backend/.gitignore
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
+.env
+*.log
+
+# IDE abierto sobre la raíz
+/.idea/
+*.iml
