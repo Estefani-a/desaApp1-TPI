@@ -24,7 +24,7 @@ Trabajo Práctico Obligatorio para la materia **Desarrollo de Aplicaciones I** �
 El proyecto sigue una arquitectura **MVVM (Model-View-ViewModel)** fundamentada en los principios de **Clean Architecture**, dividiendo el código en tres capas principales con flujo unidireccional de datos (UDF):
 
 ```text
-app/src/main/java/com/example/uniride/
+mobile/app/src/main/java/com/example/uniride/
 ├── data/                      # Capa de Datos (Data Layer)
 │   ├── datastore/             # Gestión de preferencias y sesión activa
 │   ├── local/                 # Persistencia local (Room Database)
@@ -104,5 +104,5 @@ Se utiliza la convención de [Conventional Commits](https://www.conventionalcomm
    ```bash
    git clone https://github.com/Estefani-a/desaApp1-TPI.git
    ```
-2. Abrir la carpeta `UniRide` en Android Studio.
+2. Abrir la carpeta `mobile` (no la raíz del repositorio) en Android Studio.
 3. Permitir la sincronización de Gradle y ejecutar en un emulador con API 30+ o dispositivo físico.
