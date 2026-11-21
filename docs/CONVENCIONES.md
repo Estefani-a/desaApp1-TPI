@@ -30,34 +30,46 @@ La base es lo que comprometimos en la preentrega (MVVM + Clean Architecture, Roo
 | Tema | Decisión |
 | --- | --- |
 | Framework | Spring Boot 3.5, Java 21, Maven |
-| Base de datos | PostgreSQL 16, esquema versionado con Flyway |
+| Base de datos | PostgreSQL 16. Las tablas las crea Hibernate a partir de las entidades JPA (§10.5) |
 | Seguridad | Spring Security con JWT (token Bearer firmado con HMAC) |
 | Correo | Spring Mail (SMTP). En desarrollo, Mailpit captura los correos |
 | Push | Firebase Admin SDK para Java |
 | Documentación | springdoc-openapi (Swagger UI en `/swagger-ui.html`) |
-| Entorno local | `docker compose` con PostgreSQL y Mailpit |
+| Entorno local | Un solo `docker compose up --build` levanta PostgreSQL, Mailpit y el backend juntos (§10.6) |
 
 ¿Por qué Spring Boot y no Gin (Go)? El equipo ya trabaja con Spring Boot 3.5 y JWT en Desarrollo de Aplicaciones II, el Firebase Admin SDK para Java es el oficial más completo y Spring trae resuelto el envío de correo, la validación y la seguridad. Gin es más liviano, pero tendríamos que aprender Go y armar a mano varias de esas piezas.
 
-En la app, todas las dependencias van en `gradle/libs.versions.toml`; en el backend, en el `pom.xml` con la versión administrada por el parent de Spring Boot cuando exista. Una dependencia nueva que no esté en estas tablas se discute antes en el grupo: tenemos que poder justificarla en la defensa.
+En la app, todas las dependencias van en `frontend/gradle/libs.versions.toml`; en el backend, en el `pom.xml` con la versión administrada por el parent de Spring Boot cuando exista. Una dependencia nueva que no esté en estas tablas se discute antes en el grupo: tenemos que poder justificarla en la defensa.
 
 ---
 
 ## 2. Estructura del repositorio
 
+Monorepo con el front y el back separados en dos carpetas, cada una con su propio proyecto:
+
 ```
 desaApp1-TPI/
-├── app/                    // app Android
-├── backend/                // API REST (Spring Boot)
+├── frontend/               // proyecto Android (Gradle). En Android Studio se abre ESTA carpeta, no la raíz
+│   ├── app/
+│   ├── gradle/libs.versions.toml
+│   └── settings.gradle.kts
+├── backend/                // proyecto Spring Boot (Maven). En IntelliJ se abre esta carpeta
+│   ├── pom.xml
+│   ├── Dockerfile
+│   └── src/
 ├── docs/                   // CONVENCIONES.md, DIVISION_TRABAJO.md, API.md, diagramas
-├── docker-compose.yml      // PostgreSQL + Mailpit + backend, para desarrollo
+├── docker-compose.yml      // levanta PostgreSQL + Mailpit + backend con un solo comando
+├── .env.example            // variables del docker compose, sin valores reales
 ├── CLAUDE.md               // resumen de reglas para la revisión con IA
 └── README.md
 ```
 
+- Un PR toca `frontend/` o `backend/`, idealmente no los dos. Si un RF necesita los dos, primero va el PR del backend (con `docs/API.md` actualizado) y después el de la app.
+- Cada carpeta tiene su propio `.gitignore`.
+
 ## 3. Estructura de paquetes de la app
 
-Paquete raíz: `com.example.uniride` (el que ya tiene el proyecto). Primero la capa, después la funcionalidad. Las carpetas marcadas con `*` ya existen en el repo; el resto se agrega cuando haga falta.
+Todo esto vive en `frontend/app/src/main/java/`. Paquete raíz: `com.example.uniride` (el que ya tiene el proyecto). Primero la capa, después la funcionalidad. Las carpetas marcadas con `*` ya existen en el repo; el resto se agrega cuando haga falta.
 
 ```
 com.example.uniride
@@ -356,7 +368,7 @@ Reglas:
 
 ### 7.4 Componentes comunes (`presentation/common`)
 
-Los hace Nicolás en la semana 1 y todos los usan. Antes de crear un componente nuevo, revisar si ya existe:
+Los hace Nicolás en los primeros días y todos los usan. Antes de crear un componente nuevo, revisar si ya existe:
 
 `ContentStateHost`, `LoadingState`, `EmptyState(title, message, actionLabel, onAction)`, `ErrorState(message, onRetry)`, `OfflineBanner(lastUpdatedAt)`, `PrimaryButton` (al pie, 48 dp mínimo), `UniRideTopBar`, `TripCard`, `StatusChip`, `LabeledTextField`, `SelectorField` (sede, turno, sentido).
 
@@ -476,25 +488,47 @@ Los `code` son un enum `ErrorCode` en el backend y se listan en `docs/API.md`.
 
 ### 10.5 Base de datos
 
-- El esquema lo crea **solo Flyway** (`spring.jpa.hibernate.ddl-auto=validate`).
-- Nombres de migración con fecha para que dos personas no choquen con el mismo número: `V2026_11_21_1__create_trips.sql`.
-- Una migración ya mergeada en `develop` no se edita: se agrega otra.
+- Las tablas las crea Hibernate a partir de las entidades JPA (`spring.jpa.hibernate.ddl-auto=update`): agregar una tabla o una columna es agregarla a la entidad. No usamos herramientas de migraciones (como Flyway), porque con una semana de desarrollo y sin datos reales que cuidar no se justifican.
+- `update` agrega tablas y columnas, pero **no borra ni renombra**. Si cambiás un nombre o un tipo, avisá en el grupo y que cada uno reinicie su base con `docker compose down -v` (borra el volumen de PostgreSQL).
+- Los datos iniciales (sedes y puntos de encuentro, usuarios de prueba para la demo) van en `src/main/resources/data.sql`, con `INSERT ... ON CONFLICT DO NOTHING` para que se pueda ejecutar en cada arranque (`spring.sql.init.mode=always` y `spring.jpa.defer-datasource-initialization=true`).
 - Tablas y columnas en snake_case (`trips`, `departure_date`). Los enums se guardan como texto (`@Enumerated(EnumType.STRING)`).
 
 ### 10.6 Configuración y secretos
 
 - Configuración en `application.yml` con variables de entorno: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET`, `MAIL_HOST`, `MAIL_PORT`, `APP_LINK_BASE_URL`, `FIREBASE_CREDENTIALS_PATH`.
-- `.env.example` documenta todas, sin valores reales. `.env`, la cuenta de servicio de Firebase y cualquier secreto **nunca** se commitean.
-- `docker compose up` levanta PostgreSQL, Mailpit (UI en `http://localhost:8025`, para ver los correos de activación) y el backend.
+- `.env.example` (en la raíz) documenta todas, sin valores reales. Cada uno lo copia a `.env`. `.env`, la cuenta de servicio de Firebase y cualquier secreto **nunca** se commitean.
 - Sin credenciales de Firebase el backend arranca igual y registra en el log las push que hubiera enviado. Así nadie depende de tener la cuenta de servicio para trabajar.
 
-### 10.7 Tests del backend
+### 10.7 Levantar todo con Docker
+
+`docker-compose.yml` está en la raíz y levanta los tres servicios juntos. No hace falta tener Java, Maven ni PostgreSQL instalados: solo Docker.
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+| Servicio | Qué es | Puerto |
+| --- | --- | --- |
+| `db` | PostgreSQL 16, con los datos en un volumen (`pgdata`) para que no se pierdan al reiniciar | 5432 |
+| `mailpit` | Recibe los correos que manda el backend y los muestra en una web, sin enviarlos de verdad | 8025 (web), 1025 (SMTP) |
+| `backend` | La API, construida desde `backend/Dockerfile` | 8080 |
+
+- `backend/Dockerfile` es de dos etapas: una imagen de Maven compila el `.jar` y una imagen liviana de Java 21 lo ejecuta. Así el build no depende de lo que tenga instalado cada uno.
+- `backend` arranca recién cuando `db` está lista (`depends_on` con `condition: service_healthy` y un `healthcheck` con `pg_isready`).
+- Dentro de Docker, el backend se conecta a `db:5432` y a `mailpit:1025` (los nombres de los servicios), no a `localhost`.
+- La app en el emulador llega al backend por `http://10.0.2.2:8080`; los correos se ven en `http://localhost:8025`.
+- Para programar el backend con recarga rápida se puede levantar solo la base y el correo (`docker compose up db mailpit`) y correr el backend desde IntelliJ con el perfil `local`.
+- `docker compose down` apaga todo; `docker compose down -v` además borra la base.
+
+### 10.8 Tests del backend
 
 | Qué | Cómo |
 | --- | --- |
 | Services | JUnit 5 + Mockito |
 | Controllers | `@WebMvcTest` (validación, códigos HTTP, formato de error) |
-| Repositories y migraciones | `@DataJpaTest` con Testcontainers (PostgreSQL) |
+
+Con una semana, el mínimo es un test por regla de negocio de §10.2 (dominio del correo, vacantes al aceptar, privacidad de patente y teléfono, idempotencia del `PUT`).
 
 Nombres en español: `void aceptarReservaSinVacantesDevuelveConflicto()`.
 

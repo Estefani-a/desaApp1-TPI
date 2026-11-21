@@ -291,7 +291,7 @@ Todos los parámetros son opcionales y se combinan con Y.
 ]
 ```
 
-Son las "salidas predefinidas de cada sede como puntos de encuentro" de la preentrega (2.3). Las carga una migración de Flyway; la app las guarda en caché. **[A DEFINIR: lista real de sedes y salidas]**
+Son las "salidas predefinidas de cada sede como puntos de encuentro" de la preentrega (2.3). Se cargan desde `backend/src/main/resources/data.sql`; la app las guarda en caché. **[A DEFINIR: lista real de sedes y salidas]**
 
 ### 5.3 Detalle
 
@@ -331,7 +331,7 @@ El servidor completa `driverName`, `driverRating` y los datos del vehículo desd
 
 | Método y ruta | Quién | Efecto |
 | --- | --- | --- |
-| `POST /trips/{tripId}/finish` | Conductor | `FINALIZADO`. Envía `CALIFICAR_VIAJE` al conductor y a los pasajeros aceptados |
+| `POST /trips/{tripId}/finish` | Conductor | `FINALIZADO` |
 | `POST /trips/{tripId}/cancel` | Conductor | `CANCELADO`. Las reservas `PENDIENTE` y `ACEPTADA` pasan a `CANCELADA` |
 
 Respuesta: **200** `TripDto` · **403** `FORBIDDEN` · **409** `INVALID_STATUS_TRANSITION`.
@@ -372,7 +372,7 @@ Cuando la app recibe 409 `NO_SEATS_AVAILABLE` o `TRIP_NOT_OPEN` al sincronizar u
 
 ## 7. Calificaciones y bandeja (alcance 7 y 8)
 
-Se implementan en la fase 2 y son lo primero que se recorta si falta tiempo.
+**Fuera de esta entrega** (ver "Qué se recorta" en DIVISION_TRABAJO.md). Se deja el contrato para una versión siguiente; el tipo `CALIFICAR_VIAJE` de las push tampoco se envía.
 
 ### 7.1 Calificar
 
@@ -432,9 +432,7 @@ El backend envía mensajes **de datos** (no de notificación), así la app decid
 | `NUEVA_SOLICITUD` | Conductor | C4 Panel del conductor | Refresca las solicitudes del viaje |
 | `SOLICITUD_ACEPTADA` | Pasajero | B6 Mi viaje | Refresca el viaje (ahora con patente y teléfono) |
 | `SOLICITUD_RECHAZADA` | Pasajero | B6 Mi viaje | Refresca el viaje |
-| `CALIFICAR_VIAJE` | Conductor y pasajeros | Pantalla de calificación | — |
-
-Cada push también queda registrada en la bandeja (§7.2). Si el usuario no dio permiso de notificaciones (RNF08), solo queda la bandeja.
+Si el usuario no dio permiso de notificaciones (RNF08), no recibe la push, pero ve el estado actualizado al abrir la app (tarjeta del inicio y panel del conductor). La bandeja (§7.2) y el tipo `CALIFICAR_VIAJE` quedan fuera de esta entrega.
 
 ---
 
