@@ -42,7 +42,7 @@ Todo esto se hace en paralelo y se mergea en el día. Lo que cada uno entrega ac
 
 ### Estefanía · Arquitectura y persistencia de la app
 
-- **E0** Dependencias de CONVENCIONES §1 en `frontend/gradle/libs.versions.toml` (Hilt, KSP, Room, Navigation, Retrofit, Moshi, DataStore, WorkManager, Tink, tests), `UniRideApp` con `@HiltAndroidApp`, mover `ui/theme` a `presentation/theme`, plantilla de PR y workflow de GitHub Actions (build de la app y del backend). Corregir el README: prefijo de ramas `feat/` y abrir `frontend/` en Android Studio.
+- **E0** Dependencias de CONVENCIONES §1 en `mobile/gradle/libs.versions.toml` (Hilt, KSP, Room, Navigation, Retrofit, Moshi, DataStore, WorkManager, Tink, tests), `UniRideApp` con `@HiltAndroidApp`, mover `ui/theme` a `presentation/theme`, plantilla de PR y workflow de GitHub Actions (build de la app y del backend). Corregir el README: prefijo de ramas `feat/` y abrir `mobile/` en Android Studio.
 - **E1** Room: `UniRideDatabase`, `UserEntity`, `TripEntity`, `ReservationEntity` (campos de la preentrega 11.1, ids `String`), DAOs básicos, `TypeConverters`, `DatabaseModule`.
 - **E2** `core/result` (`AppResult`, `DataError`) y `DispatchersProvider`.
 
@@ -145,7 +145,7 @@ Hasta que RF01 esté listo, `data.sql` trae usuarios de prueba ya activados para
 
 | Archivo | Dueño | Regla |
 | --- | --- | --- |
-| `frontend/gradle/libs.versions.toml`, `frontend/app/build.gradle.kts` | Estefanía | PR propio de tipo `chore(build)`, no mezclado con una funcionalidad |
+| `mobile/gradle/libs.versions.toml`, `mobile/app/build.gradle.kts` | Estefanía | PR propio de tipo `chore(build)`, no mezclado con una funcionalidad |
 | `UniRideDatabase.kt` (entities, versión) | Estefanía | Un cambio de esquema sube la versión; avisar en el grupo |
 | `docs/API.md` | Alvaro | Cambiar el contrato requiere aprobación de Alvaro, en el mismo PR que el endpoint |
 | `backend/pom.xml`, `backend/.../common/**`, `docker-compose.yml` | Gustavo | Seguridad, errores y configuración los revisa Gustavo |

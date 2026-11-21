@@ -1,6 +1,6 @@
 # UniRide · Reglas del proyecto para revisión con IA
 
-App Android de viajes compartidos para estudiantes de UADE (Kotlin, Jetpack Compose, MVVM + Clean Architecture, Offline First) con un backend REST en Spring Boot. Es un monorepo: la app Android está en `frontend/` y el backend en `backend/`. Las reglas completas están en `docs/CONVENCIONES.md` y la división del trabajo en `docs/DIVISION_TRABAJO.md`. El contrato de la API está en `docs/API.md` (borrador hasta que se apruebe en la tarea A0). Al revisar un cambio, marcar como problema todo lo que viole estas reglas:
+App Android de viajes compartidos para estudiantes de UADE (Kotlin, Jetpack Compose, MVVM + Clean Architecture, Offline First) con un backend REST en Spring Boot. Es un monorepo: la app Android está en `mobile/` y el backend en `backend/`. Las reglas completas están en `docs/CONVENCIONES.md` y la división del trabajo en `docs/DIVISION_TRABAJO.md`. El contrato de la API está en `docs/API.md` (borrador hasta que se apruebe en la tarea A0). Al revisar un cambio, marcar como problema todo lo que viole estas reglas:
 
 ## App: capas
 
@@ -33,7 +33,7 @@ App Android de viajes compartidos para estudiantes de UADE (Kotlin, Jetpack Comp
 - Patente y teléfono solo en la respuesta si quien consulta comparte una reserva `ACEPTADA` (RNF07). Aceptar una reserva descuenta la vacante en la misma transacción, con bloqueo.
 - Crear viajes y reservas es `PUT` idempotente con el UUID del cliente.
 - Las tablas las crea Hibernate desde las entidades (`ddl-auto=update`); los datos iniciales van en `data.sql` y se pueden ejecutar más de una vez. Sin secretos en el repo (`.env` no se commitea).
-- Un PR toca `frontend/` o `backend/`, idealmente no los dos.
+- Un PR toca `mobile/` o `backend/`, idealmente no los dos.
 - Si cambia el contrato, `docs/API.md` se actualiza en el mismo PR.
 
 ## General

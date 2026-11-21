@@ -1,4 +1,4 @@
-# Raíz del monorepo: lo propio de cada proyecto está en frontend/.gitignore y backend/.gitignore
+# Raíz del monorepo: lo propio de cada proyecto está en mobile/.gitignore y backend/.gitignore
 .DS_Store
 .env
 *.log

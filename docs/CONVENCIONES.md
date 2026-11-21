@@ -39,17 +39,17 @@ La base es lo que comprometimos en la preentrega (MVVM + Clean Architecture, Roo
 
 ¿Por qué Spring Boot y no Gin (Go)? El equipo ya trabaja con Spring Boot 3.5 y JWT en Desarrollo de Aplicaciones II, el Firebase Admin SDK para Java es el oficial más completo y Spring trae resuelto el envío de correo, la validación y la seguridad. Gin es más liviano, pero tendríamos que aprender Go y armar a mano varias de esas piezas.
 
-En la app, todas las dependencias van en `frontend/gradle/libs.versions.toml`; en el backend, en el `pom.xml` con la versión administrada por el parent de Spring Boot cuando exista. Una dependencia nueva que no esté en estas tablas se discute antes en el grupo: tenemos que poder justificarla en la defensa.
+En la app, todas las dependencias van en `mobile/gradle/libs.versions.toml`; en el backend, en el `pom.xml` con la versión administrada por el parent de Spring Boot cuando exista. Una dependencia nueva que no esté en estas tablas se discute antes en el grupo: tenemos que poder justificarla en la defensa.
 
 ---
 
 ## 2. Estructura del repositorio
 
-Monorepo con el front y el back separados en dos carpetas, cada una con su propio proyecto:
+Monorepo con la app móvil y el backend separados en dos carpetas, cada una con su propio proyecto:
 
 ```
 desaApp1-TPI/
-├── frontend/               // proyecto Android (Gradle). En Android Studio se abre ESTA carpeta, no la raíz
+├── mobile/                 // proyecto Android (Gradle). En Android Studio se abre ESTA carpeta, no la raíz
 │   ├── app/
 │   ├── gradle/libs.versions.toml
 │   └── settings.gradle.kts
@@ -64,12 +64,12 @@ desaApp1-TPI/
 └── README.md
 ```
 
-- Un PR toca `frontend/` o `backend/`, idealmente no los dos. Si un RF necesita los dos, primero va el PR del backend (con `docs/API.md` actualizado) y después el de la app.
+- Un PR toca `mobile/` o `backend/`, idealmente no los dos. Si un RF necesita los dos, primero va el PR del backend (con `docs/API.md` actualizado) y después el de la app.
 - Cada carpeta tiene su propio `.gitignore`.
 
 ## 3. Estructura de paquetes de la app
 
-Todo esto vive en `frontend/app/src/main/java/`. Paquete raíz: `com.example.uniride` (el que ya tiene el proyecto). Primero la capa, después la funcionalidad. Las carpetas marcadas con `*` ya existen en el repo; el resto se agrega cuando haga falta.
+Todo esto vive en `mobile/app/src/main/java/`. Paquete raíz: `com.example.uniride` (el que ya tiene el proyecto). Primero la capa, después la funcionalidad. Las carpetas marcadas con `*` ya existen en el repo; el resto se agrega cuando haga falta.
 
 ```
 com.example.uniride
