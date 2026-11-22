@@ -1,3 +1,55 @@
 <resources>
     <string name="app_name">UniRide</string>
+
+    <!-- Navegación (G3): barra inferior y selector de modo -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_feed">Explorar</string>
+    <string name="nav_publish">Publicar</string>
+    <string name="nav_profile">Perfil</string>
+    <string name="nav_mode_passenger">Pasajero</string>
+    <string name="nav_mode_driver">Conductor</string>
+    <string name="nav_mode_selector_description">Modo de uso</string>
+
+    <!-- Placeholders de G3: cada RF los reemplaza por su pantalla -->
+    <string name="placeholder_message">Pantalla en construcción</string>
+    <string name="placeholder_action_login">Iniciar sesión</string>
+    <string name="placeholder_action_register">Crear cuenta</string>
+    <string name="placeholder_action_enter">Entrar</string>
+    <string name="placeholder_action_forgot_password">Olvidé mi contraseña</string>
+    <string name="placeholder_action_create_account">Registrarme</string>
+    <string name="placeholder_action_trip_detail">Ver detalle de un viaje</string>
+    <string name="placeholder_action_request_seat">Solicitar asiento</string>
+    <string name="placeholder_action_back">Volver</string>
+    <string name="placeholder_action_my_trip">Ver mi viaje</string>
+    <string name="placeholder_action_publish">Publicar un viaje</string>
+    <string name="placeholder_action_driver_panel">Ver solicitudes</string>
+    <string name="placeholder_action_logout">Cerrar sesión</string>
+
+    <!-- Auth (RF01) -->
+    <string name="auth_welcome_title">Bienvenida</string>
+    <string name="auth_login_title">Iniciar sesión</string>
+    <string name="auth_register_title">Crear cuenta</string>
+    <string name="auth_check_email_title">Revisá tu correo</string>
+    <string name="auth_forgot_password_title">Recuperar contraseña</string>
+    <string name="auth_reset_password_title">Nueva contraseña</string>
+    <string name="auth_activate_title">Activar cuenta</string>
+
+    <!-- Inicio -->
+    <string name="home_passenger_title">Inicio del pasajero</string>
+    <string name="home_driver_title">Inicio del conductor</string>
+
+    <!-- Feed (RF03) -->
+    <string name="feed_title">Explorar viajes</string>
+
+    <!-- Detalle y reserva (RF04) -->
+    <string name="detail_title">Detalle del viaje</string>
+    <string name="seat_requested_title">Solicitud enviada</string>
+    <string name="my_trip_title">Mi viaje</string>
+    <string name="driver_panel_title">Panel del conductor</string>
+
+    <!-- Publicación (RF02) -->
+    <string name="publish_title">Publicar un viaje</string>
+
+    <!-- Perfil (RF01) -->
+    <string name="profile_title">Perfil</string>
 </resources>
