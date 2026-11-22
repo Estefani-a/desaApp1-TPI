@@ -1,0 +1,61 @@
+# Configuración por variables de entorno (CONVENCIONES §10.6). Los valores de ejemplo
+# están en .env.example, en la raíz del repo. Dentro de Docker los completa docker-compose.yml.
+spring:
+  application:
+    name: uniride-backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/uniride}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    # Hibernate crea y actualiza las tablas a partir de las entidades (CONVENCIONES §10.5)
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  sql:
+    init:
+      # data.sql es idempotente (ON CONFLICT DO NOTHING) y corre en cada arranque
+      mode: always
+      encoding: UTF-8
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+  jackson:
+    default-property-inclusion: always
+    deserialization:
+      fail-on-unknown-properties: false
+
+server:
+  port: 8080
+  error:
+    include-stacktrace: never
+    include-message: never
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 30d
+  # Base de los enlaces de los correos (docs/API.md §8)
+  link-base-url: ${APP_LINK_BASE_URL:http://10.0.2.2:8080}
+  # Sin credenciales, el backend arranca igual y solo registra en el log las push (CONVENCIONES §10.6)
+  firebase-credentials-path: ${FIREBASE_CREDENTIALS_PATH:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  health:
+    # Mailpit caído no tiene que marcar el backend como DOWN
+    mail:
+      enabled: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
