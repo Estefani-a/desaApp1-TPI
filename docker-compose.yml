@@ -1,0 +1,50 @@
+# Levanta PostgreSQL, Mailpit y el backend juntos (CONVENCIONES §10.7):
+#   cp .env.example .env
+#   docker compose up --build
+# Solo la base y el correo, para correr el backend desde IntelliJ con el perfil "local":
+#   docker compose up db mailpit
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: uniride
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "8025:8025" # web: http://localhost:8025
+      - "1025:1025" # SMTP
+
+  backend:
+    build: ./backend
+    environment:
+      # Dentro de Docker se usan los nombres de los servicios, no localhost
+      DB_URL: jdbc:postgresql://db:5432/uniride
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      APP_LINK_BASE_URL: ${APP_LINK_BASE_URL}
+      FIREBASE_CREDENTIALS_PATH: ${FIREBASE_CREDENTIALS_PATH:-}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+
+volumes:
+  pgdata:
