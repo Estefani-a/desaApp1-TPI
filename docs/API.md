@@ -83,7 +83,7 @@ En la app, `safeApiCall` traduce el HTTP a `DataError` (CONVENCIONES §6.3) y, c
 | --- | --- |
 | `PreferredMode` | `PASAJERO`, `CONDUCTOR`, `AMBOS` |
 | `Direction` | `IDA` (hacia la sede), `VUELTA` (desde la sede) |
-| `Shift` | `MANANA` (`00:00`–`12:59`), `TARDE` (`13:00`–`17:59`), `NOCHE` (`18:00`–`23:59`) |
+| `Shift` | `MANANA` (`06:00`–`12:59`), `TARDE` (`13:00`–`17:59`), `NOCHE` (`18:00`–`05:59`) |
 | `TripStatus` | `ABIERTO`, `COMPLETO`, `FINALIZADO`, `CANCELADO` |
 | `ReservationStatus` | `PENDIENTE`, `ACEPTADA`, `RECHAZADA`, `CANCELADA` |
 | `NotificationType` | `NUEVA_SOLICITUD`, `SOLICITUD_ACEPTADA`, `SOLICITUD_RECHAZADA`, `CALIFICAR_VIAJE` |
@@ -237,7 +237,9 @@ Política de contraseña: mínimo 8 caracteres, con al menos una letra y un núm
 }
 ```
 
-El JWT se firma con HS256, lleva el id del usuario en `sub` y dura 30 días. No hay refresh token: cuando vence, la API responde 401 y la app vuelve al login (preentrega 11.3).
+El JWT se firma con HS256, lleva el id del usuario en `sub` y dura 30 días sin refresh token: cuando vence (o ante cualquier 401), la app borra el token y vuelve al login (preentrega 11.3).
+
+> **Simplificación de alcance del TP:** se utiliza un único JWT de 30 días para acotar la implementación y evitar renovaciones durante la demo. En un entorno productivo, lo óptimo es emitir un **access token JWT de corta duración (15–30 minutos)** combinado con un **refresh token de mayor duración (7–30 días)** almacenado y revocable en base de datos con rotación en cada uso, lo que permite revocar sesiones comprometidas o cerradas sin esperar al vencimiento del JWT.
 
 ### 4.5 Recuperación de contraseña
 
@@ -465,9 +467,9 @@ Si el usuario no dio permiso de notificaciones (RNF08), no recibe la push, pero 
 
 ## 11. Decisiones cerradas en A0
 
-1. **Franjas horarias de `Shift`:** `MANANA` (`00:00`–`12:59`), `TARDE` (`13:00`–`17:59`), `NOCHE` (`18:00`–`23:59`).
+1. **Franjas horarias de `Shift`:** `MANANA` (`06:00`–`12:59`), `TARDE` (`13:00`–`17:59`), `NOCHE` (`18:00`–`05:59`, cubriendo vueltas pasadas la medianoche).
 2. **Sedes y salidas (`GET /campuses`):** `MONSERRAT`, `BELGRANO` y `RECOLETA` con sus puntos de encuentro definidos en §5.2.
-3. **Política de contraseña y JWT:** mínimo 8 caracteres con al menos 1 letra y 1 número; JWT HS256 con duración de 30 días (sin refresh token).
+3. **Política de contraseña y JWT:** mínimo 8 caracteres con al menos 1 letra y 1 número; JWT HS256 de 30 días sin refresh token como simplificación del TP (en producción lo óptimo es access token corto de 15–30 min + refresh token rotativo y revocable en base de datos, ver §4.4).
 4. **Activación de cuenta:** `POST /auth/activate` devuelve `AuthResponse` y deja la sesión iniciada automáticamente.
 5. **Listado de viajes (`GET /trips`):** sin paginación, tope de 100 resultados.
 6. **Push al cancelar un viaje:** fuera de alcance en esta entrega (se mantienen los 3 tipos de RF04).
