@@ -143,4 +143,15 @@ class FakeRemoteDataSourcesTest {
         assertEquals("ABIERTO", detail.status)
         assertEquals(1, detail.availableSeats)
     }
+
+    @Test
+    fun `viaje de madrugada pertenece al turno NOCHE y no a MANANA`() {
+        val store = FakeBackendStore()
+
+        assertTrue(store.matchesShift("00:30", "NOCHE"))
+        assertTrue(!store.matchesShift("00:30", "MANANA"))
+        assertTrue(store.matchesShift("06:00", "MANANA"))
+        assertTrue(store.matchesShift("13:00", "TARDE"))
+        assertTrue(store.matchesShift("18:00", "NOCHE"))
+    }
 }

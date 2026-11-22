@@ -168,9 +168,9 @@ class FakeBackendStore {
     internal fun matchesShift(departureTime: String, shift: String): Boolean {
         val time = runCatching { LocalTime.parse(departureTime) }.getOrNull() ?: return false
         return when (shift.uppercase()) {
-            "MANANA" -> time.isBefore(LocalTime.of(13, 0))
+            "MANANA" -> !time.isBefore(LocalTime.of(6, 0)) && time.isBefore(LocalTime.of(13, 0))
             "TARDE" -> !time.isBefore(LocalTime.of(13, 0)) && time.isBefore(LocalTime.of(18, 0))
-            "NOCHE" -> !time.isBefore(LocalTime.of(18, 0))
+            "NOCHE" -> !time.isBefore(LocalTime.of(18, 0)) || time.isBefore(LocalTime.of(6, 0))
             else -> false
         }
     }
