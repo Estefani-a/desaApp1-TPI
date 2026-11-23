@@ -76,7 +76,7 @@ Seguimos una metodología de **Git Flow simplificado**:
 
 * **`main`**: Rama de producción y entregas estables evaluables. Solo recibe código testeado y aprobado mediante Pull Requests.
 * **`develop`**: Rama principal de integración continua donde converge el desarrollo diario.
-* **`feature/<nombre-feature>`**: Ramas individuales creadas a partir de `develop` para desarrollar una funcionalidad o pantalla específica (ej. `feature/login-institucional`, `feature/feed-viajes`, `feature/room-persistence`).
+* **`feat/<descripción>`**: Ramas individuales creadas a partir de `develop` para desarrollar una funcionalidad o pantalla específica (ej. `feat/login-institucional`, `feat/feed-viajes`, `feat/room-persistence`).
 
 ### Convención de Commits
 Se utiliza la convención de [Conventional Commits](https://www.conventionalcommits.org/):
