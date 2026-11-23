@@ -83,7 +83,7 @@ En la app, `safeApiCall` traduce el HTTP a `DataError` (CONVENCIONES §6.3) y, c
 | --- | --- |
 | `PreferredMode` | `PASAJERO`, `CONDUCTOR`, `AMBOS` |
 | `Direction` | `IDA` (hacia la sede), `VUELTA` (desde la sede) |
-| `Shift` | `MANANA` (`06:00`–`12:59`), `TARDE` (`13:00`–`17:59`), `NOCHE` (`18:00`–`05:59`) |
+| `Shift` | `MANANA` (`[06:00, 13:00)`), `TARDE` (`[13:00, 18:00)`), `NOCHE` (`[18:00, 06:00)`) — no viaja en `TripDto`, se calcula a partir de `departureTime` |
 | `TripStatus` | `ABIERTO`, `COMPLETO`, `FINALIZADO`, `CANCELADO` |
 | `ReservationStatus` | `PENDIENTE`, `ACEPTADA`, `RECHAZADA`, `CANCELADA` |
 | `NotificationType` | `NUEVA_SOLICITUD`, `SOLICITUD_ACEPTADA`, `SOLICITUD_RECHAZADA`, `CALIFICAR_VIAJE` |
@@ -277,6 +277,7 @@ Todos los parámetros son opcionales y se combinan con Y.
 
 - **200** `TripDto[]` ordenado por `departureDate` y `departureTime`.
 - Devuelve los viajes `ABIERTO` y `COMPLETO` que todavía no salieron. Con `updatedSince`, solo los que cambiaron desde ese momento, **incluidos** los que pasaron a `FINALIZADO` o `CANCELADO`, para que la app los saque de Room.
+- El parámetro `shift` se evalúa sobre `departureTime` con los intervalos semiabiertos de §3.1 (`shift` no forma parte de `TripDto`; la app aplica la misma regla al filtrar en Room sin conexión).
 - Sin paginación: se devuelven como máximo 100 viajes.
 
 ### 5.2 Sedes y puntos de encuentro
@@ -300,7 +301,7 @@ Todos los parámetros son opcionales y se combinan con Y.
     "name": "Sede Belgrano",
     "meetingPoints": [
       "Salida 11 de Septiembre 1990",
-      "Esquina Echeverría"
+      "Salida Echeverría"
     ]
   },
   {
@@ -358,7 +359,7 @@ El servidor completa `driverName`, `driverRating` y los datos del vehículo desd
 
 Respuesta: **200** `TripDto` · **403** `FORBIDDEN` · **409** `INVALID_STATUS_TRANSITION`.
 
-En esta entrega cancelar un viaje **no** envía notificación push (se mantienen únicamente los 3 tipos de RF04 definidos en §9); el pasajero ve el cambio de estado al abrir la app.
+En esta entrega cancelar un viaje **no** envía notificación push (se mantienen únicamente los 3 tipos de RF04 definidos en §9); el pasajero con reserva `ACEPTADA` ve el cambio de estado al abrir la app. Esta simplificación queda documentada en "Limitaciones conocidas" del README.
 
 ---
 
@@ -467,10 +468,10 @@ Si el usuario no dio permiso de notificaciones (RNF08), no recibe la push, pero 
 
 ## 11. Decisiones cerradas en A0
 
-1. **Franjas horarias de `Shift`:** `MANANA` (`06:00`–`12:59`), `TARDE` (`13:00`–`17:59`), `NOCHE` (`18:00`–`05:59`, cubriendo vueltas pasadas la medianoche).
-2. **Sedes y salidas (`GET /campuses`):** `MONSERRAT`, `BELGRANO` y `RECOLETA` con sus puntos de encuentro definidos en §5.2.
+1. **Franjas horarias de `Shift`:** intervalos semiabiertos `MANANA` (`[06:00, 13:00)`), `TARDE` (`[13:00, 18:00)`), `NOCHE` (`[18:00, 06:00)`), calculado desde `departureTime` (no viaja en `TripDto`).
+2. **Sedes y salidas (`GET /campuses`):** `MONSERRAT`, `BELGRANO` y `RECOLETA` con sus puntos de encuentro unificados en formato `"Salida …"` (§5.2).
 3. **Política de contraseña y JWT:** mínimo 8 caracteres con al menos 1 letra y 1 número; JWT HS256 de 30 días sin refresh token como simplificación del TP (en producción lo óptimo es access token corto de 15–30 min + refresh token rotativo y revocable en base de datos, ver §4.4).
 4. **Activación de cuenta:** `POST /auth/activate` devuelve `AuthResponse` y deja la sesión iniciada automáticamente.
 5. **Listado de viajes (`GET /trips`):** sin paginación, tope de 100 resultados.
-6. **Push al cancelar un viaje:** fuera de alcance en esta entrega (se mantienen los 3 tipos de RF04).
+6. **Push al cancelar un viaje:** fuera de alcance en esta entrega (se mantienen los 3 tipos de RF04; documentado en "Limitaciones conocidas" del README).
 7. **Enlaces de los correos:** página HTML intermedia del backend en `/api/v1/links/activate` y `/api/v1/links/reset-password` redirigiendo a `uniride://…`.
