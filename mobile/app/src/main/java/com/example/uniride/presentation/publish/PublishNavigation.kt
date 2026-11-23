@@ -4,6 +4,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.example.uniride.R
+import com.example.uniride.presentation.navigation.PlaceholderAction
 import com.example.uniride.presentation.navigation.PlaceholderScreen
 import kotlinx.serialization.Serializable
 
@@ -11,9 +12,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object PublishTripRoute
 
-@Suppress("UNUSED_PARAMETER") // RF02 uses it to go back after publishing
 fun NavGraphBuilder.publishGraph(navController: NavController) {
     composable<PublishTripRoute> {
-        PlaceholderScreen(titleRes = R.string.publish_title, screenCode = "C2")
+        PlaceholderScreen(
+            titleRes = R.string.publish_title,
+            actions = listOf(
+                PlaceholderAction(R.string.placeholder_action_back) { navController.popBackStack() },
+            ),
+        )
     }
 }

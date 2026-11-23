@@ -22,7 +22,6 @@ fun NavGraphBuilder.detailGraph(navController: NavController) {
         val route = entry.toRoute<TripDetailRoute>()
         PlaceholderScreen(
             titleRes = R.string.detail_title,
-            screenCode = "B3",
             actions = listOf(
                 PlaceholderAction(R.string.placeholder_action_request_seat) {
                     navController.navigate(SeatRequestedRoute(reservationId = "placeholder-${route.tripId}")) {
@@ -35,7 +34,6 @@ fun NavGraphBuilder.detailGraph(navController: NavController) {
     composable<SeatRequestedRoute> {
         PlaceholderScreen(
             titleRes = R.string.seat_requested_title,
-            screenCode = "B5",
             actions = listOf(
                 PlaceholderAction(R.string.placeholder_action_back) { navController.popBackStack() },
             ),

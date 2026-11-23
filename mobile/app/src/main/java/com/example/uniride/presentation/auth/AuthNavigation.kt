@@ -33,20 +33,19 @@ data object CheckEmailRoute
 @Serializable
 data object ForgotPasswordRoute
 
-/** New password. Opened from `uniride://reset-password?token=...` (docs/API.md §8). */
+/** New password. Opened from the reset link of the email, which brings [resetCode] (docs/API.md §8). */
 @Serializable
-data class ResetPasswordRoute(val token: String)
+data class ResetPasswordRoute(val resetCode: String)
 
-/** Opened from `uniride://activate?token=...` (docs/API.md §8). Calls `POST /auth/activate`. */
+/** Opened from the activation link of the email, which brings [activationCode] (docs/API.md §8). */
 @Serializable
-data class ActivateAccountRoute(val token: String)
+data class ActivateAccountRoute(val activationCode: String)
 
 fun NavGraphBuilder.authGraph(navController: NavController) {
     navigation<AuthGraphRoute>(startDestination = WelcomeRoute) {
         composable<WelcomeRoute> {
             PlaceholderScreen(
                 titleRes = R.string.auth_welcome_title,
-                screenCode = "A1",
                 actions = listOf(
                     PlaceholderAction(R.string.placeholder_action_login) { navController.navigate(LoginRoute) },
                     PlaceholderAction(R.string.placeholder_action_register) { navController.navigate(RegisterRoute) },
@@ -56,7 +55,6 @@ fun NavGraphBuilder.authGraph(navController: NavController) {
         composable<LoginRoute> {
             PlaceholderScreen(
                 titleRes = R.string.auth_login_title,
-                screenCode = "A2",
                 actions = listOf(
                     PlaceholderAction(R.string.placeholder_action_enter) { navController.navigateToMain() },
                     PlaceholderAction(R.string.placeholder_action_forgot_password) {
@@ -68,7 +66,6 @@ fun NavGraphBuilder.authGraph(navController: NavController) {
         composable<RegisterRoute> {
             PlaceholderScreen(
                 titleRes = R.string.auth_register_title,
-                screenCode = "RF01",
                 actions = listOf(
                     PlaceholderAction(R.string.placeholder_action_create_account) {
                         navController.navigate(CheckEmailRoute)
@@ -77,18 +74,17 @@ fun NavGraphBuilder.authGraph(navController: NavController) {
             )
         }
         composable<CheckEmailRoute> {
-            PlaceholderScreen(titleRes = R.string.auth_check_email_title, screenCode = "RF01")
+            PlaceholderScreen(titleRes = R.string.auth_check_email_title)
         }
         composable<ForgotPasswordRoute> {
-            PlaceholderScreen(titleRes = R.string.auth_forgot_password_title, screenCode = "RF01")
+            PlaceholderScreen(titleRes = R.string.auth_forgot_password_title)
         }
         composable<ResetPasswordRoute> {
-            PlaceholderScreen(titleRes = R.string.auth_reset_password_title, screenCode = "RF01")
+            PlaceholderScreen(titleRes = R.string.auth_reset_password_title)
         }
         composable<ActivateAccountRoute> {
             PlaceholderScreen(
                 titleRes = R.string.auth_activate_title,
-                screenCode = "RF01",
                 actions = listOf(
                     PlaceholderAction(R.string.placeholder_action_enter) { navController.navigateToMain() },
                 ),

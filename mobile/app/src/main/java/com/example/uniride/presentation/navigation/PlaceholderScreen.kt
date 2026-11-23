@@ -20,17 +20,22 @@ import androidx.compose.ui.unit.dp
 import com.example.uniride.R
 import com.example.uniride.ui.theme.UniRideTheme
 
+/**
+ * Id of the trip the placeholders navigate to. It disappears together with them when each
+ * RF reads the real trips from Room.
+ */
+const val PLACEHOLDER_TRIP_ID = "placeholder-trip"
+
 /** Button of a placeholder that goes to another screen. */
 data class PlaceholderAction(@StringRes val labelRes: Int, val onClick: () -> Unit)
 
 /**
- * Temporary screen of G3: shows the name and the Figma code of the screen and buttons to
- * walk the navigation. Each RF replaces it with its real `XxxRoute`.
+ * Temporary screen of G3: shows its name and buttons to walk the navigation. Each RF replaces
+ * it with its real `XxxRoute`. The Figma code of each screen is in the KDoc of its route.
  */
 @Composable
 fun PlaceholderScreen(
     @StringRes titleRes: Int,
-    screenCode: String,
     modifier: Modifier = Modifier,
     actions: List<PlaceholderAction> = emptyList(),
 ) {
@@ -41,11 +46,6 @@ fun PlaceholderScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = screenCode,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
-        )
         Text(
             text = stringResource(titleRes),
             style = MaterialTheme.typography.headlineSmall,
@@ -76,7 +76,6 @@ private fun PlaceholderScreenPreview() {
     UniRideTheme {
         PlaceholderScreen(
             titleRes = R.string.feed_title,
-            screenCode = "B1",
             actions = listOf(PlaceholderAction(R.string.placeholder_action_trip_detail) {}),
         )
     }

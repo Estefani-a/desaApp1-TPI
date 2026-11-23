@@ -18,7 +18,6 @@ fun NavGraphBuilder.profileGraph(navController: NavController) {
     composable<ProfileRoute> {
         PlaceholderScreen(
             titleRes = R.string.profile_title,
-            screenCode = "RF01",
             actions = listOf(
                 PlaceholderAction(R.string.placeholder_action_logout) {
                     navController.navigate(AuthGraphRoute) {

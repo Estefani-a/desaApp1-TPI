@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import com.example.uniride.R
 import com.example.uniride.presentation.detail.TripDetailRoute
 import com.example.uniride.presentation.navigation.PlaceholderAction
+import com.example.uniride.presentation.navigation.PLACEHOLDER_TRIP_ID
 import com.example.uniride.presentation.navigation.PlaceholderScreen
 import kotlinx.serialization.Serializable
 
@@ -21,15 +22,14 @@ fun NavGraphBuilder.reservationsGraph(navController: NavController) {
     composable<MyTripRoute> {
         PlaceholderScreen(
             titleRes = R.string.my_trip_title,
-            screenCode = "B6",
             actions = listOf(
                 PlaceholderAction(R.string.placeholder_action_trip_detail) {
-                    navController.navigate(TripDetailRoute(tripId = "placeholder-trip"))
+                    navController.navigate(TripDetailRoute(tripId = PLACEHOLDER_TRIP_ID))
                 },
             ),
         )
     }
     composable<DriverPanelRoute> {
-        PlaceholderScreen(titleRes = R.string.driver_panel_title, screenCode = "C4")
+        PlaceholderScreen(titleRes = R.string.driver_panel_title)
     }
 }
