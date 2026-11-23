@@ -27,8 +27,24 @@ class FakeAuthRemoteDataSource(
         maybeDelay()
         return store.withState {
             val email = request.email.trim().lowercase()
-            if (!email.endsWith("@uade.edu.ar")) {
+            // TODO: reuse EmailValidator and PasswordPolicy once PR #3 merges into develop.
+            if (!EMAIL_FORMAT_REGEX.matches(email)) {
+                throw store.apiError(
+                    httpCode = 400,
+                    code = ApiErrorCode.VALIDATION_ERROR,
+                    message = "Hay campos con errores.",
+                    fields = mapOf("email" to "El correo electrónico no tiene un formato válido."),
+                )
+            }
+            if (email.substringAfter('@') != ALLOWED_DOMAIN) {
                 throw store.apiError(400, ApiErrorCode.INVALID_EMAIL_DOMAIN, "Solo se permiten correos @uade.edu.ar.")
+            }
+            if (!isStrongPassword(request.password)) {
+                throw store.apiError(
+                    httpCode = 400,
+                    code = ApiErrorCode.WEAK_PASSWORD,
+                    message = "La contraseña debe tener al menos 8 caracteres, una letra y un número.",
+                )
             }
             if (store.users.values.any { it.user.email.equals(email, ignoreCase = true) }) {
                 throw store.apiError(409, ApiErrorCode.EMAIL_ALREADY_REGISTERED, "El correo ya está registrado.")
@@ -119,6 +135,13 @@ class FakeAuthRemoteDataSource(
     override suspend fun confirmPasswordReset(request: ConfirmPasswordResetRequest) {
         maybeDelay()
         store.withState {
+            if (!isStrongPassword(request.newPassword)) {
+                throw store.apiError(
+                    httpCode = 400,
+                    code = ApiErrorCode.WEAK_PASSWORD,
+                    message = "La contraseña debe tener al menos 8 caracteres, una letra y un número.",
+                )
+            }
             val userId = store.passwordResetTokens.remove(request.token)
                 ?: throw store.apiError(400, ApiErrorCode.INVALID_OR_EXPIRED_TOKEN, "Enlace inválido o vencido.")
             val stored = store.users[userId]
@@ -161,10 +184,24 @@ class FakeAuthRemoteDataSource(
         store.withState {
             val current = store.requireCurrentUser()
             store.users[current.user.id] = current.copy(fcmToken = null)
+            store.currentUserId = null
         }
     }
 
+    private fun isStrongPassword(password: String): Boolean =
+        password.length >= MIN_PASSWORD_LENGTH &&
+            password.any { it.isLetter() } &&
+            password.any { it in '0'..'9' }
+
     private suspend fun maybeDelay() {
         if (simulatedDelayMs > 0L) delay(simulatedDelayMs)
+    }
+
+    private companion object {
+        const val ALLOWED_DOMAIN = "uade.edu.ar"
+        const val MIN_PASSWORD_LENGTH = 8
+        val EMAIL_FORMAT_REGEX = Regex(
+            pattern = "^[A-Za-z0-9_%+-]+(?:\\.[A-Za-z0-9_%+-]+)*@[A-Za-z0-9-]+(?:\\.[A-Za-z0-9-]+)+$",
+        )
     }
 }

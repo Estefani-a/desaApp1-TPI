@@ -92,6 +92,9 @@ class FakeReservationRemoteDataSource(
             if (reservation.status != FakeBackendStore.STATUS_PENDING) {
                 throw store.apiError(409, ApiErrorCode.INVALID_STATUS_TRANSITION, "La reserva no está pendiente.")
             }
+            if (trip.status == FakeBackendStore.STATUS_FINISHED || trip.status == FakeBackendStore.STATUS_CANCELLED) {
+                throw store.apiError(409, ApiErrorCode.TRIP_NOT_OPEN, "El viaje ya no está abierto.")
+            }
             if (trip.availableSeats <= 0) {
                 throw store.apiError(409, ApiErrorCode.NO_SEATS_AVAILABLE, "El viaje ya no tiene plazas disponibles.")
             }

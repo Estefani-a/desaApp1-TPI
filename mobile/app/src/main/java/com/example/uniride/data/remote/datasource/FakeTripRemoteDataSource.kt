@@ -23,15 +23,26 @@ class FakeTripRemoteDataSource(
     ): List<TripDto> {
         maybeDelay()
         return store.withState {
-            val viewerId = store.currentUserId
+            val viewerId = store.requireCurrentUser().user.id
+            val sinceInstant = updatedSince?.let {
+                store.parseOffsetDateTime(it) ?: throw store.apiError(
+                    httpCode = 400,
+                    code = ApiErrorCode.VALIDATION_ERROR,
+                    message = "Hay campos con errores.",
+                    fields = mapOf("updatedSince" to "Formato ISO-8601 inválido."),
+                )
+            }
+
             store.trips.values
                 .asSequence()
                 .filter { trip ->
-                    if (updatedSince != null) {
-                        trip.updatedAt >= updatedSince
+                    if (sinceInstant != null) {
+                        val tripUpdatedAt = store.parseOffsetDateTime(trip.updatedAt)
+                        tripUpdatedAt != null && !tripUpdatedAt.isBefore(sinceInstant)
                     } else {
-                        trip.status == FakeBackendStore.STATUS_OPEN ||
-                            trip.status == FakeBackendStore.STATUS_FULL
+                        (trip.status == FakeBackendStore.STATUS_OPEN ||
+                            trip.status == FakeBackendStore.STATUS_FULL) &&
+                            store.isUpcoming(trip.departureDate, trip.departureTime)
                     }
                 }
                 .filter { campus == null || it.campus.equals(campus, ignoreCase = true) }
@@ -53,9 +64,10 @@ class FakeTripRemoteDataSource(
     override suspend fun getTripDetail(tripId: String): TripDto {
         maybeDelay()
         return store.withState {
+            val viewerId = store.requireCurrentUser().user.id
             val trip = store.trips[tripId]
                 ?: throw store.apiError(404, ApiErrorCode.NOT_FOUND, "Viaje no encontrado.")
-            store.toPublicTripDto(trip, store.currentUserId)
+            store.toPublicTripDto(trip, viewerId)
         }
     }
 
@@ -75,16 +87,40 @@ class FakeTripRemoteDataSource(
                 httpCode = 400,
                 code = ApiErrorCode.VALIDATION_ERROR,
                 message = "Debés cargar un vehículo en tu perfil antes de publicar un viaje.",
+                fields = mapOf("vehicle" to "Se requiere un vehículo cargado en el perfil."),
             )
-            if (request.totalSeats !in 1..4 || request.contributionPerSeat < 0) {
-                throw store.apiError(400, ApiErrorCode.VALIDATION_ERROR, "Hay campos con errores.")
+
+            val fieldErrors = buildMap {
+                if (request.totalSeats !in 1..4) {
+                    put("totalSeats", "Debe estar entre 1 y 4.")
+                }
+                if (request.contributionPerSeat < 0) {
+                    put("contributionPerSeat", "Debe ser mayor o igual a 0.")
+                }
+                if (!store.isUpcoming(request.departureDate, request.departureTime)) {
+                    put("departureDate", "Debe ser una fecha y hora futura.")
+                }
+                val campus = store.campuses.firstOrNull { it.code.equals(request.campus, ignoreCase = true) }
+                if (campus == null) {
+                    put("campus", "La sede indicada no existe.")
+                } else if (request.meetingPoint !in campus.meetingPoints) {
+                    put("meetingPoint", "El punto de encuentro no corresponde a la sede elegida.")
+                }
+            }
+            if (fieldErrors.isNotEmpty()) {
+                throw store.apiError(
+                    httpCode = 400,
+                    code = ApiErrorCode.VALIDATION_ERROR,
+                    message = "Hay campos con errores.",
+                    fields = fieldErrors,
+                )
             }
 
             val created = FakeBackendStore.StoredTrip(
                 tripId = tripId,
                 driverId = driver.id,
                 direction = request.direction,
-                campus = request.campus,
+                campus = request.campus.uppercase(),
                 meetingPoint = request.meetingPoint,
                 destinationNeighborhood = request.destinationNeighborhood,
                 destinationReference = request.destinationReference,

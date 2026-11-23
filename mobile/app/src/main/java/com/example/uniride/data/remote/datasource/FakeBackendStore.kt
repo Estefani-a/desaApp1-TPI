@@ -1,5 +1,6 @@
 package com.example.uniride.data.remote.datasource
 
+import com.example.uniride.data.remote.ApiException
 import com.example.uniride.data.remote.dto.ApiErrorCode
 import com.example.uniride.data.remote.dto.ApiErrorDto
 import com.example.uniride.data.remote.dto.CampusDto
@@ -9,9 +10,12 @@ import com.example.uniride.data.remote.dto.UserDto
 import com.example.uniride.data.remote.dto.VehicleDto
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /**
  * Shared in-memory backend fixture used by all Fake*RemoteDataSource implementations (A2).
@@ -59,6 +63,7 @@ class FakeBackendStore {
 
     private val mutex = Mutex()
     private val zone = ZoneId.of("America/Argentina/Buenos_Aires")
+    private val isoOffsetFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
 
     internal val campuses: List<CampusDto> = listOf(
         CampusDto(
@@ -76,7 +81,7 @@ class FakeBackendStore {
             name = "Sede Belgrano",
             meetingPoints = listOf(
                 "Salida 11 de Septiembre 1990",
-                "Esquina Echeverría",
+                "Salida Echeverría",
             ),
         ),
         CampusDto(
@@ -92,7 +97,8 @@ class FakeBackendStore {
     internal val trips = mutableMapOf<String, StoredTrip>()
     internal val reservations = mutableMapOf<String, StoredReservation>()
 
-    internal var currentUserId: String = DEFAULT_PASSENGER_ID
+    // Starts unauthenticated (null) so 401 and login flows of RF01 can be tested accurately.
+    internal var currentUserId: String? = null
 
     init {
         seedDemoData()
@@ -100,17 +106,33 @@ class FakeBackendStore {
 
     internal suspend fun <T> withState(block: () -> T): T = mutex.withLock { block() }
 
-    internal fun nowIso(): String = OffsetDateTime.now(zone).withNano(0).toString()
+    internal fun nowIso(): String = OffsetDateTime.now(zone).format(isoOffsetFormatter)
 
     internal fun expiresIn30DaysIso(): String =
-        OffsetDateTime.now(zone).plusDays(30).withNano(0).toString()
+        OffsetDateTime.now(zone).plusDays(30).format(isoOffsetFormatter)
 
-    internal fun requireCurrentUser(): StoredUser =
-        users[currentUserId] ?: throw apiError(
+    internal fun parseOffsetDateTime(value: String): OffsetDateTime? =
+        runCatching { OffsetDateTime.parse(value) }.getOrNull()
+
+    internal fun isUpcoming(departureDate: String, departureTime: String): Boolean {
+        val date = runCatching { LocalDate.parse(departureDate) }.getOrNull() ?: return false
+        val time = runCatching { LocalTime.parse(departureTime) }.getOrNull() ?: return false
+        val departure = LocalDateTime.of(date, time).atZone(zone)
+        return departure.isAfter(OffsetDateTime.now(zone).atZoneSameInstant(zone))
+    }
+
+    internal fun requireCurrentUser(): StoredUser {
+        val userId = currentUserId ?: throw apiError(
             httpCode = 401,
             code = ApiErrorCode.UNAUTHENTICATED,
             message = "Sesión no iniciada.",
         )
+        return users[userId] ?: throw apiError(
+            httpCode = 401,
+            code = ApiErrorCode.UNAUTHENTICATED,
+            message = "Sesión no iniciada.",
+        )
+    }
 
     internal fun toPublicTripDto(trip: StoredTrip, viewerId: String): TripDto {
         val driver = users[trip.driverId]?.user
@@ -180,7 +202,7 @@ class FakeBackendStore {
         code: ApiErrorCode,
         message: String,
         fields: Map<String, String>? = null,
-    ): FakeApiException = FakeApiException(
+    ): ApiException = ApiException(
         httpCode = httpCode,
         apiError = ApiErrorDto(code = code.name, message = message, fields = fields),
     )
@@ -243,7 +265,11 @@ class FakeBackendStore {
         users[martin.id] = StoredUser(martin, DEMO_PASSWORD, isActivated = true)
         users[sofia.id] = StoredUser(sofia, DEMO_PASSWORD, isActivated = true)
 
+        val today = LocalDate.now(zone)
+        val tomorrow = today.plusDays(1).toString()
+        val inTwoDays = today.plusDays(2).toString()
         val now = nowIso()
+
         trips[DEMO_TRIP_MONSERRAT_ID] = StoredTrip(
             tripId = DEMO_TRIP_MONSERRAT_ID,
             driverId = lucia.id,
@@ -252,7 +278,7 @@ class FakeBackendStore {
             meetingPoint = "Salida Lima 717",
             destinationNeighborhood = "Ramos Mejía",
             destinationReference = "Estación de tren",
-            departureDate = "2026-11-25",
+            departureDate = tomorrow,
             departureTime = "22:15",
             estimatedArrivalTime = "23:00",
             totalSeats = 3,
@@ -273,7 +299,7 @@ class FakeBackendStore {
             meetingPoint = "Salida 11 de Septiembre 1990",
             destinationNeighborhood = "Palermo",
             destinationReference = "Plaza Italia",
-            departureDate = "2026-11-26",
+            departureDate = inTwoDays,
             departureTime = "08:00",
             estimatedArrivalTime = "08:30",
             totalSeats = 2,
@@ -294,7 +320,7 @@ class FakeBackendStore {
             meetingPoint = "Salida Libertad 1340",
             destinationNeighborhood = "Caballito",
             destinationReference = "Parque Rivadavia",
-            departureDate = "2026-11-26",
+            departureDate = inTwoDays,
             departureTime = "15:30",
             estimatedArrivalTime = "16:10",
             totalSeats = 2,

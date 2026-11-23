@@ -1,5 +1,6 @@
 package com.example.uniride.data.remote.datasource
 
+import com.example.uniride.data.remote.ApiException
 import com.example.uniride.data.remote.dto.ActivateRequest
 import com.example.uniride.data.remote.dto.ApiErrorCode
 import com.example.uniride.data.remote.dto.LoginRequest
@@ -12,13 +13,51 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
+import java.time.LocalDate
+import java.time.ZoneId
 
 class FakeRemoteDataSourcesTest {
 
+    private val zone = ZoneId.of("America/Argentina/Buenos_Aires")
+
     @Test
-    fun `registro y activacion inician sesion automaticamente con correo uade`() = runBlocking {
+    fun `sin sesion iniciada los endpoints protegidos devuelven 401 UNAUTHENTICATED`() = runBlocking {
+        val store = FakeBackendStore()
+        val trips = FakeTripRemoteDataSource(store)
+
+        try {
+            trips.getTrips()
+            fail("Se esperaba ApiException 401")
+        } catch (ex: ApiException) {
+            assertEquals(401, ex.httpCode)
+            assertEquals(ApiErrorCode.UNAUTHENTICATED, ex.apiError.errorCode)
+        }
+
+        // GET /campuses es público y responde sin sesión
+        assertEquals(3, trips.getCampuses().size)
+    }
+
+    @Test
+    fun `registro valida contrasena debil y activacion inicia sesion automaticamente`() = runBlocking {
         val store = FakeBackendStore()
         val auth = FakeAuthRemoteDataSource(store)
+
+        try {
+            auth.register(
+                RegisterRequest(
+                    email = "nuevo@uade.edu.ar",
+                    password = "debil",
+                    fullName = "Juan Perez",
+                    career = "Ingeniería en Informática",
+                    phone = "+5491144445555",
+                    preferredMode = "PASAJERO",
+                ),
+            )
+            fail("Se esperaba WEAK_PASSWORD")
+        } catch (ex: ApiException) {
+            assertEquals(400, ex.httpCode)
+            assertEquals(ApiErrorCode.WEAK_PASSWORD, ex.apiError.errorCode)
+        }
 
         auth.register(
             RegisterRequest(
@@ -45,8 +84,8 @@ class FakeRemoteDataSourcesTest {
 
         try {
             auth.login(LoginRequest("lfernandez@uade.edu.ar", "ClaveIncorrecta9"))
-            fail("Se esperaba FakeApiException")
-        } catch (ex: FakeApiException) {
+            fail("Se esperaba ApiException")
+        } catch (ex: ApiException) {
             assertEquals(401, ex.httpCode)
             assertEquals(ApiErrorCode.INVALID_CREDENTIALS, ex.apiError.errorCode)
         }
@@ -55,8 +94,10 @@ class FakeRemoteDataSourcesTest {
     @Test
     fun `listado de viajes filtra por sede y turno y oculta patente y telefono sin reserva aceptada`() = runBlocking {
         val store = FakeBackendStore()
+        val auth = FakeAuthRemoteDataSource(store)
         val trips = FakeTripRemoteDataSource(store)
 
+        auth.login(LoginRequest("mgomez@uade.edu.ar", FakeBackendStore.DEMO_PASSWORD))
         val nightMonserratTrips = trips.getTrips(campus = "MONSERRAT", shift = "NOCHE")
 
         assertEquals(1, nightMonserratTrips.size)
@@ -64,6 +105,38 @@ class FakeRemoteDataSourcesTest {
         assertEquals(FakeBackendStore.DEMO_TRIP_MONSERRAT_ID, trip.tripId)
         assertNull(trip.vehiclePlate)
         assertNull(trip.driverPhone)
+        assertTrue(trip.updatedAt.matches(Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[+-]\\d{2}:\\d{2}$")))
+    }
+
+    @Test
+    fun `publicar viaje valida fecha futura y punto de encuentro de la sede con fields`() = runBlocking {
+        val store = FakeBackendStore()
+        val auth = FakeAuthRemoteDataSource(store)
+        val trips = FakeTripRemoteDataSource(store)
+
+        auth.login(LoginRequest("lfernandez@uade.edu.ar", FakeBackendStore.DEMO_PASSWORD))
+        val invalidRequest = PublishTripRequest(
+            direction = "VUELTA",
+            campus = "MONSERRAT",
+            meetingPoint = "Salida Inventada 999",
+            destinationNeighborhood = "Belgrano",
+            destinationReference = null,
+            departureDate = LocalDate.now(zone).minusDays(1).toString(),
+            departureTime = "10:00",
+            estimatedArrivalTime = null,
+            totalSeats = 3,
+            contributionPerSeat = 3000,
+        )
+
+        try {
+            trips.publishTrip("trip-invalid-1", invalidRequest)
+            fail("Se esperaba VALIDATION_ERROR")
+        } catch (ex: ApiException) {
+            assertEquals(400, ex.httpCode)
+            assertEquals(ApiErrorCode.VALIDATION_ERROR, ex.apiError.errorCode)
+            assertNotNull(ex.apiError.fields?.get("departureDate"))
+            assertNotNull(ex.apiError.fields?.get("meetingPoint"))
+        }
     }
 
     @Test
@@ -79,7 +152,7 @@ class FakeRemoteDataSourcesTest {
             meetingPoint = "Salida Chile 1142",
             destinationNeighborhood = "Belgrano",
             destinationReference = "Barrancas",
-            departureDate = "2026-11-28",
+            departureDate = LocalDate.now(zone).plusDays(3).toString(),
             departureTime = "21:30",
             estimatedArrivalTime = "22:05",
             totalSeats = 3,
@@ -101,24 +174,44 @@ class FakeRemoteDataSourcesTest {
         val reservations = FakeReservationRemoteDataSource(store)
         val tripId = FakeBackendStore.DEMO_TRIP_BELGRANO_ID
 
-        // Pasajero solicita asiento (viaje tiene 1 vacante disponible)
         auth.login(LoginRequest("mgomez@uade.edu.ar", FakeBackendStore.DEMO_PASSWORD))
         val pending = reservations.requestSeat(tripId = tripId, reservationId = "res-uuid-1")
         assertEquals("PENDIENTE", pending.status)
 
-        // Conductora acepta la reserva -> descuenta la última vacante y marca COMPLETO
         auth.login(LoginRequest("sperez@uade.edu.ar", FakeBackendStore.DEMO_PASSWORD))
         val accepted = reservations.acceptReservation(tripId = tripId, reservationId = "res-uuid-1")
         assertEquals("ACEPTADA", accepted.status)
         assertNotNull(accepted.passengerPhone)
 
-        // Pasajero vuelve a ver el detalle -> ahora ve patente y teléfono (RNF07)
         auth.login(LoginRequest("mgomez@uade.edu.ar", FakeBackendStore.DEMO_PASSWORD))
         val detail = trips.getTripDetail(tripId)
         assertEquals("COMPLETO", detail.status)
         assertEquals(0, detail.availableSeats)
         assertNotNull(detail.vehiclePlate)
         assertNotNull(detail.driverPhone)
+    }
+
+    @Test
+    fun `no permite aceptar una reserva si el viaje fue finalizado`() = runBlocking {
+        val store = FakeBackendStore()
+        val auth = FakeAuthRemoteDataSource(store)
+        val trips = FakeTripRemoteDataSource(store)
+        val reservations = FakeReservationRemoteDataSource(store)
+        val tripId = FakeBackendStore.DEMO_TRIP_MONSERRAT_ID
+
+        auth.login(LoginRequest("mgomez@uade.edu.ar", FakeBackendStore.DEMO_PASSWORD))
+        reservations.requestSeat(tripId = tripId, reservationId = "res-finished-1")
+
+        auth.login(LoginRequest("lfernandez@uade.edu.ar", FakeBackendStore.DEMO_PASSWORD))
+        trips.finishTrip(tripId)
+
+        try {
+            reservations.acceptReservation(tripId = tripId, reservationId = "res-finished-1")
+            fail("Se esperaba TRIP_NOT_OPEN")
+        } catch (ex: ApiException) {
+            assertEquals(409, ex.httpCode)
+            assertEquals(ApiErrorCode.TRIP_NOT_OPEN, ex.apiError.errorCode)
+        }
     }
 
     @Test
