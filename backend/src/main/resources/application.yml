@@ -40,10 +40,8 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     expiration: 30d
-  # Base de los enlaces de los correos (docs/API.md §8)
-  link-base-url: ${APP_LINK_BASE_URL:http://10.0.2.2:8080}
-  # Sin credenciales, el backend arranca igual y solo registra en el log las push (CONVENCIONES §10.6)
-  firebase-credentials-path: ${FIREBASE_CREDENTIALS_PATH:}
+  # APP_LINK_BASE_URL (RF01) y FIREBASE_CREDENTIALS_PATH (push) se agregan acá
+  # cuando haya código que las lea, con su @ConfigurationProperties validado.
 
 management:
   endpoints:
