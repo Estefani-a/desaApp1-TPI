@@ -4,39 +4,39 @@ import com.example.uniride.core.result.AppResult
 import com.example.uniride.domain.model.Trip
 import com.example.uniride.domain.model.TripDraft
 import com.example.uniride.domain.model.TripFilters
+import com.example.uniride.domain.model.TripId
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Trips (RF02 and RF03, docs/API.md §5). The `observe*` functions read Room; the API is
- * only used by the `refresh*` functions and by the sync worker (CONVENCIONES §6.1).
+ * Trips (RF02 and RF03). The `observe` functions emit the last known data, also offline, and
+ * again whenever it changes. The `refresh` functions bring news from the server.
  */
 interface TripRepository {
 
-    /** Open and full trips of the catalog that match [filters] (RF03). */
+    /** Trips that still take passengers and match [filters]. */
     fun observeTrips(filters: TripFilters): Flow<List<Trip>>
 
-    /** `null` if the trip is not in Room. */
-    fun observeTrip(tripId: String): Flow<Trip?>
+    /** `null` if the trip is not known. */
+    fun observeTrip(tripId: TripId): Flow<Trip?>
 
-    /** Trips the user published or has a reservation on (`GET /users/me/trips`). */
+    /** Trips the user offers or travels on. */
     fun observeMyTrips(): Flow<List<Trip>>
 
-    /** Updates the catalog in Room (with `updatedSince` after the first time). */
     suspend fun refreshTrips(): AppResult<Unit>
 
-    suspend fun refreshTrip(tripId: String): AppResult<Unit>
+    suspend fun refreshTrip(tripId: TripId): AppResult<Unit>
 
     suspend fun refreshMyTrips(): AppResult<Unit>
 
     /**
-     * Saves the trip in Room with `isSync = false` and schedules the sync (CONVENCIONES §6.2).
-     * Works offline. Returns the `tripId` generated in the app.
+     * Offers a new trip. Works offline: the trip is visible right away as pending and is sent
+     * when there is connection. Returns its id.
      */
-    suspend fun publishTrip(draft: TripDraft): AppResult<String>
+    suspend fun publish(draft: TripDraft): AppResult<TripId>
 
-    /** Offline write, sent by the sync worker. */
-    suspend fun finishTrip(tripId: String): AppResult<Unit>
+    /** Works offline, like [publish]. */
+    suspend fun finish(tripId: TripId): AppResult<Unit>
 
-    /** Offline write, sent by the sync worker. */
-    suspend fun cancelTrip(tripId: String): AppResult<Unit>
+    /** Works offline, like [publish]. */
+    suspend fun cancel(tripId: TripId): AppResult<Unit>
 }
