@@ -1,11 +1,10 @@
 package com.example.uniride.backend.trip.dto;
 
-import com.example.uniride.backend.reservation.Reservation;
-import com.example.uniride.backend.reservation.ReservationStatus;
 import com.example.uniride.backend.reservation.dto.ReservationResponse;
 import com.example.uniride.backend.trip.Direction;
 import com.example.uniride.backend.trip.Trip;
 import com.example.uniride.backend.trip.TripStatus;
+import com.example.uniride.backend.user.PublicName;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -14,10 +13,8 @@ import java.util.UUID;
 
 /**
  * {@code TripDto} of docs/API.md §3.3. Shared by every endpoint that returns a trip.
- *
- * <p>RNF07: {@code vehiclePlate} and {@code driverPhone} only have a value when the viewer is
- * the driver or has an {@code ACEPTADA} reservation on the trip. In any other case they are
- * {@code null}.
+ * {@code vehiclePlate} and {@code driverPhone} are {@code null} unless the caller decided,
+ * with {@code ContactVisibilityPolicy}, that the viewer can see them (RNF07).
  */
 public record TripResponse(
         UUID tripId,
@@ -45,34 +42,32 @@ public record TripResponse(
 ) {
 
     /**
-     * @param viewerId      user that makes the request
-     * @param myReservation reservation of the viewer on this trip, or {@code null}
+     * @param myReservation reservation of the viewer, already mapped, or {@code null}
+     * @param showContact   decided by {@code ContactVisibilityPolicy}; this record only copies values
      */
-    public static TripResponse from(Trip trip, UUID viewerId, Reservation myReservation) {
-        boolean showContact = trip.isDrivenBy(viewerId)
-                || (myReservation != null && myReservation.getStatus() == ReservationStatus.ACEPTADA);
+    public static TripResponse from(Trip trip, ReservationResponse myReservation, boolean showContact) {
         return new TripResponse(
                 trip.getId(),
                 trip.getDriver().getId(),
-                trip.getDriver().getPublicName(),
+                PublicName.of(trip.getDriver().getFullName()),
                 trip.getDriver().getRatingAvg(),
-                trip.getDirection(),
+                trip.getRoute().getDirection(),
                 trip.getCampus().getCode(),
-                trip.getMeetingPoint(),
-                trip.getDestinationNeighborhood(),
-                trip.getDestinationReference(),
-                trip.getDepartureDate(),
-                trip.getDepartureTime(),
-                trip.getEstimatedArrivalTime(),
+                trip.getRoute().getMeetingPoint(),
+                trip.getRoute().getDestinationNeighborhood(),
+                trip.getRoute().getDestinationReference(),
+                trip.getSchedule().getDepartureDate(),
+                trip.getSchedule().getDepartureTime(),
+                trip.getSchedule().getEstimatedArrivalTime(),
                 trip.getTotalSeats(),
                 trip.getAvailableSeats(),
                 trip.getContributionPerSeat(),
-                trip.getVehicleModel(),
-                trip.getVehicleColor(),
-                showContact ? trip.getVehiclePlate() : null,
+                trip.getVehicle().getModel(),
+                trip.getVehicle().getColor(),
+                showContact ? trip.getVehicle().getPlate() : null,
                 showContact ? trip.getDriver().getPhone() : null,
                 trip.getStatus(),
-                myReservation == null ? null : ReservationResponse.from(myReservation, viewerId),
+                myReservation,
                 trip.getUpdatedAt());
     }
 }

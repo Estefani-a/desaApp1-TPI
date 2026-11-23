@@ -2,14 +2,12 @@ package com.example.uniride.backend.reservation.dto;
 
 import com.example.uniride.backend.reservation.Reservation;
 import com.example.uniride.backend.reservation.ReservationStatus;
+import com.example.uniride.backend.user.PublicName;
 
 import java.time.Instant;
 import java.util.UUID;
 
-/**
- * {@code ReservationDto} of docs/API.md §3.4. {@code passengerPhone} only has a value for
- * the driver of the trip once the reservation is {@code ACEPTADA} (RNF07).
- */
+/** {@code ReservationDto} of docs/API.md §3.4. */
 public record ReservationResponse(
         UUID reservationId,
         UUID tripId,
@@ -22,15 +20,15 @@ public record ReservationResponse(
         Instant updatedAt
 ) {
 
-    /** @param viewerId user that makes the request: decides whether the phone is shown. */
-    public static ReservationResponse from(Reservation reservation, UUID viewerId) {
-        boolean showPhone = reservation.getTrip().isDrivenBy(viewerId)
-                && reservation.getStatus() == ReservationStatus.ACEPTADA;
+    /**
+     * @param showPhone decided by {@code ContactVisibilityPolicy}; this record only copies values
+     */
+    public static ReservationResponse from(Reservation reservation, boolean showPhone) {
         return new ReservationResponse(
                 reservation.getId(),
                 reservation.getTrip().getId(),
                 reservation.getPassenger().getId(),
-                reservation.getPassenger().getPublicName(),
+                PublicName.of(reservation.getPassenger().getFullName()),
                 reservation.getPassenger().getRatingAvg(),
                 showPhone ? reservation.getPassenger().getPhone() : null,
                 reservation.getStatus(),
