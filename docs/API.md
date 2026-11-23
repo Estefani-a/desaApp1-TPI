@@ -62,6 +62,7 @@ Toda respuesta de error tiene este cuerpo:
 | 403 | `FORBIDDEN` | El recurso no es del usuario (por ejemplo, aceptar una reserva de un viaje ajeno) |
 | 403 | `CANNOT_RESERVE_OWN_TRIP` | El conductor intenta reservar en su propio viaje |
 | 404 | `NOT_FOUND` | El recurso no existe |
+| 405 | `METHOD_NOT_ALLOWED` | La ruta existe pero no admite ese método HTTP |
 | 409 | `EMAIL_ALREADY_REGISTERED` | Registro con un correo que ya existe |
 | 409 | `ID_CONFLICT` | El UUID ya existe y pertenece a otro usuario |
 | 409 | `NO_SEATS_AVAILABLE` | No quedan plazas al reservar o al aceptar |
@@ -69,6 +70,7 @@ Toda respuesta de error tiene este cuerpo:
 | 409 | `ALREADY_RESERVED` | El pasajero ya tiene una reserva `PENDIENTE` o `ACEPTADA` en ese viaje |
 | 409 | `INVALID_STATUS_TRANSITION` | Por ejemplo, aceptar una reserva `CANCELADA` |
 | 409 | `ALREADY_RATED` | Ya calificó a esa persona en ese viaje |
+| 415 | `UNSUPPORTED_MEDIA_TYPE` | El cuerpo no es `application/json` |
 | 500 | `INTERNAL_ERROR` | Error inesperado (nunca se devuelve el stack trace) |
 
 En la app, `safeApiCall` traduce el HTTP a `DataError` (CONVENCIONES §6.3) y, cuando la pantalla necesita distinguir el motivo, lee el `code`.
