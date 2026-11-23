@@ -1,5 +1,6 @@
 package com.example.uniride.backend.service;
 
+import com.example.uniride.backend.PostgresIntegrationTest;
 import com.example.uniride.backend.exception.ApiException;
 import com.example.uniride.backend.repository.CampusRepository;
 import com.example.uniride.backend.model.Direction;
