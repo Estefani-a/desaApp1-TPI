@@ -26,12 +26,14 @@ import com.example.uniride.domain.model.AppMode
 import com.example.uniride.ui.theme.UniRideTheme
 
 /**
- * Bottom bar: mode selector (pasajero / conductor) on top of the tabs of that mode.
+ * Bottom bar: mode selector (pasajero / conductor) on top of the tabs of that mode. The
+ * selector only appears when the user can switch ([availableModes] has more than one).
  * Stateless: the shell decides the mode and the selected tab.
  */
 @Composable
 fun UniRideBottomBar(
     appMode: AppMode,
+    availableModes: Set<AppMode>,
     selected: TopLevelDestination?,
     onModeChange: (AppMode) -> Unit,
     onTabClick: (TopLevelDestination) -> Unit,
@@ -39,13 +41,16 @@ fun UniRideBottomBar(
 ) {
     Surface(modifier = modifier, color = MaterialTheme.colorScheme.surfaceContainer) {
         Column {
-            ModeSelector(
-                appMode = appMode,
-                onModeChange = onModeChange,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-            )
+            if (availableModes.size > 1) {
+                ModeSelector(
+                    appMode = appMode,
+                    modes = availableModes,
+                    onModeChange = onModeChange,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+            }
             NavigationBar {
                 TopLevelDestination.forMode(appMode).forEach { destination ->
                     NavigationBarItem(
@@ -64,16 +69,18 @@ fun UniRideBottomBar(
 @Composable
 private fun ModeSelector(
     appMode: AppMode,
+    modes: Set<AppMode>,
     onModeChange: (AppMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val options = AppMode.entries.filter { it in modes }
     val description = stringResource(R.string.nav_mode_selector_description)
     SingleChoiceSegmentedButtonRow(modifier = modifier.semantics { contentDescription = description }) {
-        AppMode.entries.forEachIndexed { index, mode ->
+        options.forEachIndexed { index, mode ->
             SegmentedButton(
                 selected = mode == appMode,
                 onClick = { onModeChange(mode) },
-                shape = SegmentedButtonDefaults.itemShape(index = index, count = AppMode.entries.size),
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
                 modifier = Modifier.heightIn(min = 48.dp),
             ) {
                 Text(stringResource(mode.labelRes))
@@ -94,7 +101,22 @@ private fun UniRideBottomBarPassengerPreview() {
     UniRideTheme {
         UniRideBottomBar(
             appMode = AppMode.PASAJERO,
+            availableModes = AppMode.entries.toSet(),
             selected = TopLevelDestination.FEED,
+            onModeChange = {},
+            onTabClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun UniRideBottomBarPassengerOnlyPreview() {
+    UniRideTheme {
+        UniRideBottomBar(
+            appMode = AppMode.PASAJERO,
+            availableModes = setOf(AppMode.PASAJERO),
+            selected = TopLevelDestination.HOME,
             onModeChange = {},
             onTabClick = {},
         )
@@ -107,6 +129,7 @@ private fun UniRideBottomBarDriverPreview() {
     UniRideTheme {
         UniRideBottomBar(
             appMode = AppMode.CONDUCTOR,
+            availableModes = AppMode.entries.toSet(),
             selected = TopLevelDestination.HOME,
             onModeChange = {},
             onTabClick = {},
