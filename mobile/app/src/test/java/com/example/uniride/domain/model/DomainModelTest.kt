@@ -12,7 +12,9 @@ class DomainModelTest {
 
     @Test
     fun `el turno usa las franjas acordadas en A0`() {
-        assertEquals(Shift.MANANA, Shift.of(LocalTime.of(0, 0)))
+        assertEquals(Shift.NOCHE, Shift.of(LocalTime.of(0, 0)))
+        assertEquals(Shift.NOCHE, Shift.of(LocalTime.of(5, 59)))
+        assertEquals(Shift.MANANA, Shift.of(LocalTime.of(6, 0)))
         assertEquals(Shift.MANANA, Shift.of(LocalTime.of(12, 59, 59)))
         assertEquals(Shift.TARDE, Shift.of(LocalTime.of(13, 0)))
         assertEquals(Shift.TARDE, Shift.of(LocalTime.of(17, 59)))
