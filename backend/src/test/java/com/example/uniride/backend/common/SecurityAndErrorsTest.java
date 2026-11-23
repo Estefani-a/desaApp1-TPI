@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,12 +28,14 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.Map;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -148,6 +151,37 @@ class SecurityAndErrorsTest {
     }
 
     @Test
+    void metodoNoPermitidoDevuelve405ConSuCodigo() throws Exception {
+        mvc.perform(post("/api/v1/probe/me").header("Authorization", bearer()))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.code").value("METHOD_NOT_ALLOWED"));
+    }
+
+    @Test
+    void cuerpoQueNoEsJsonDevuelve415() throws Exception {
+        mvc.perform(put("/api/v1/probe/" + UUID.randomUUID())
+                        .header("Authorization", bearer())
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .content("hola"))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.code").value("UNSUPPORTED_MEDIA_TYPE"));
+    }
+
+    @Test
+    void claveDuplicadaEnLaBaseDevuelve409() throws Exception {
+        mvc.perform(get("/api/v1/probe/duplicate").header("Authorization", bearer()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("ID_CONFLICT"));
+    }
+
+    @Test
+    void otraViolacionDeIntegridadSigueSiendo500() throws Exception {
+        mvc.perform(get("/api/v1/probe/not-null").header("Authorization", bearer()))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.code").value("INTERNAL_ERROR"));
+    }
+
+    @Test
     void errorInesperadoDevuelve500SinStackTrace() throws Exception {
         mvc.perform(get("/api/v1/probe/boom").header("Authorization", bearer()))
                 .andExpect(status().isInternalServerError())
@@ -193,6 +227,16 @@ class SecurityAndErrorsTest {
         @GetMapping("/api/v1/probe/no-seats")
         void noSeats() {
             throw new ApiException(ErrorCode.NO_SEATS_AVAILABLE);
+        }
+
+        @GetMapping("/api/v1/probe/duplicate")
+        void duplicate() {
+            throw new DataIntegrityViolationException("dup", new SQLException("duplicate key", "23505"));
+        }
+
+        @GetMapping("/api/v1/probe/not-null")
+        void notNull() {
+            throw new DataIntegrityViolationException("null", new SQLException("null value", "23502"));
         }
 
         @GetMapping("/api/v1/probe/boom")

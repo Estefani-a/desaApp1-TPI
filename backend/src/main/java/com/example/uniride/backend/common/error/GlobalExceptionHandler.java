@@ -3,6 +3,7 @@ package com.example.uniride.backend.common.error;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -24,6 +26,9 @@ import java.util.Map;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /** SQLState of PostgreSQL for {@code unique_violation}. */
+    private static final String UNIQUE_VIOLATION = "23505";
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
@@ -80,6 +85,19 @@ public class GlobalExceptionHandler {
                 .body(ApiError.of(ErrorCode.VALIDATION_ERROR, "El cuerpo de la solicitud no es un JSON válido."));
     }
 
+    /**
+     * A unique or primary key constraint of the database (for example, two simultaneous
+     * inserts with the same UUID or email): the resource already exists. Any other integrity
+     * error is a bug and stays a 500. Services translate the cases they know first.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> handleDataIntegrity(DataIntegrityViolationException ex) {
+        if (ex.getMostSpecificCause() instanceof SQLException sql && UNIQUE_VIOLATION.equals(sql.getSQLState())) {
+            return ResponseEntity.status(ErrorCode.ID_CONFLICT.status()).body(ApiError.of(ErrorCode.ID_CONFLICT));
+        }
+        return handleOther(ex);
+    }
+
     /** Thrown by method security ({@code @PreAuthorize}) inside a controller. */
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex) {
@@ -99,6 +117,8 @@ public class GlobalExceptionHandler {
                 case 401 -> ErrorCode.UNAUTHENTICATED;
                 case 403 -> ErrorCode.FORBIDDEN;
                 case 404 -> ErrorCode.NOT_FOUND;
+                case 405 -> ErrorCode.METHOD_NOT_ALLOWED;
+                case 415 -> ErrorCode.UNSUPPORTED_MEDIA_TYPE;
                 default -> ErrorCode.VALIDATION_ERROR;
             };
             return ResponseEntity.status(status).body(ApiError.of(code));

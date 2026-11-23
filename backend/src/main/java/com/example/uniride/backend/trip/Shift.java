@@ -4,35 +4,31 @@ import java.time.LocalTime;
 
 /**
  * Time slot used by the {@code shift} filter of {@code GET /trips} (docs/API.md §3.1). It is
- * not stored: it is derived from the departure time.
+ * not stored: it is derived from the departure time. Each slot goes from its start to the
+ * start of the next one: MANANA 00:00–12:59, TARDE 13:00–17:59, NOCHE 18:00–23:59.
  */
 public enum Shift {
-    MANANA(LocalTime.MIDNIGHT, LocalTime.of(12, 59)),
-    TARDE(LocalTime.of(13, 0), LocalTime.of(17, 59)),
-    NOCHE(LocalTime.of(18, 0), LocalTime.of(23, 59));
+    MANANA(LocalTime.MIDNIGHT),
+    TARDE(LocalTime.of(13, 0)),
+    NOCHE(LocalTime.of(18, 0));
 
-    private final LocalTime from;
-    private final LocalTime to;
+    private final LocalTime start;
 
-    Shift(LocalTime from, LocalTime to) {
-        this.from = from;
-        this.to = to;
+    Shift(LocalTime start) {
+        this.start = start;
     }
 
-    /** First minute of the slot. */
-    public LocalTime from() {
-        return from;
-    }
-
-    /** Last minute of the slot, inclusive ({@code 12:59} includes {@code 12:59:59}). */
-    public LocalTime to() {
-        return to;
+    public LocalTime start() {
+        return start;
     }
 
     public static Shift of(LocalTime time) {
-        if (time.getHour() < 13) {
-            return MANANA;
+        Shift result = MANANA;
+        for (Shift shift : values()) {
+            if (!time.isBefore(shift.start)) {
+                result = shift;
+            }
         }
-        return time.getHour() < 18 ? TARDE : NOCHE;
+        return result;
     }
 }

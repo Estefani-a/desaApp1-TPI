@@ -29,6 +29,11 @@ public class Vehicle {
         this.plate = plate;
     }
 
+    /** Embeddables cannot be shared between two entities: each one keeps its own copy. */
+    public Vehicle copy() {
+        return new Vehicle(brand, model, color, plate);
+    }
+
     public String getBrand() {
         return brand;
     }

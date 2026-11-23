@@ -17,6 +17,7 @@ public enum ErrorCode {
     FORBIDDEN(HttpStatus.FORBIDDEN, "No tenés permiso para hacer esto."),
     CANNOT_RESERVE_OWN_TRIP(HttpStatus.FORBIDDEN, "No podés reservar un asiento en tu propio viaje."),
     NOT_FOUND(HttpStatus.NOT_FOUND, "No encontramos lo que buscabas."),
+    METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "La ruta no admite ese método HTTP."),
     EMAIL_ALREADY_REGISTERED(HttpStatus.CONFLICT, "Ya existe una cuenta con ese correo."),
     ID_CONFLICT(HttpStatus.CONFLICT, "El identificador ya está en uso."),
     NO_SEATS_AVAILABLE(HttpStatus.CONFLICT, "El viaje ya no tiene plazas disponibles."),
@@ -24,6 +25,7 @@ public enum ErrorCode {
     ALREADY_RESERVED(HttpStatus.CONFLICT, "Ya tenés una reserva en este viaje."),
     INVALID_STATUS_TRANSITION(HttpStatus.CONFLICT, "No se puede hacer ese cambio de estado."),
     ALREADY_RATED(HttpStatus.CONFLICT, "Ya calificaste a esta persona en este viaje."),
+    UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "El cuerpo tiene que ser JSON."),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrió un error inesperado. Probá de nuevo más tarde.");
 
     private final HttpStatus status;

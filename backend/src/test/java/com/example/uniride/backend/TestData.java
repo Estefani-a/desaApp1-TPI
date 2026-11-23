@@ -5,13 +5,17 @@ import com.example.uniride.backend.reservation.Reservation;
 import com.example.uniride.backend.reservation.ReservationStatus;
 import com.example.uniride.backend.trip.Direction;
 import com.example.uniride.backend.trip.Trip;
+import com.example.uniride.backend.trip.TripRoute;
+import com.example.uniride.backend.trip.TripSchedule;
 import com.example.uniride.backend.user.PreferredMode;
 import com.example.uniride.backend.user.User;
+import com.example.uniride.backend.user.UserProfile;
 import com.example.uniride.backend.user.Vehicle;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -22,32 +26,46 @@ public final class TestData {
 
     public static final Clock CLOCK =
             Clock.fixed(Instant.parse("2026-11-20T21:00:00Z"), ZoneId.of("America/Argentina/Buenos_Aires"));
+    public static final Instant NOW = CLOCK.instant();
+    public static final LocalDateTime LOCAL_NOW = LocalDateTime.now(CLOCK);
 
-    private static final Campus MONSERRAT = new Campus("MONSERRAT", "Sede Monserrat", List.of("Salida Lima 717"));
+    public static final Campus MONSERRAT = new Campus("MONSERRAT", "Sede Monserrat", List.of("Salida Lima 717"));
 
     private TestData() {
     }
 
     public static User driver() {
-        return new User("conductora.demo@uade.edu.ar", "hash", "Lucía Fernández", "Ingeniería",
-                "+5491155550000", PreferredMode.AMBOS, new Vehicle("Volkswagen", "Gol Trend", "Gris", "AB123CD"));
+        return new User("conductora.demo@uade.edu.ar", "hash", new UserProfile("Lucía Fernández", "Ingeniería",
+                "+5491155550000", PreferredMode.AMBOS, new Vehicle("Volkswagen", "Gol Trend", "Gris", "AB123CD")), NOW);
     }
 
     public static User passenger() {
-        return new User("pasajero.demo@uade.edu.ar", "hash", "Martín Gómez", "Administración",
-                "+5491155550001", PreferredMode.PASAJERO, null);
+        return new User("pasajero.demo@uade.edu.ar", "hash", new UserProfile("Martín Gómez", "Administración",
+                "+5491155550001", PreferredMode.PASAJERO, null), NOW);
     }
 
-    /** Trip of [driver] today at 22:15 with [seats] seats. */
+    /** Trip of [driver] on [date] at 22:15 with [seats] seats. */
+    public static Trip trip(User driver, int seats, LocalDate date) {
+        return new Trip(UUID.randomUUID(), driver, MONSERRAT,
+                new TripRoute(Direction.VUELTA, "Salida Lima 717", "Ramos Mejía", null),
+                new TripSchedule(date, LocalTime.of(22, 15), null),
+                seats, 3500, NOW);
+    }
+
+    /** Trip of [driver] today at 22:15 (after "now") with [seats] seats. */
     public static Trip trip(User driver, int seats) {
-        return new Trip(UUID.randomUUID(), driver, Direction.VUELTA, MONSERRAT, "Salida Lima 717",
-                "Ramos Mejía", null, LocalDate.of(2026, 11, 20), LocalTime.of(22, 15), null,
-                seats, 3500, "Gol Trend", "Gris", "AB123CD");
+        return trip(driver, seats, LocalDate.of(2026, 11, 20));
     }
 
+    /** Reservation of [passenger] on [trip] taken to [status] through its transitions. */
     public static Reservation reservation(Trip trip, User passenger, ReservationStatus status) {
-        Reservation reservation = new Reservation(UUID.randomUUID(), trip, passenger);
-        reservation.setStatus(status);
+        Reservation reservation = new Reservation(UUID.randomUUID(), trip, passenger, NOW);
+        switch (status) {
+            case PENDIENTE -> { }
+            case ACEPTADA -> reservation.accept(NOW);
+            case RECHAZADA -> reservation.reject(NOW);
+            case CANCELADA -> reservation.cancel(NOW);
+        }
         return reservation;
     }
 }
