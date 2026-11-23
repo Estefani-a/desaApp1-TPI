@@ -34,7 +34,6 @@ object DomainFixtures {
         vehicle = TripVehicle("Gol Trend", "Gris", plate = null),
         status = status,
         updatedAt = UPDATED_AT,
-        isPendingSync = false,
     )
 
     fun reservation(status: ReservationStatus, passengerId: UserId = PASSENGER_ID) = Reservation(
@@ -44,6 +43,5 @@ object DomainFixtures {
         status = status,
         reservedAt = UPDATED_AT,
         updatedAt = UPDATED_AT,
-        isPendingSync = false,
     )
 }

@@ -22,6 +22,12 @@ interface TripRepository {
     /** Trips the user offers or travels on. */
     fun observeMyTrips(): Flow<List<Trip>>
 
+    /**
+     * Trips created or changed on this device that the server did not confirm yet. The screens
+     * combine it with the trips to show "Pendiente de sincronizar".
+     */
+    fun observePendingTripIds(): Flow<Set<TripId>>
+
     suspend fun refreshTrips(): AppResult<Unit>
 
     suspend fun refreshTrip(tripId: TripId): AppResult<Unit>
@@ -29,8 +35,8 @@ interface TripRepository {
     suspend fun refreshMyTrips(): AppResult<Unit>
 
     /**
-     * Offers a new trip. Works offline: the trip is visible right away as pending and is sent
-     * when there is connection. Returns its id.
+     * Offers a new trip. Works offline: the trip is visible right away, appears in
+     * [observePendingTripIds] and is sent when there is connection. Returns its id.
      */
     suspend fun publish(draft: TripDraft): AppResult<TripId>
 

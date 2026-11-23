@@ -19,8 +19,6 @@ data class Trip(
     val vehicle: TripVehicle,
     val status: TripStatus,
     val updatedAt: Instant,
-    /** Created or changed without connection and not confirmed by the server yet. */
-    val isPendingSync: Boolean,
 ) {
     fun isDrivenBy(userId: UserId): Boolean = driver.id == userId
 }
