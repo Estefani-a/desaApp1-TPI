@@ -1,4 +1,4 @@
-package com.example.uniride.domain.usecase
+package com.example.uniride.domain.usecase.connectivity
 
 import com.example.uniride.fake.FakeNetworkMonitor
 import kotlinx.coroutines.flow.first

@@ -37,14 +37,14 @@ class ConnectivityNetworkMonitor(
                 network: Network,
                 networkCapabilities: NetworkCapabilities,
             ) {
-                trySend(networkCapabilities.hasValidatedInternet())
+                trySend(networkCapabilities.hasInternetCapability())
             }
 
             override fun onLost(network: Network) {
                 val activeNetwork = connectivityManager.activeNetwork
                 val stillOnline = activeNetwork != null &&
                     activeNetwork != network &&
-                    connectivityManager.getNetworkCapabilities(activeNetwork).hasValidatedInternet()
+                    connectivityManager.getNetworkCapabilities(activeNetwork).hasInternetCapability()
                 trySend(stillOnline)
             }
 
@@ -63,10 +63,10 @@ class ConnectivityNetworkMonitor(
     }.distinctUntilChanged()
 
     private fun ConnectivityManager.isCurrentlyOnline(): Boolean =
-        getNetworkCapabilities(activeNetwork).hasValidatedInternet()
+        getNetworkCapabilities(activeNetwork).hasInternetCapability()
 
-    private fun NetworkCapabilities?.hasValidatedInternet(): Boolean =
-        this != null &&
-            hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
-            hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+    // Check NET_CAPABILITY_INTERNET only (not NET_CAPABILITY_VALIDATED) so local Wi-Fi/hotspots
+    // without external internet access and emulators can still reach the local backend without flickering.
+    private fun NetworkCapabilities?.hasInternetCapability(): Boolean =
+        this != null && hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
 }
