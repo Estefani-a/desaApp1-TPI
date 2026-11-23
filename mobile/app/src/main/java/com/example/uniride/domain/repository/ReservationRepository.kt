@@ -7,9 +7,9 @@ import com.example.uniride.domain.model.TripId
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Seat requests (RF04). Every change works offline: it is visible right away as pending and
- * is sent when there is connection. If the server rejects it, the reservation shows the real
- * status.
+ * Seat requests (RF04). Every change works offline: it is visible right away, appears in
+ * [observePendingReservationIds] and is sent when there is connection. If the server rejects
+ * it, the reservation shows the real status.
  */
 interface ReservationRepository {
 
@@ -21,6 +21,12 @@ interface ReservationRepository {
 
     /** The user's reservations as passenger, newest first. */
     fun observeMyReservations(): Flow<List<Reservation>>
+
+    /**
+     * Reservations created or changed on this device that the server did not confirm yet. The
+     * screens combine it with the reservations to show "Pendiente de sincronizar".
+     */
+    fun observePendingReservationIds(): Flow<Set<ReservationId>>
 
     suspend fun refreshTripReservations(tripId: TripId): AppResult<Unit>
 

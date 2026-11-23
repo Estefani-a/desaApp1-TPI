@@ -10,8 +10,6 @@ data class Reservation(
     val status: ReservationStatus,
     val reservedAt: Instant,
     val updatedAt: Instant,
-    /** Made or changed without connection and not confirmed by the server yet. */
-    val isPendingSync: Boolean,
 ) {
     val isActive: Boolean get() = status.isActive
 }
