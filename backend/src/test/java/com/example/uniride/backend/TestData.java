@@ -1,16 +1,16 @@
 package com.example.uniride.backend;
 
-import com.example.uniride.backend.campus.Campus;
-import com.example.uniride.backend.reservation.Reservation;
-import com.example.uniride.backend.reservation.ReservationStatus;
-import com.example.uniride.backend.trip.Direction;
-import com.example.uniride.backend.trip.Trip;
-import com.example.uniride.backend.trip.TripRoute;
-import com.example.uniride.backend.trip.TripSchedule;
-import com.example.uniride.backend.user.PreferredMode;
-import com.example.uniride.backend.user.User;
-import com.example.uniride.backend.user.UserProfile;
-import com.example.uniride.backend.user.Vehicle;
+import com.example.uniride.backend.model.Campus;
+import com.example.uniride.backend.model.Direction;
+import com.example.uniride.backend.model.PreferredMode;
+import com.example.uniride.backend.model.Reservation;
+import com.example.uniride.backend.model.ReservationStatus;
+import com.example.uniride.backend.model.Trip;
+import com.example.uniride.backend.model.TripRoute;
+import com.example.uniride.backend.model.TripSchedule;
+import com.example.uniride.backend.model.User;
+import com.example.uniride.backend.model.UserProfile;
+import com.example.uniride.backend.model.Vehicle;
 
 import java.time.Clock;
 import java.time.Instant;
