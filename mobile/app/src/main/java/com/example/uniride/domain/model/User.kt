@@ -1,24 +1,29 @@
 package com.example.uniride.domain.model
 
-/**
- * Profile of the logged-in user (`UserDto`, docs/API.md §3.2). Other users never appear
- * with this model: they come inside [Trip] and [Reservation] with name and initial (RNF07).
- */
+/** The logged-in student. Other students appear as [Participant]. */
 data class User(
-    val id: String,
-    val fullName: String,
+    val id: UserId,
     val email: String,
+    val profile: Profile,
+    /** `null` while nobody rated the user. */
+    val rating: Rating?,
+) {
+    /** Only a user with a vehicle can offer trips. */
+    val canDrive: Boolean get() = profile.vehicle != null
+}
+
+/**
+ * What a student tells about themselves. The same data is used to create the account and
+ * to edit it later; the email is not here because it never changes.
+ */
+data class Profile(
+    val fullName: String,
     val career: String,
     val phone: String,
     val preferredMode: PreferredMode,
-    /** `null` while nobody rated the user. */
-    val ratingAvg: Double?,
-    val ratingCount: Int,
-    /** `null` if the user did not load a vehicle. Required to publish a trip. */
+    /** `null` if the student does not drive. */
     val vehicle: Vehicle?,
-) {
-    val canDrive: Boolean get() = vehicle != null
-}
+)
 
 data class Vehicle(
     val brand: String,
@@ -27,22 +32,20 @@ data class Vehicle(
     val plate: String,
 )
 
-/** Data of the registration form (`POST /auth/register`, docs/API.md §4.1). */
-data class Registration(
-    val email: String,
-    val password: String,
-    val fullName: String,
-    val career: String,
-    val phone: String,
-    val preferredMode: PreferredMode,
-    val vehicle: Vehicle?,
+/** Average of the stars received and how many ratings it is based on. */
+data class Rating(
+    val average: Double,
+    val count: Int,
 )
 
-/** Editable fields of the profile (`PUT /users/me`). The email cannot be changed. */
-data class ProfileUpdate(
-    val fullName: String,
-    val career: String,
-    val phone: String,
-    val preferredMode: PreferredMode,
-    val vehicle: Vehicle?,
+/**
+ * Another student as seen by the user on a shared trip: the driver of a trip or the passenger
+ * of a request. [phone] is only known once both travel together (accepted reservation, RNF07).
+ */
+data class Participant(
+    val id: UserId,
+    /** First name and initial of the last name, "Lucía F.". */
+    val displayName: String,
+    val rating: Double?,
+    val phone: String?,
 )
