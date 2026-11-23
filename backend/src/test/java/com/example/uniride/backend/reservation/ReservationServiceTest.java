@@ -11,6 +11,7 @@ import com.example.uniride.backend.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -25,7 +26,7 @@ import static com.example.uniride.backend.TestData.passenger;
 import static com.example.uniride.backend.TestData.reservation;
 import static com.example.uniride.backend.TestData.trip;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.lenient;
@@ -33,6 +34,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/** Orchestration of RF04: locks, permissions and errors. The transitions are in ModelTest. */
 @ExtendWith(MockitoExtension.class)
 class ReservationServiceTest {
 
@@ -49,10 +51,11 @@ class ReservationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ReservationService(reservationRepository, tripRepository, userRepository, CLOCK);
+        service = new ReservationService(reservationRepository, tripRepository, userRepository,
+                new ContactVisibilityPolicy(), CLOCK);
         driver = driver();
         passenger = passenger();
-        lenient().when(reservationRepository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(reservationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     private void givenTrip(Trip trip) {
@@ -64,19 +67,14 @@ class ReservationServiceTest {
         when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
     }
 
-    private ErrorCode errorOf(Runnable action) {
-        try {
-            action.run();
-        } catch (ApiException ex) {
-            return ex.getCode();
-        }
-        throw new AssertionError("Se esperaba una ApiException");
+    private static ErrorCode errorOf(Executable action) {
+        return assertThrows(ApiException.class, action).getCode();
     }
 
     // --- Solicitar ---
 
     @Test
-    void solicitarAsientoCreaLaReservaPendienteSinDescontarVacante() {
+    void solicitarAsientoBloqueaElViajeYCreaLaReservaPendiente() {
         Trip trip = trip(driver, 3);
         givenTrip(trip);
         UUID reservationId = UUID.randomUUID();
@@ -86,15 +84,16 @@ class ReservationServiceTest {
         var result = service.requestSeat(passenger.getId(), trip.getId(), reservationId);
 
         assertThat(result.created()).isTrue();
-        assertThat(result.reservation().reservationId()).isEqualTo(reservationId);
         assertThat(result.reservation().status()).isEqualTo(ReservationStatus.PENDIENTE);
         assertThat(result.reservation().passengerName()).isEqualTo("Martín G.");
         assertThat(trip.getAvailableSeats()).isEqualTo(3);
+        verify(tripRepository).findByIdForUpdate(trip.getId());
     }
 
     @Test
     void reintentarLaMismaSolicitudDevuelveLaReservaSinDuplicarla() {
         Trip trip = trip(driver, 3);
+        givenTrip(trip);
         Reservation existing = reservation(trip, passenger, ReservationStatus.PENDIENTE);
         givenReservation(existing);
 
@@ -102,12 +101,13 @@ class ReservationServiceTest {
 
         assertThat(result.created()).isFalse();
         assertThat(result.reservation().reservationId()).isEqualTo(existing.getId());
-        verify(reservationRepository, never()).saveAndFlush(any());
+        verify(reservationRepository, never()).save(any());
     }
 
     @Test
     void reusarElIdDeOtroUsuarioDevuelveIdConflict() {
         Trip trip = trip(driver, 3);
+        givenTrip(trip);
         Reservation existing = reservation(trip, passenger(), ReservationStatus.PENDIENTE);
         givenReservation(existing);
 
@@ -125,29 +125,16 @@ class ReservationServiceTest {
     }
 
     @Test
-    void solicitarEnUnViajeCompletoOCanceladoDevuelveTripNotOpen() {
+    void solicitarEnUnViajeCompletoOQueYaSalioDevuelveTripNotOpen() {
         Trip full = trip(driver, 1);
-        full.setAvailableSeats(0);
-        full.setStatus(TripStatus.COMPLETO);
+        reservation(full, passenger(), ReservationStatus.ACEPTADA);
         givenTrip(full);
-        Trip cancelled = trip(driver, 3);
-        cancelled.setStatus(TripStatus.CANCELADO);
-        givenTrip(cancelled);
-
-        assertThat(errorOf(() -> service.requestSeat(passenger.getId(), full.getId(), UUID.randomUUID())))
-                .isEqualTo(ErrorCode.TRIP_NOT_OPEN);
-        assertThat(errorOf(() -> service.requestSeat(passenger.getId(), cancelled.getId(), UUID.randomUUID())))
-                .isEqualTo(ErrorCode.TRIP_NOT_OPEN);
-    }
-
-    @Test
-    void solicitarEnUnViajeQueYaSalioDevuelveTripNotOpen() {
-        Trip yesterday = new Trip(UUID.randomUUID(), driver, trip(driver, 3).getDirection(),
-                trip(driver, 3).getCampus(), "Salida Lima 717", "Ramos Mejía", null,
-                LocalDate.of(2026, 11, 19), trip(driver, 3).getDepartureTime(), null, 3, 3500,
-                "Gol Trend", "Gris", "AB123CD");
+        Trip yesterday = trip(driver, 3, LocalDate.of(2026, 11, 19));
         givenTrip(yesterday);
 
+        assertThat(full.getStatus()).isEqualTo(TripStatus.COMPLETO);
+        assertThat(errorOf(() -> service.requestSeat(passenger.getId(), full.getId(), UUID.randomUUID())))
+                .isEqualTo(ErrorCode.TRIP_NOT_OPEN);
         assertThat(errorOf(() -> service.requestSeat(passenger.getId(), yesterday.getId(), UUID.randomUUID())))
                 .isEqualTo(ErrorCode.TRIP_NOT_OPEN);
     }
@@ -156,17 +143,17 @@ class ReservationServiceTest {
     void conUnaReservaActivaEnElViajeDevuelveAlreadyReserved() {
         Trip trip = trip(driver, 3);
         givenTrip(trip);
-        when(reservationRepository.existsByTripIdAndPassengerIdAndStatusIn(
-                any(), any(), anyCollection())).thenReturn(true);
+        when(reservationRepository.existsByTripIdAndPassengerIdAndStatusIn(any(), any(), anyCollection()))
+                .thenReturn(true);
 
         assertThat(errorOf(() -> service.requestSeat(passenger.getId(), trip.getId(), UUID.randomUUID())))
                 .isEqualTo(ErrorCode.ALREADY_RESERVED);
     }
 
-    // --- Aceptar ---
+    // --- Aceptar y rechazar ---
 
     @Test
-    void aceptarDescuentaUnaVacanteUsandoElBloqueoDeLaFila() {
+    void aceptarBloqueaElViajeYDescuentaUnaVacante() {
         Trip trip = trip(driver, 3);
         givenTrip(trip);
         Reservation pending = reservation(trip, passenger, ReservationStatus.PENDIENTE);
@@ -175,69 +162,32 @@ class ReservationServiceTest {
         ReservationResponse response = service.accept(driver.getId(), trip.getId(), pending.getId());
 
         assertThat(response.status()).isEqualTo(ReservationStatus.ACEPTADA);
+        assertThat(response.passengerPhone()).isEqualTo("+5491155550001");
         assertThat(trip.getAvailableSeats()).isEqualTo(2);
-        assertThat(trip.getStatus()).isEqualTo(TripStatus.ABIERTO);
         verify(tripRepository).findByIdForUpdate(trip.getId());
-    }
-
-    @Test
-    void aceptarLaUltimaVacanteDejaElViajeCompleto() {
-        Trip trip = trip(driver, 1);
-        givenTrip(trip);
-        Reservation pending = reservation(trip, passenger, ReservationStatus.PENDIENTE);
-        givenReservation(pending);
-
-        service.accept(driver.getId(), trip.getId(), pending.getId());
-
-        assertThat(trip.getAvailableSeats()).isZero();
-        assertThat(trip.getStatus()).isEqualTo(TripStatus.COMPLETO);
     }
 
     @Test
     void aceptarReservaSinVacantesDevuelveConflicto() {
         Trip trip = trip(driver, 1);
-        trip.setAvailableSeats(0);
-        trip.setStatus(TripStatus.COMPLETO);
+        reservation(trip, passenger(), ReservationStatus.ACEPTADA);
         givenTrip(trip);
         Reservation pending = reservation(trip, passenger, ReservationStatus.PENDIENTE);
         givenReservation(pending);
 
         assertThat(errorOf(() -> service.accept(driver.getId(), trip.getId(), pending.getId())))
                 .isEqualTo(ErrorCode.NO_SEATS_AVAILABLE);
-        assertThat(pending.getStatus()).isEqualTo(ReservationStatus.PENDIENTE);
     }
 
     @Test
-    void aceptarDosVecesNoDescuentaDosVacantes() {
-        Trip trip = trip(driver, 3);
-        givenTrip(trip);
-        Reservation pending = reservation(trip, passenger, ReservationStatus.PENDIENTE);
-        givenReservation(pending);
-
-        service.accept(driver.getId(), trip.getId(), pending.getId());
-        service.accept(driver.getId(), trip.getId(), pending.getId());
-
-        assertThat(trip.getAvailableSeats()).isEqualTo(2);
-    }
-
-    @Test
-    void soloElConductorPuedeAceptar() {
+    void soloElConductorPuedeAceptarYRechazar() {
         Trip trip = trip(driver, 3);
         givenTrip(trip);
 
         assertThat(errorOf(() -> service.accept(passenger.getId(), trip.getId(), UUID.randomUUID())))
                 .isEqualTo(ErrorCode.FORBIDDEN);
-    }
-
-    @Test
-    void aceptarUnaReservaCanceladaDevuelveInvalidStatusTransition() {
-        Trip trip = trip(driver, 3);
-        givenTrip(trip);
-        Reservation cancelled = reservation(trip, passenger, ReservationStatus.CANCELADA);
-        givenReservation(cancelled);
-
-        assertThat(errorOf(() -> service.accept(driver.getId(), trip.getId(), cancelled.getId())))
-                .isEqualTo(ErrorCode.INVALID_STATUS_TRANSITION);
+        assertThat(errorOf(() -> service.reject(passenger.getId(), trip.getId(), UUID.randomUUID())))
+                .isEqualTo(ErrorCode.FORBIDDEN);
     }
 
     @Test
@@ -251,39 +201,27 @@ class ReservationServiceTest {
                 .isEqualTo(ErrorCode.NOT_FOUND);
     }
 
-    // --- Rechazar ---
-
     @Test
-    void rechazarNoTocaLasVacantes() {
-        Trip trip = trip(driver, 3);
-        givenTrip(trip);
-        Reservation pending = reservation(trip, passenger, ReservationStatus.PENDIENTE);
+    void despuesDeLaSalidaNoSeAceptaPeroElReintentoSiResponde() {
+        Trip departed = trip(driver, 3, LocalDate.of(2026, 11, 19));
+        givenTrip(departed);
+        Reservation pending = reservation(departed, passenger, ReservationStatus.PENDIENTE);
+        Reservation accepted = reservation(departed, passenger(), ReservationStatus.ACEPTADA);
+
         givenReservation(pending);
-
-        ReservationResponse response = service.reject(driver.getId(), trip.getId(), pending.getId());
-
-        assertThat(response.status()).isEqualTo(ReservationStatus.RECHAZADA);
-        assertThat(trip.getAvailableSeats()).isEqualTo(3);
-    }
-
-    @Test
-    void rechazarUnaAceptadaDevuelveInvalidStatusTransition() {
-        Trip trip = trip(driver, 3);
-        givenTrip(trip);
-        Reservation accepted = reservation(trip, passenger, ReservationStatus.ACEPTADA);
-        givenReservation(accepted);
-
-        assertThat(errorOf(() -> service.reject(driver.getId(), trip.getId(), accepted.getId())))
+        assertThat(errorOf(() -> service.accept(driver.getId(), departed.getId(), pending.getId())))
                 .isEqualTo(ErrorCode.INVALID_STATUS_TRANSITION);
+
+        givenReservation(accepted);
+        assertThat(service.accept(driver.getId(), departed.getId(), accepted.getId()).status())
+                .isEqualTo(ReservationStatus.ACEPTADA);
     }
 
     // --- Cancelar ---
 
     @Test
-    void cancelarUnaAceptadaDevuelveLaVacanteYReabreElViaje() {
+    void cancelarUnaAceptadaDevuelveLaVacante() {
         Trip trip = trip(driver, 1);
-        trip.setAvailableSeats(0);
-        trip.setStatus(TripStatus.COMPLETO);
         givenTrip(trip);
         Reservation accepted = reservation(trip, passenger, ReservationStatus.ACEPTADA);
         givenReservation(accepted);
@@ -291,22 +229,8 @@ class ReservationServiceTest {
         ReservationResponse response = service.cancel(passenger.getId(), trip.getId(), accepted.getId());
 
         assertThat(response.status()).isEqualTo(ReservationStatus.CANCELADA);
-        assertThat(trip.getAvailableSeats()).isEqualTo(1);
         assertThat(trip.getStatus()).isEqualTo(TripStatus.ABIERTO);
-    }
-
-    @Test
-    void cancelarUnaPendienteNoTocaLasVacantesYEsIdempotente() {
-        Trip trip = trip(driver, 3);
-        givenTrip(trip);
-        Reservation pending = reservation(trip, passenger, ReservationStatus.PENDIENTE);
-        givenReservation(pending);
-
-        service.cancel(passenger.getId(), trip.getId(), pending.getId());
-        ReservationResponse again = service.cancel(passenger.getId(), trip.getId(), pending.getId());
-
-        assertThat(again.status()).isEqualTo(ReservationStatus.CANCELADA);
-        assertThat(trip.getAvailableSeats()).isEqualTo(3);
+        assertThat(trip.getAvailableSeats()).isEqualTo(1);
     }
 
     @Test
@@ -320,7 +244,19 @@ class ReservationServiceTest {
                 .isEqualTo(ErrorCode.FORBIDDEN);
     }
 
-    // --- Listar y privacidad (RNF07) ---
+    @Test
+    void despuesDeLaSalidaNoSePuedeCancelar() {
+        Trip departed = trip(driver, 3, LocalDate.of(2026, 11, 19));
+        givenTrip(departed);
+        Reservation accepted = reservation(departed, passenger, ReservationStatus.ACEPTADA);
+        givenReservation(accepted);
+
+        assertThat(errorOf(() -> service.cancel(passenger.getId(), departed.getId(), accepted.getId())))
+                .isEqualTo(ErrorCode.INVALID_STATUS_TRANSITION);
+        assertThat(departed.getAvailableSeats()).isEqualTo(2);
+    }
+
+    // --- Listar ---
 
     @Test
     void elConductorVeElTelefonoSoloDeLasReservasAceptadas() {
@@ -332,8 +268,7 @@ class ReservationServiceTest {
 
         List<ReservationResponse> list = service.listForTrip(driver.getId(), trip.getId());
 
-        assertThat(list).extracting(ReservationResponse::passengerPhone)
-                .containsExactly("+5491155550001", null);
+        assertThat(list).extracting(ReservationResponse::passengerPhone).containsExactly("+5491155550001", null);
     }
 
     @Test
@@ -341,9 +276,7 @@ class ReservationServiceTest {
         Trip trip = trip(driver, 3);
         givenTrip(trip);
 
-        assertThatThrownBy(() -> service.listForTrip(passenger.getId(), trip.getId()))
-                .isInstanceOf(ApiException.class)
-                .extracting(ex -> ((ApiException) ex).getCode())
+        assertThat(errorOf(() -> service.listForTrip(passenger.getId(), trip.getId())))
                 .isEqualTo(ErrorCode.FORBIDDEN);
     }
 }

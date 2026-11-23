@@ -58,3 +58,8 @@ ON CONFLICT DO NOTHING;
 -- =============================================================================
 -- RF04 · Reservas
 -- =============================================================================
+-- Un pasajero tiene como máximo una reserva activa por viaje (ALREADY_RESERVED). El service
+-- lo controla con el viaje bloqueado; este índice es la red de seguridad en la base.
+CREATE UNIQUE INDEX IF NOT EXISTS uk_reservations_active_passenger
+    ON reservations (trip_id, passenger_id)
+    WHERE status IN ('PENDIENTE', 'ACEPTADA');

@@ -5,42 +5,42 @@ import com.example.uniride.backend.common.error.ErrorCode;
 import com.example.uniride.backend.reservation.dto.ReservationResponse;
 import com.example.uniride.backend.trip.Trip;
 import com.example.uniride.backend.trip.TripRepository;
-import com.example.uniride.backend.trip.TripStatus;
 import com.example.uniride.backend.user.User;
 import com.example.uniride.backend.user.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 
 /**
- * Seat requests (RF04, docs/API.md §6). Every transition is idempotent: repeating it on a
- * reservation that is already in the target state answers the reservation as it is.
+ * Seat requests (RF04, docs/API.md §6). This service finds, locks and checks permissions;
+ * the transitions and the seats are rules of {@link Reservation} and {@link Trip}.
  *
- * <p>Accepting and cancelling change the seats of the trip, so they read it with a row lock
- * ({@link TripRepository#findByIdForUpdate}): two simultaneous acceptances never leave
- * negative seats.
+ * <p>Every write reads the trip with a row lock ({@link TripRepository#findByIdForUpdate}), so
+ * everything that touches the same trip runs one after the other: two acceptances never leave
+ * negative seats, and a retry of the same request never collides with the first one.
  */
 @Service
 public class ReservationService {
 
-    static final Set<ReservationStatus> ACTIVE = EnumSet.of(ReservationStatus.PENDIENTE, ReservationStatus.ACEPTADA);
-
     private final ReservationRepository reservationRepository;
     private final TripRepository tripRepository;
     private final UserRepository userRepository;
+    private final ContactVisibilityPolicy contactVisibility;
     private final Clock clock;
 
     public ReservationService(ReservationRepository reservationRepository, TripRepository tripRepository,
-                              UserRepository userRepository, Clock clock) {
+                              UserRepository userRepository, ContactVisibilityPolicy contactVisibility, Clock clock) {
         this.reservationRepository = reservationRepository;
         this.tripRepository = tripRepository;
         this.userRepository = userRepository;
+        this.contactVisibility = contactVisibility;
         this.clock = clock;
     }
 
@@ -50,136 +50,100 @@ public class ReservationService {
      */
     @Transactional
     public RequestSeatResult requestSeat(UUID userId, UUID tripId, UUID reservationId) {
-        var existing = reservationRepository.findById(reservationId);
+        Trip trip = lockTrip(tripId);
+
+        Optional<Reservation> existing = reservationRepository.findById(reservationId);
         if (existing.isPresent()) {
             Reservation reservation = existing.get();
-            if (!reservation.belongsTo(userId) || !reservation.getTrip().getId().equals(tripId)) {
+            if (!reservation.belongsTo(userId) || !reservation.isFor(trip)) {
                 throw new ApiException(ErrorCode.ID_CONFLICT);
             }
-            return new RequestSeatResult(ReservationResponse.from(reservation, userId), false);
+            return new RequestSeatResult(toResponse(reservation, userId), false);
         }
 
-        Trip trip = findTrip(tripId);
         if (trip.isDrivenBy(userId)) {
             throw new ApiException(ErrorCode.CANNOT_RESERVE_OWN_TRIP);
         }
-        if (trip.getStatus() != TripStatus.ABIERTO || hasDeparted(trip)) {
+        if (!trip.acceptsRequestsAt(now())) {
             throw new ApiException(ErrorCode.TRIP_NOT_OPEN);
         }
-        if (trip.getAvailableSeats() <= 0) {
-            throw new ApiException(ErrorCode.NO_SEATS_AVAILABLE);
-        }
-        if (reservationRepository.existsByTripIdAndPassengerIdAndStatusIn(tripId, userId, ACTIVE)) {
+        if (reservationRepository.existsByTripIdAndPassengerIdAndStatusIn(tripId, userId, ReservationStatus.ACTIVE)) {
             throw new ApiException(ErrorCode.ALREADY_RESERVED);
         }
         User passenger = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHENTICATED));
 
-        Reservation saved = reservationRepository.saveAndFlush(new Reservation(reservationId, trip, passenger));
+        Reservation created = reservationRepository.save(new Reservation(reservationId, trip, passenger, clock.instant()));
         // TODO(push, D5): enviar NUEVA_SOLICITUD al conductor (docs/API.md §9)
-        return new RequestSeatResult(ReservationResponse.from(saved, userId), true);
+        return new RequestSeatResult(toResponse(created, userId), true);
     }
 
     /** {@code GET /trips/{tripId}/reservations}: only for the driver. */
     @Transactional(readOnly = true)
     public List<ReservationResponse> listForTrip(UUID userId, UUID tripId) {
-        Trip trip = findTrip(tripId);
+        Trip trip = tripRepository.findById(tripId).orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND));
         requireDriver(trip, userId);
         return reservationRepository.findByTripIdOrderByReservedAtAsc(tripId).stream()
-                .map(reservation -> ReservationResponse.from(reservation, userId))
+                .map(reservation -> toResponse(reservation, userId))
                 .toList();
     }
 
-    /**
-     * {@code PENDIENTE} → {@code ACEPTADA}. Takes one seat in the same transaction, with the
-     * trip row locked; the trip becomes {@code COMPLETO} at 0 seats.
-     */
+    /** The driver accepts: takes a seat; the trip becomes {@code COMPLETO} at 0. */
     @Transactional
     public ReservationResponse accept(UUID userId, UUID tripId, UUID reservationId) {
-        Trip trip = tripRepository.findByIdForUpdate(tripId)
-                .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND));
-        requireDriver(trip, userId);
-        Reservation reservation = findReservation(trip, reservationId);
-
-        if (reservation.getStatus() == ReservationStatus.ACEPTADA) {
-            return ReservationResponse.from(reservation, userId);
-        }
-        if (reservation.getStatus() != ReservationStatus.PENDIENTE
-                || trip.getStatus() == TripStatus.FINALIZADO || trip.getStatus() == TripStatus.CANCELADO) {
-            throw new ApiException(ErrorCode.INVALID_STATUS_TRANSITION);
-        }
-        if (trip.getAvailableSeats() <= 0) {
-            throw new ApiException(ErrorCode.NO_SEATS_AVAILABLE);
-        }
-
-        trip.setAvailableSeats(trip.getAvailableSeats() - 1);
-        if (trip.getAvailableSeats() == 0) {
-            trip.setStatus(TripStatus.COMPLETO);
-        }
-        reservation.setStatus(ReservationStatus.ACEPTADA);
-        reservationRepository.flush();
         // TODO(push, D5): enviar SOLICITUD_ACEPTADA al pasajero (docs/API.md §9)
-        return ReservationResponse.from(reservation, userId);
+        return asDriver(userId, tripId, reservationId, Reservation::accept, ReservationStatus.ACEPTADA);
     }
 
-    /** {@code PENDIENTE} → {@code RECHAZADA}. Does not touch the seats. */
+    /** The driver rejects. Does not touch the seats. */
     @Transactional
     public ReservationResponse reject(UUID userId, UUID tripId, UUID reservationId) {
-        Trip trip = findTrip(tripId);
-        requireDriver(trip, userId);
-        Reservation reservation = findReservation(trip, reservationId);
-
-        if (reservation.getStatus() == ReservationStatus.RECHAZADA) {
-            return ReservationResponse.from(reservation, userId);
-        }
-        if (reservation.getStatus() != ReservationStatus.PENDIENTE) {
-            throw new ApiException(ErrorCode.INVALID_STATUS_TRANSITION);
-        }
-        reservation.setStatus(ReservationStatus.RECHAZADA);
-        reservationRepository.flush();
         // TODO(push, D5): enviar SOLICITUD_RECHAZADA al pasajero (docs/API.md §9)
-        return ReservationResponse.from(reservation, userId);
+        return asDriver(userId, tripId, reservationId, Reservation::reject, ReservationStatus.RECHAZADA);
     }
 
-    /**
-     * The passenger cancels: {@code PENDIENTE} or {@code ACEPTADA} → {@code CANCELADA}. If it
-     * was accepted, the seat goes back and a {@code COMPLETO} trip is {@code ABIERTO} again.
-     */
+    /** The passenger cancels. An accepted reservation gives the seat back. */
     @Transactional
     public ReservationResponse cancel(UUID userId, UUID tripId, UUID reservationId) {
-        Trip trip = tripRepository.findByIdForUpdate(tripId)
-                .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND));
+        Trip trip = lockTrip(tripId);
         Reservation reservation = findReservation(trip, reservationId);
         if (!reservation.belongsTo(userId)) {
             throw new ApiException(ErrorCode.FORBIDDEN);
         }
-
-        if (reservation.getStatus() == ReservationStatus.CANCELADA) {
-            return ReservationResponse.from(reservation, userId);
-        }
-        if (!ACTIVE.contains(reservation.getStatus()) || trip.getStatus() == TripStatus.FINALIZADO) {
-            throw new ApiException(ErrorCode.INVALID_STATUS_TRANSITION);
-        }
-
-        if (reservation.getStatus() == ReservationStatus.ACEPTADA) {
-            trip.setAvailableSeats(Math.min(trip.getAvailableSeats() + 1, trip.getTotalSeats()));
-            if (trip.getStatus() == TripStatus.COMPLETO) {
-                trip.setStatus(TripStatus.ABIERTO);
-            }
-        }
-        reservation.setStatus(ReservationStatus.CANCELADA);
-        reservationRepository.flush();
-        return ReservationResponse.from(reservation, userId);
+        requireNotDeparted(trip, reservation, ReservationStatus.CANCELADA);
+        reservation.cancel(clock.instant());
+        return toResponse(reservation, userId);
     }
 
-    private Trip findTrip(UUID tripId) {
-        return tripRepository.findById(tripId).orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND));
+    private ReservationResponse asDriver(UUID userId, UUID tripId, UUID reservationId,
+                                         BiConsumer<Reservation, Instant> transition, ReservationStatus target) {
+        Trip trip = lockTrip(tripId);
+        requireDriver(trip, userId);
+        Reservation reservation = findReservation(trip, reservationId);
+        requireNotDeparted(trip, reservation, target);
+        transition.accept(reservation, clock.instant());
+        return toResponse(reservation, userId);
+    }
+
+    /**
+     * Once the trip left, its reservations do not change anymore. A repeated transition that
+     * already happened is still answered (idempotency), so a reservation that is already in
+     * [target] passes.
+     */
+    private void requireNotDeparted(Trip trip, Reservation reservation, ReservationStatus target) {
+        if (trip.hasDepartedAt(now()) && reservation.getStatus() != target) {
+            throw new ApiException(ErrorCode.INVALID_STATUS_TRANSITION);
+        }
+    }
+
+    private Trip lockTrip(UUID tripId) {
+        return tripRepository.findByIdForUpdate(tripId).orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND));
     }
 
     /** The reservation has to exist and belong to the trip of the path. */
     private Reservation findReservation(Trip trip, UUID reservationId) {
         return reservationRepository.findById(reservationId)
-                .filter(reservation -> reservation.getTrip().getId().equals(trip.getId()))
+                .filter(reservation -> reservation.isFor(trip))
                 .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND));
     }
 
@@ -189,9 +153,12 @@ public class ReservationService {
         }
     }
 
-    private boolean hasDeparted(Trip trip) {
-        return LocalDateTime.of(trip.getDepartureDate(), trip.getDepartureTime())
-                .isBefore(LocalDateTime.now(clock));
+    private ReservationResponse toResponse(Reservation reservation, UUID viewerId) {
+        return ReservationResponse.from(reservation, contactVisibility.canSeePassengerContact(reservation, viewerId));
+    }
+
+    private LocalDateTime now() {
+        return LocalDateTime.now(clock);
     }
 
     /** {@code created} decides between 201 (new) and 200 (retry of the same request). */

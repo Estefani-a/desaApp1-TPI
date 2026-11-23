@@ -391,6 +391,8 @@ Solicitar no descuenta la vacante: se descuenta al aceptar.
 
 Respuesta: **200** `ReservationDto` · **403** `FORBIDDEN` · **409** `NO_SEATS_AVAILABLE` (al aceptar), `INVALID_STATUS_TRANSITION`.
 
+Una vez que el viaje salió (fecha y hora de salida en el pasado), sus reservas ya no cambian: aceptar, rechazar o cancelar responde **409** `INVALID_STATUS_TRANSITION`, salvo que se repita una transición que ya ocurrió (idempotencia).
+
 Cuando la app recibe 409 `NO_SEATS_AVAILABLE` o `TRIP_NOT_OPEN` al sincronizar una reserva hecha sin conexión, muestra el mensaje de la preentrega (12.1) y vuelve a pedir el viaje para actualizar Room.
 
 ---
