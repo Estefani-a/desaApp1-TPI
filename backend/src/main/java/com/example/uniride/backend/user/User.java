@@ -7,10 +7,9 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -30,18 +29,8 @@ public class User {
     @Column(name = "password_hash", nullable = false, length = 100)
     private String passwordHash;
 
-    @Column(name = "full_name", nullable = false, length = 100)
-    private String fullName;
-
-    @Column(nullable = false, length = 100)
-    private String career;
-
-    @Column(nullable = false, length = 30)
-    private String phone;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "preferred_mode", nullable = false, length = 20)
-    private PreferredMode preferredMode;
+    @Embedded
+    private UserProfile profile;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -54,15 +43,9 @@ public class User {
     @Column(name = "rating_count", nullable = false)
     private int ratingCount;
 
-    /** {@code null} if the user did not load a vehicle. */
-    @Embedded
-    private Vehicle vehicle;
-
-    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
@@ -70,18 +53,40 @@ public class User {
     }
 
     /** New account, {@code PENDIENTE} until activated (RF01). */
-    public User(String email, String passwordHash, String fullName, String career, String phone,
-                PreferredMode preferredMode, Vehicle vehicle) {
+    public User(String email, String passwordHash, UserProfile profile, Instant now) {
         this.id = UUID.randomUUID();
-        this.email = email;
-        this.passwordHash = passwordHash;
-        this.fullName = fullName;
-        this.career = career;
-        this.phone = phone;
-        this.preferredMode = preferredMode;
-        this.vehicle = vehicle;
+        this.email = Objects.requireNonNull(email);
+        this.passwordHash = Objects.requireNonNull(passwordHash);
+        this.profile = Objects.requireNonNull(profile);
         this.status = AccountStatus.PENDIENTE;
         this.ratingCount = 0;
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    public void activate(Instant now) {
+        if (status != AccountStatus.ACTIVA) {
+            status = AccountStatus.ACTIVA;
+            updatedAt = now;
+        }
+    }
+
+    public void updateProfile(UserProfile newProfile, Instant now) {
+        profile = Objects.requireNonNull(newProfile);
+        updatedAt = now;
+    }
+
+    public void changePassword(String newPasswordHash, Instant now) {
+        passwordHash = Objects.requireNonNull(newPasswordHash);
+        updatedAt = now;
+    }
+
+    public boolean isActive() {
+        return status == AccountStatus.ACTIVA;
+    }
+
+    public boolean hasVehicle() {
+        return profile.getVehicle() != null;
     }
 
     public UUID getId() {
@@ -96,52 +101,24 @@ public class User {
         return passwordHash;
     }
 
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
+    public UserProfile getProfile() {
+        return profile;
     }
 
     public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
-    public String getCareer() {
-        return career;
-    }
-
-    public void setCareer(String career) {
-        this.career = career;
+        return profile.getFullName();
     }
 
     public String getPhone() {
-        return phone;
+        return profile.getPhone();
     }
 
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public PreferredMode getPreferredMode() {
-        return preferredMode;
-    }
-
-    public void setPreferredMode(PreferredMode preferredMode) {
-        this.preferredMode = preferredMode;
+    public Vehicle getVehicle() {
+        return profile.getVehicle();
     }
 
     public AccountStatus getStatus() {
         return status;
-    }
-
-    public void activate() {
-        this.status = AccountStatus.ACTIVA;
-    }
-
-    public boolean isActive() {
-        return status == AccountStatus.ACTIVA;
     }
 
     public Double getRatingAvg() {
@@ -152,32 +129,11 @@ public class User {
         return ratingCount;
     }
 
-    public Vehicle getVehicle() {
-        return vehicle;
-    }
-
-    public void setVehicle(Vehicle vehicle) {
-        this.vehicle = vehicle;
-    }
-
-    public boolean hasVehicle() {
-        return vehicle != null && vehicle.getPlate() != null;
-    }
-
     public Instant getCreatedAt() {
         return createdAt;
     }
 
     public Instant getUpdatedAt() {
         return updatedAt;
-    }
-
-    /** "Lucía F.": how other users see this one (RNF07, docs/API.md §3.2). */
-    public String getPublicName() {
-        String[] parts = fullName.trim().split("\\s+");
-        if (parts.length < 2) {
-            return parts[0];
-        }
-        return parts[0] + " " + parts[parts.length - 1].charAt(0) + ".";
     }
 }
