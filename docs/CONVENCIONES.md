@@ -427,30 +427,30 @@ Mínimo exigido por PR que agrega lógica:
 
 ### 10.1 Paquetes
 
-Paquete raíz `com.example.uniride.backend`, organizado **por funcionalidad** y, adentro, por responsabilidad:
+Paquete raíz `com.example.uniride.backend`, organizado **por capa**:
 
 ```
 backend/src/main/java/com/example/uniride/backend/
 ├── UniRideBackendApplication.java
-├── common/
-│   ├── config/          // SecurityConfig, FirebaseConfig, OpenApiConfig
-│   ├── security/        // JwtService, JwtAuthenticationFilter, CurrentUser
-│   └── error/           // ApiError, ErrorCode, GlobalExceptionHandler, excepciones de negocio
-├── auth/                // registro, activación, login, recuperación de contraseña
-├── user/                // perfil, vehículo, token FCM
-├── campus/              // sedes y puntos de encuentro
-├── trip/                // publicar, listar, finalizar, cancelar
-├── reservation/         // solicitar, aceptar/rechazar, cancelar
-└── notification/        // envío por FCM y bandeja
+├── controller/          // TripController, ReservationController, AuthController…
+├── service/             // TripService, ReservationService… y las políticas que usan (ContactVisibilityPolicy)
+├── repository/          // TripRepository, ReservationRepository… (Spring Data JPA)
+├── model/               // entidades JPA (Trip, Reservation, User, Campus), sus embeddables y enums
+├── dto/                 // TripDTO, ReservationDTO, ApiErrorDTO, PublishTripRequestDTO…
+├── exception/           // ApiException, ErrorCode, GlobalExceptionHandler
+├── security/            // JwtService, JwtAuthenticationFilter, CurrentUser
+├── config/              // SecurityConfig, OpenApiConfig, TimeConfig, FirebaseConfig
+└── util/                // funciones puras sin estado (PublicName)
 ```
 
-Cada funcionalidad tiene `XxxController`, `XxxService`, `XxxRepository` (Spring Data JPA), `Xxx` (entidad JPA) y `dto/` con `XxxResponse` / `XxxRequest`.
+Una funcionalidad nueva agrega su `XxxController`, `XxxService`, `XxxRepository`, sus entidades en `model/` y sus DTOs en `dto/`. Los tests siguen los mismos paquetes.
 
 ### 10.2 Reglas de capas
 
 - El **Controller** solo recibe, valida (`@Valid`) y delega. Nada de lógica de negocio ni acceso a repositorios.
 - El **Service** tiene las reglas de negocio y las transacciones (`@Transactional`). Es lo que se testea.
-- Las entidades JPA **nunca** se devuelven en un controller: siempre se mapean a un `*Response`. Los DTOs son `record` de Java.
+- Las entidades JPA **nunca** se devuelven en un controller: siempre se mapean a un DTO. Los DTOs son `record` de Java y se llaman `XxxDTO` (respuesta) o `XxxRequestDTO` (cuerpo de un request).
+- El flujo es Controller → Service → Repository → Model. Un Controller no usa repositorios ni entidades; un Repository no tiene lógica.
 - Inyección por constructor (campos `private final`). Sin `@Autowired` en campos.
 - Reglas que exige la preentrega y que viven en el Service, no en la app:
   - registro solo con correo `@uade.edu.ar` y cuenta `PENDIENTE` hasta activar (RF01);

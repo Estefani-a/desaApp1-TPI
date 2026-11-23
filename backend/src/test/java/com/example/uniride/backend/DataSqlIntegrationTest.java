@@ -1,7 +1,7 @@
 package com.example.uniride.backend;
 
-import com.example.uniride.backend.campus.CampusRepository;
-import com.example.uniride.backend.user.UserRepository;
+import com.example.uniride.backend.repository.CampusRepository;
+import com.example.uniride.backend.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;

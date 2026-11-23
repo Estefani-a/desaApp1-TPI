@@ -148,7 +148,7 @@ Hasta que RF01 esté listo, `data.sql` trae usuarios de prueba ya activados para
 | `mobile/gradle/libs.versions.toml`, `mobile/app/build.gradle.kts` | Estefanía | PR propio de tipo `chore(build)`, no mezclado con una funcionalidad |
 | `UniRideDatabase.kt` (entities, versión) | Estefanía | Un cambio de esquema sube la versión; avisar en el grupo |
 | `docs/API.md` | Alvaro | Cambiar el contrato requiere aprobación de Alvaro, en el mismo PR que el endpoint |
-| `backend/pom.xml`, `backend/.../common/**`, `docker-compose.yml` | Gustavo | Seguridad, errores y configuración los revisa Gustavo |
+| `backend/pom.xml`, `backend/.../config/**`, `security/**`, `exception/**`, `docker-compose.yml` | Gustavo | Seguridad, errores y configuración los revisa Gustavo |
 | `backend/src/main/resources/data.sql` | todos | Agregar al final de la sección de tu RF; renombrar una columna en una entidad se avisa (CONVENCIONES §10.5) |
 | `UniRideNavHost.kt` | Gustavo | Cada área agrega su ruta en su propio subgrafo, no en el NavHost |
 | `presentation/theme`, `presentation/common` | Nicolás | Un componente nuevo compartido lo revisa Nicolás |
