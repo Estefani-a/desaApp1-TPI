@@ -1,6 +1,6 @@
 # UniRide · Contrato de la API REST
 
-> **Contrato aprobado (A0).** Este archivo es la fuente de verdad de la API REST de UniRide: si el código del backend o de la app no coincide con él, el error está en el código. Cualquier cambio posterior requiere aprobación del responsable de red (Alvaro) y debe actualizar este archivo en el mismo PR.
+> **Borrador.** Lo armamos a partir de la preentrega y de `CONVENCIONES.md` para que la tarea A0 no arranque de cero. Lo revisa y aprueba Alvaro con el resto del equipo; las dudas están marcadas con **[A DEFINIR]** y resumidas al final. Una vez aprobado, este archivo es el que manda: si el código del backend o de la app no coincide con él, el error está en el código.
 
 ---
 
@@ -83,7 +83,7 @@ En la app, `safeApiCall` traduce el HTTP a `DataError` (CONVENCIONES §6.3) y, c
 | --- | --- |
 | `PreferredMode` | `PASAJERO`, `CONDUCTOR`, `AMBOS` |
 | `Direction` | `IDA` (hacia la sede), `VUELTA` (desde la sede) |
-| `Shift` | `MANANA` (`[06:00, 13:00)`), `TARDE` (`[13:00, 18:00)`), `NOCHE` (`[18:00, 06:00)`) — no viaja en `TripDto`, se calcula a partir de `departureTime` |
+| `Shift` | `MANANA`, `TARDE`, `NOCHE` **[A DEFINIR: franjas horarias exactas]** |
 | `TripStatus` | `ABIERTO`, `COMPLETO`, `FINALIZADO`, `CANCELADO` |
 | `ReservationStatus` | `PENDIENTE`, `ACEPTADA`, `RECHAZADA`, `CANCELADA` |
 | `NotificationType` | `NUEVA_SOLICITUD`, `SOLICITUD_ACEPTADA`, `SOLICITUD_RECHAZADA`, `CALIFICAR_VIAJE` |
@@ -201,7 +201,7 @@ Los campos son los de `TripEntity` (preentrega 11.1), así el mapper Dto → Ent
 - **201** `{ "message": "Te enviamos un correo para activar la cuenta." }`. La cuenta queda `PENDIENTE` y se envía el correo con el enlace de activación (§8).
 - **400** `INVALID_EMAIL_DOMAIN`, `WEAK_PASSWORD`, `VALIDATION_ERROR` · **409** `EMAIL_ALREADY_REGISTERED`.
 
-Política de contraseña: mínimo 8 caracteres, con al menos una letra y un número. La app valida lo mismo antes de enviar (RF01), pero el servidor no confía en eso.
+Política de contraseña: mínimo 8 caracteres, con al menos una letra y un número **[A DEFINIR]**. La app valida lo mismo antes de enviar (RF01), pero el servidor no confía en eso.
 
 ### 4.2 Activación
 
@@ -211,7 +211,7 @@ Política de contraseña: mínimo 8 caracteres, con al menos una letra y un núm
 { "token": "<token del enlace>" }
 ```
 
-- **200** `AuthResponse` (§4.4): activar deja la sesión iniciada automáticamente, para no pedir la contraseña otra vez.
+- **200** `AuthResponse` (§4.4): activar deja la sesión iniciada, para no pedir la contraseña otra vez **[A DEFINIR]**.
 - **400** `INVALID_OR_EXPIRED_TOKEN`. El token vence a las 24 h y es de un solo uso.
 
 `POST /auth/resend-activation` · público · `{ "email": "..." }` → **202** siempre, exista o no la cuenta.
@@ -237,9 +237,7 @@ Política de contraseña: mínimo 8 caracteres, con al menos una letra y un núm
 }
 ```
 
-El JWT se firma con HS256, lleva el id del usuario en `sub` y dura 30 días sin refresh token: cuando vence (o ante cualquier 401), la app borra el token y vuelve al login (preentrega 11.3).
-
-> **Simplificación de alcance del TP:** se utiliza un único JWT de 30 días para acotar la implementación y evitar renovaciones durante la demo. En un entorno productivo, lo óptimo es emitir un **access token JWT de corta duración (15–30 minutos)** combinado con un **refresh token de mayor duración (7–30 días)** almacenado y revocable en base de datos con rotación en cada uso, lo que permite revocar sesiones comprometidas o cerradas sin esperar al vencimiento del JWT.
+El JWT se firma con HS256, lleva el id del usuario en `sub` y dura 30 días **[A DEFINIR]**. No hay refresh token: cuando vence, la API responde 401 y la app vuelve al login (preentrega 11.3).
 
 ### 4.5 Recuperación de contraseña
 
@@ -277,8 +275,7 @@ Todos los parámetros son opcionales y se combinan con Y.
 
 - **200** `TripDto[]` ordenado por `departureDate` y `departureTime`.
 - Devuelve los viajes `ABIERTO` y `COMPLETO` que todavía no salieron. Con `updatedSince`, solo los que cambiaron desde ese momento, **incluidos** los que pasaron a `FINALIZADO` o `CANCELADO`, para que la app los saque de Room.
-- El parámetro `shift` se evalúa sobre `departureTime` con los intervalos semiabiertos de §3.1 (`shift` no forma parte de `TripDto`; la app aplica la misma regla al filtrar en Room sin conexión).
-- Sin paginación: se devuelven como máximo 100 viajes.
+- Sin paginación: se devuelven como máximo 100 viajes **[A DEFINIR]**.
 
 ### 5.2 Sedes y puntos de encuentro
 
@@ -289,32 +286,12 @@ Todos los parámetros son opcionales y se combinan con Y.
   {
     "code": "MONSERRAT",
     "name": "Sede Monserrat",
-    "meetingPoints": [
-      "Salida Lima 717",
-      "Salida Lima 757",
-      "Salida Chile 1142",
-      "Salida Independencia 1072"
-    ]
-  },
-  {
-    "code": "BELGRANO",
-    "name": "Sede Belgrano",
-    "meetingPoints": [
-      "Salida 11 de Septiembre 1990",
-      "Salida Echeverría"
-    ]
-  },
-  {
-    "code": "RECOLETA",
-    "name": "Sede Recoleta",
-    "meetingPoints": [
-      "Salida Libertad 1340"
-    ]
+    "meetingPoints": ["Salida Lima 717", "Salida Chile 1142"]
   }
 ]
 ```
 
-Son las "salidas predefinidas de cada sede como puntos de encuentro" de la preentrega (2.3). Se cargan desde `backend/src/main/resources/data.sql` y la app las guarda en caché.
+Son las "salidas predefinidas de cada sede como puntos de encuentro" de la preentrega (2.3). Se cargan desde `backend/src/main/resources/data.sql`; la app las guarda en caché. **[A DEFINIR: lista real de sedes y salidas]**
 
 ### 5.3 Detalle
 
@@ -359,7 +336,7 @@ El servidor completa `driverName`, `driverRating` y los datos del vehículo desd
 
 Respuesta: **200** `TripDto` · **403** `FORBIDDEN` · **409** `INVALID_STATUS_TRANSITION`.
 
-En esta entrega cancelar un viaje **no** envía notificación push (se mantienen únicamente los 3 tipos de RF04 definidos en §9); el pasajero con reserva `ACEPTADA` ve el cambio de estado al abrir la app. Esta simplificación queda documentada en "Limitaciones conocidas" del README.
+**[A DEFINIR]** Si al cancelar un viaje se avisa a los pasajeros con una push, hace falta un tipo nuevo (`VIAJE_CANCELADO`) que no está en la preentrega.
 
 ---
 
@@ -426,10 +403,10 @@ Los clientes de correo (Gmail incluido) no permiten tocar enlaces con un esquema
 
 | Correo | Enlace del correo | Abre en la app |
 | --- | --- | --- |
-| Activación | `{APP_LINK_BASE_URL}/api/v1/links/activate?token=...` | `uniride://activate?token=...` → llama a `POST /auth/activate` |
-| Recuperación | `{APP_LINK_BASE_URL}/api/v1/links/reset-password?token=...` | `uniride://reset-password?token=...` → pantalla de nueva contraseña |
+| Activación | `{APP_LINK_BASE_URL}/links/activate?token=...` | `uniride://activate?token=...` → llama a `POST /auth/activate` |
+| Recuperación | `{APP_LINK_BASE_URL}/links/reset-password?token=...` | `uniride://reset-password?token=...` → pantalla de nueva contraseña |
 
-Se utiliza esta página HTML intermedia en el backend (`GET /api/v1/links/activate` y `GET /api/v1/links/reset-password`), con un botón "Abrir UniRide" hacia `uniride://…` y un texto para el caso en que la app no esté instalada. Los Android App Links verificados sobre HTTPS quedan fuera de esta entrega.
+La página tiene un botón "Abrir UniRide" con el enlace `uniride://…` y un texto para el caso en que la app no esté instalada. **[A DEFINIR]** Si el backend se publica con un dominio propio y HTTPS, se pueden usar Android App Links verificados en lugar de la página intermedia.
 
 En desarrollo, los correos se ven en Mailpit (`http://localhost:8025`), y `APP_LINK_BASE_URL` es `http://10.0.2.2:8080` para abrirlos desde el emulador.
 
@@ -466,12 +443,12 @@ Si el usuario no dio permiso de notificaciones (RNF08), no recibe la push, pero 
 
 ---
 
-## 11. Decisiones cerradas en A0
+## 11. Puntos a definir en la revisión (A0)
 
-1. **Franjas horarias de `Shift`:** intervalos semiabiertos `MANANA` (`[06:00, 13:00)`), `TARDE` (`[13:00, 18:00)`), `NOCHE` (`[18:00, 06:00)`), calculado desde `departureTime` (no viaja en `TripDto`).
-2. **Sedes y salidas (`GET /campuses`):** `MONSERRAT`, `BELGRANO` y `RECOLETA` con sus puntos de encuentro unificados en formato `"Salida …"` (§5.2).
-3. **Política de contraseña y JWT:** mínimo 8 caracteres con al menos 1 letra y 1 número; JWT HS256 de 30 días sin refresh token como simplificación del TP (en producción lo óptimo es access token corto de 15–30 min + refresh token rotativo y revocable en base de datos, ver §4.4).
-4. **Activación de cuenta:** `POST /auth/activate` devuelve `AuthResponse` y deja la sesión iniciada automáticamente.
-5. **Listado de viajes (`GET /trips`):** sin paginación, tope de 100 resultados.
-6. **Push al cancelar un viaje:** fuera de alcance en esta entrega (se mantienen los 3 tipos de RF04; documentado en "Limitaciones conocidas" del README).
-7. **Enlaces de los correos:** página HTML intermedia del backend en `/api/v1/links/activate` y `/api/v1/links/reset-password` redirigiendo a `uniride://…`.
+1. Franjas horarias de `Shift` (por ejemplo, `MANANA` antes de las 13, `TARDE` hasta las 18, `NOCHE` después).
+2. Lista real de sedes y salidas para `GET /campuses`.
+3. Política de contraseña y duración del JWT.
+4. Si activar la cuenta deja la sesión iniciada (§4.2) o lleva al login.
+5. Límite de resultados de `GET /trips` y si hace falta paginación.
+6. Push al cancelar un viaje (tipo `VIAJE_CANCELADO`).
+7. Página intermedia para los enlaces de los correos o App Links con dominio propio.

@@ -1,4 +1,4 @@
-package com.example.uniride.presentation.theme
+package com.example.uniride.ui.theme
 
 import android.app.Activity
 import android.os.Build
