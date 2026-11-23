@@ -43,6 +43,9 @@ public class User {
     @Column(name = "rating_count", nullable = false)
     private int ratingCount;
 
+    @Column(name = "fcm_token", length = 255)
+    private String fcmToken;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -79,6 +82,20 @@ public class User {
     public void changePassword(String newPasswordHash, Instant now) {
         passwordHash = Objects.requireNonNull(newPasswordHash);
         updatedAt = now;
+    }
+
+    public void updateFcmToken(String newFcmToken, Instant now) {
+        fcmToken = Objects.requireNonNull(newFcmToken);
+        updatedAt = now;
+    }
+
+    public void clearFcmToken(Instant now) {
+        fcmToken = null;
+        updatedAt = now;
+    }
+
+    public String getFcmToken() {
+        return fcmToken;
     }
 
     public boolean isActive() {
