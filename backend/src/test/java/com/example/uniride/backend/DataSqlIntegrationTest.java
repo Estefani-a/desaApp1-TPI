@@ -11,7 +11,7 @@ import javax.sql.DataSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** data.sql runs against the schema of the entities, and can run again without duplicating. */
+/** data.sql and data-demo.sql run against the schema of the entities, and can run again without duplicating. */
 class DataSqlIntegrationTest extends PostgresIntegrationTest {
 
     @Autowired
@@ -33,7 +33,8 @@ class DataSqlIntegrationTest extends PostgresIntegrationTest {
 
     @Test
     void ejecutarDataSqlOtraVezNoDuplicaNada() {
-        new ResourceDatabasePopulator(new ClassPathResource("data.sql")).execute(dataSource);
+        new ResourceDatabasePopulator(new ClassPathResource("data.sql"), new ClassPathResource("data-demo.sql"))
+                .execute(dataSource);
 
         assertThat(campusRepository.count()).isEqualTo(3);
         assertThat(userRepository.count()).isEqualTo(3);

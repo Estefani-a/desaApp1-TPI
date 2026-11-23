@@ -30,7 +30,7 @@ Tests y build: `./mvnw verify` (en Windows, `mvnw.cmd verify`).
 
 ## Usuarios de prueba
 
-`data.sql` carga las sedes con sus puntos de encuentro y tres usuarios ya activados, con la contraseña `UniRide2026`:
+`data.sql` carga las sedes con sus puntos de encuentro. Con el perfil `demo` (lo activan `docker compose` y el perfil `local`), `data-demo.sql` agrega tres usuarios ya activados con la contraseña `UniRide2026`. Como la contraseña es pública, un despliegue real no tiene que activar `demo`:
 
 | Correo | Modo | Vehículo |
 | --- | --- | --- |

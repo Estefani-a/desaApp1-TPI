@@ -2,13 +2,15 @@ package com.example.uniride.backend;
 
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Base of the tests that need the real PostgreSQL: the schema that Hibernate creates,
- * {@code data.sql} and the row locks. Without Docker these tests are skipped, so
+ * {@code data.sql} and the row locks. They run with the "demo" profile, so the demo users of
+ * {@code data-demo.sql} exist. Without Docker these tests are skipped, so
  * {@code ./mvnw verify} still works.
  *
  * <p>One container for the whole run, started by hand: Spring reuses the same context in
@@ -16,6 +18,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * singleton container pattern).
  */
 @SpringBootTest
+@ActiveProfiles("demo")
 @Testcontainers(disabledWithoutDocker = true)
 @TestPropertySource(properties = {
         "app.jwt.secret=secreto-de-prueba-de-al-menos-32-caracteres!!",
