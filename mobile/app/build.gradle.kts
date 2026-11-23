@@ -23,7 +23,13 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8080/api/v1/\"")
+            buildConfigField("boolean", "USE_FAKE_BACKEND", "true")
+        }
         release {
+            buildConfigField("String", "API_BASE_URL", "\"https://api.uniride.uade.edu.ar/api/v1/\"")
+            buildConfigField("boolean", "USE_FAKE_BACKEND", "false")
             optimization {
                 enable = false
             }
@@ -35,6 +41,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

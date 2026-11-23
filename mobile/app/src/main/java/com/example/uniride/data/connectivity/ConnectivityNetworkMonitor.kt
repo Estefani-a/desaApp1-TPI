@@ -5,17 +5,22 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import com.example.uniride.domain.repository.NetworkMonitor
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.shareIn
 
 /**
  * Android implementation of [NetworkMonitor] backed by [ConnectivityManager].
- * Emits the current connectivity status immediately and updates reactively on network changes.
+ * Shares a single callback registration across all ViewModels via [shareIn] to avoid hitting
+ * Android's per-app NetworkCallback limit.
  */
 class ConnectivityNetworkMonitor(
     context: Context,
+    appScope: CoroutineScope,
 ) : NetworkMonitor {
 
     private val appContext = context.applicationContext
@@ -60,7 +65,13 @@ class ConnectivityNetworkMonitor(
         awaitClose {
             connectivityManager.unregisterNetworkCallback(callback)
         }
-    }.distinctUntilChanged()
+    }
+        .distinctUntilChanged()
+        .shareIn(
+            scope = appScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+            replay = 1,
+        )
 
     private fun ConnectivityManager.isCurrentlyOnline(): Boolean =
         getNetworkCapabilities(activeNetwork).hasInternetCapability()
@@ -69,4 +80,8 @@ class ConnectivityNetworkMonitor(
     // without external internet access and emulators can still reach the local backend without flickering.
     private fun NetworkCapabilities?.hasInternetCapability(): Boolean =
         this != null && hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+
+    private companion object {
+        const val STOP_TIMEOUT_MS = 5_000L
+    }
 }
