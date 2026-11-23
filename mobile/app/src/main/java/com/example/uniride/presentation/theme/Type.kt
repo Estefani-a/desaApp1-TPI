@@ -1,4 +1,4 @@
-package com.example.uniride.ui.theme
+package com.example.uniride.presentation.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
