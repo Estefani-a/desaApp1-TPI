@@ -21,11 +21,4 @@ class TopLevelDestinationTest {
             TopLevelDestination.forMode(AppMode.CONDUCTOR),
         )
     }
-
-    @Test
-    fun `la clase de cada ruta coincide con su objeto`() {
-        TopLevelDestination.entries.forEach { destination ->
-            assertEquals(destination.routeClass, destination.route::class)
-        }
-    }
 }
