@@ -18,9 +18,10 @@ INSERT INTO campus_meeting_points (campus_code, position, meeting_point) VALUES
     ('MONSERRAT', 2, 'Salida Chile 1142'),
     ('MONSERRAT', 3, 'Salida Independencia 1072'),
     ('BELGRANO', 0, 'Salida 11 de Septiembre 1990'),
-    ('BELGRANO', 1, 'Esquina Echeverría'),
+    ('BELGRANO', 1, 'Salida Echeverría'),
     ('RECOLETA', 0, 'Salida Libertad 1340')
-ON CONFLICT DO NOTHING;
+-- Si un punto cambia de nombre, la base que ya existía se actualiza sola al arrancar.
+ON CONFLICT (campus_code, position) DO UPDATE SET meeting_point = EXCLUDED.meeting_point;
 
 -- =============================================================================
 -- RF01 · Autenticación y perfil
