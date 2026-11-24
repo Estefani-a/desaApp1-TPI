@@ -6,6 +6,7 @@ import com.example.uniride.domain.model.TripDraft
 import com.example.uniride.domain.model.TripFilters
 import com.example.uniride.domain.model.TripId
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 
 /**
  * Trips (RF02 and RF03). The `observe` functions emit the last known data, also offline, and
@@ -27,6 +28,12 @@ interface TripRepository {
      * combine it with the trips to show "Pendiente de sincronizar".
      */
     fun observePendingTripIds(): Flow<Set<TripId>>
+
+    /**
+     * When the trips of the feed were last brought from the server, or `null` if never (first
+     * start). It survives restarts, so the feed can say "Actualizado HH:MM" offline (RF03).
+     */
+    fun observeLastRefreshedAt(): Flow<Instant?>
 
     suspend fun refreshTrips(): AppResult<Unit>
 
