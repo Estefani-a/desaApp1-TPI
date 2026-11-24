@@ -14,7 +14,7 @@
 
 <!-- Si toca UI: capturas o video. Si no, borrar la sección. -->
 
-## Checklist (Definition of Done, CONVENCIONES §12)
+## Checklist (Definition of Done)
 
 - [ ] Compila y pasan Lint y los tests en CI.
 - [ ] App: respeta la regla de capas (`domain` sin Android; el ViewModel no importa nada de `data`).
