@@ -70,7 +70,9 @@ class NavigationTest {
     fun cambiarDeModoVuelveAlInicioConLasPestanasDelModo() {
         start()
         login()
-        click(R.string.nav_feed)
+        // Any tab other than Home works to leave it. Not the feed: it is a real screen with a
+        // Hilt ViewModel, and this test has no Hilt
+        click(R.string.nav_profile)
 
         click(R.string.nav_mode_driver)
 
