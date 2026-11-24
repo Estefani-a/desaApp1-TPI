@@ -1,31 +1,22 @@
 package com.example.uniride.data.datastore
 
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.uniride.domain.model.CampusCode
 import com.example.uniride.domain.model.Direction
 import com.example.uniride.domain.model.Shift
 import com.example.uniride.domain.model.TripFilters
+import com.example.uniride.fake.InMemoryPreferencesDataStore
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
-import java.io.File
 import java.time.LocalDate
 
 /** RF03: the last filters survive closing the app. */
 class FeedFiltersDataStoreTest {
 
-    @get:Rule
-    val folder = TemporaryFolder()
-
-    private fun TestScope.dataStore() = PreferenceDataStoreFactory.create(scope = backgroundScope) {
-        File(folder.root, "test.preferences_pb")
-    }
+    private fun dataStore() = InMemoryPreferencesDataStore()
 
     @Test
     fun `sin nada guardado no hay filtros`() = runTest {
