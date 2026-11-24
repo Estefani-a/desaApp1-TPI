@@ -93,7 +93,7 @@ class FakeAuthRemoteDataSource(
             store.users[userId] = activated
             store.currentUserId = userId
             AuthResponseDto(
-                accessToken = "fake-jwt-$userId",
+                accessToken = "${FakeBackendStore.FAKE_TOKEN_PREFIX}$userId",
                 expiresAt = store.expiresIn30DaysIso(),
                 user = activated.user,
             )
@@ -124,7 +124,7 @@ class FakeAuthRemoteDataSource(
             }
             store.currentUserId = stored.user.id
             AuthResponseDto(
-                accessToken = "fake-jwt-${stored.user.id}",
+                accessToken = "${FakeBackendStore.FAKE_TOKEN_PREFIX}${stored.user.id}",
                 expiresAt = store.expiresIn30DaysIso(),
                 user = stored.user,
             )

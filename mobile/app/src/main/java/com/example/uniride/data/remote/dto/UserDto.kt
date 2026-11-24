@@ -1,8 +1,11 @@
 package com.example.uniride.data.remote.dto
 
+import com.squareup.moshi.JsonClass
+
 /**
  * Vehicle information embedded in user profiles (docs/API.md §3.2).
  */
+@JsonClass(generateAdapter = true)
 data class VehicleDto(
     val brand: String,
     val model: String,
@@ -13,6 +16,7 @@ data class VehicleDto(
 /**
  * Authenticated user profile returned by GET/PUT /users/me and AuthResponse (docs/API.md §3.2).
  */
+@JsonClass(generateAdapter = true)
 data class UserDto(
     val id: String,
     val fullName: String,
@@ -28,6 +32,7 @@ data class UserDto(
 /**
  * Request body for PUT /users/me (docs/API.md §4.6).
  */
+@JsonClass(generateAdapter = true)
 data class UpdateProfileRequest(
     val fullName: String,
     val career: String,
@@ -39,6 +44,7 @@ data class UpdateProfileRequest(
 /**
  * Request body for PUT /users/me/device-token (docs/API.md §4.6).
  */
+@JsonClass(generateAdapter = true)
 data class DeviceTokenRequest(
     val fcmToken: String,
 )

@@ -1,10 +1,13 @@
 package com.example.uniride.data.remote.dto
 
+import com.squareup.moshi.JsonClass
+
 /**
  * Trip payload returned by /trips endpoints (docs/API.md §3.3).
  * [vehiclePlate] and [driverPhone] are non-null only for the driver or passengers
  * with an ACCEPTED reservation (RNF07).
  */
+@JsonClass(generateAdapter = true)
 data class TripDto(
     val tripId: String,
     val driverId: String,
@@ -33,6 +36,7 @@ data class TripDto(
 /**
  * Request body for idempotent PUT /trips/{tripId} (docs/API.md §5.4).
  */
+@JsonClass(generateAdapter = true)
 data class PublishTripRequest(
     val direction: String,
     val campus: String,
@@ -49,6 +53,7 @@ data class PublishTripRequest(
 /**
  * Campus and predefined meeting points returned by GET /campuses (docs/API.md §5.2).
  */
+@JsonClass(generateAdapter = true)
 data class CampusDto(
     val code: String,
     val name: String,

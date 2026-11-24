@@ -1,8 +1,11 @@
 package com.example.uniride.data.remote.dto
 
+import com.squareup.moshi.JsonClass
+
 /**
  * Request body for POST /auth/register (docs/API.md §4.1).
  */
+@JsonClass(generateAdapter = true)
 data class RegisterRequest(
     val email: String,
     val password: String,
@@ -16,6 +19,7 @@ data class RegisterRequest(
 /**
  * Request body for POST /auth/login (docs/API.md §4.3).
  */
+@JsonClass(generateAdapter = true)
 data class LoginRequest(
     val email: String,
     val password: String,
@@ -24,6 +28,7 @@ data class LoginRequest(
 /**
  * Request body for POST /auth/activate (docs/API.md §4.2).
  */
+@JsonClass(generateAdapter = true)
 data class ActivateRequest(
     val token: String,
 )
@@ -31,6 +36,7 @@ data class ActivateRequest(
 /**
  * Request body for POST /auth/resend-activation (docs/API.md §4.2).
  */
+@JsonClass(generateAdapter = true)
 data class ResendActivationRequest(
     val email: String,
 )
@@ -38,6 +44,7 @@ data class ResendActivationRequest(
 /**
  * Request body for POST /auth/password-reset (docs/API.md §4.5).
  */
+@JsonClass(generateAdapter = true)
 data class PasswordResetRequest(
     val email: String,
 )
@@ -45,6 +52,7 @@ data class PasswordResetRequest(
 /**
  * Request body for POST /auth/password-reset/confirm (docs/API.md §4.5).
  */
+@JsonClass(generateAdapter = true)
 data class ConfirmPasswordResetRequest(
     val token: String,
     val newPassword: String,
@@ -53,6 +61,7 @@ data class ConfirmPasswordResetRequest(
 /**
  * Response body for POST /auth/login and POST /auth/activate (docs/API.md §4.4).
  */
+@JsonClass(generateAdapter = true)
 data class AuthResponseDto(
     val accessToken: String,
     val expiresAt: String,
@@ -62,6 +71,7 @@ data class AuthResponseDto(
 /**
  * Generic message response used by POST /auth/register and POST /auth/password-reset.
  */
+@JsonClass(generateAdapter = true)
 data class MessageResponseDto(
     val message: String,
 )

@@ -10,6 +10,7 @@ import org.junit.Assert.fail
 import org.junit.Test
 import java.io.IOException
 import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 class SafeApiCallTest {
 
@@ -40,6 +41,7 @@ class SafeApiCallTest {
     fun `sin red es NO_CONNECTION y un timeout es TIMEOUT`() = runTest {
         assertEquals(AppResult.Failure(DataError.NO_CONNECTION), safeApiCall<Unit> { throw IOException() })
         assertEquals(AppResult.Failure(DataError.TIMEOUT), safeApiCall<Unit> { throw SocketTimeoutException() })
+        assertEquals(AppResult.Failure(DataError.NO_CONNECTION), safeApiCall<Unit> { throw UnknownHostException("offline") })
     }
 
     @Test
