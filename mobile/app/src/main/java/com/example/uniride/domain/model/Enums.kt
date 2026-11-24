@@ -33,23 +33,21 @@ enum class ReservationStatus {
 enum class AppMode { PASAJERO, CONDUCTOR }
 
 /**
- * Time slot of the day (docs/API.md §3.1), derived from the departure time. Half-open intervals
- * `[start, end)`: MANANA 06:00 to 12:59, TARDE 13:00 to 17:59 and NOCHE 18:00 to 05:59, which goes
- * through midnight (a trip at 01:00 is a night trip). The server filters with the same rule.
+ * Time slot of the day, from the departure time. Half-open intervals, as in the API contract;
+ * NOCHE crosses midnight.
  */
-enum class Shift(val start: LocalTime, val end: LocalTime) {
-    MANANA(LocalTime.of(6, 0), LocalTime.of(13, 0)),
-    TARDE(LocalTime.of(13, 0), LocalTime.of(18, 0)),
-    NOCHE(LocalTime.of(18, 0), LocalTime.of(6, 0)),
+enum class Shift(val start: LocalTime) {
+    /** [06:00, 13:00). */
+    MANANA(LocalTime.of(6, 0)),
+
+    /** [13:00, 18:00). */
+    TARDE(LocalTime.of(13, 0)),
+
+    /** [18:00, 06:00): before 06:00 it is still the night of the previous evening. */
+    NOCHE(LocalTime.of(18, 0)),
     ;
 
-    operator fun contains(time: LocalTime): Boolean {
-        val afterStart = !time.isBefore(start)
-        val beforeEnd = time.isBefore(end)
-        return if (end.isBefore(start)) afterStart || beforeEnd else afterStart && beforeEnd
-    }
-
     companion object {
-        fun of(time: LocalTime): Shift = entries.first { time in it }
+        fun of(time: LocalTime): Shift = entries.lastOrNull { !time.isBefore(it.start) } ?: NOCHE
     }
 }
