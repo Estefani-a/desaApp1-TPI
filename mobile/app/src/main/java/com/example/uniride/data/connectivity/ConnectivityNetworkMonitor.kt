@@ -69,7 +69,10 @@ class ConnectivityNetworkMonitor(
         .distinctUntilChanged()
         .shareIn(
             scope = appScope,
-            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+            started = SharingStarted.WhileSubscribed(
+                stopTimeoutMillis = STOP_TIMEOUT_MS,
+                replayExpirationMillis = 0L,
+            ),
             replay = 1,
         )
 

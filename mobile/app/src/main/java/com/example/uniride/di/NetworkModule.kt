@@ -2,6 +2,7 @@ package com.example.uniride.di
 
 import android.content.Context
 import com.example.uniride.BuildConfig
+import com.example.uniride.core.dispatcher.DispatchersProvider
 import com.example.uniride.data.connectivity.ConnectivityNetworkMonitor
 import com.example.uniride.data.datastore.EncryptedSessionTokenStore
 import com.example.uniride.data.datastore.SessionTokenStore
@@ -27,19 +28,12 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.TimeUnit
-import javax.inject.Qualifier
 import javax.inject.Singleton
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class ApplicationScope
 
 /**
  * Hilt module for the network stack, connectivity monitor and remote data sources (A1, A2, A3).
@@ -52,16 +46,11 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    @ApplicationScope
-    fun provideApplicationScope(): CoroutineScope =
-        CoroutineScope(SupervisorJob() + Dispatchers.Default)
-
-    @Provides
-    @Singleton
     fun provideSessionTokenStore(
         @ApplicationContext context: Context,
         @ApplicationScope appScope: CoroutineScope,
-    ): SessionTokenStore = EncryptedSessionTokenStore(context, appScope)
+        dispatchers: DispatchersProvider,
+    ): SessionTokenStore = EncryptedSessionTokenStore(context, appScope, dispatchers)
 
     @Provides
     @Singleton
@@ -89,8 +78,9 @@ object NetworkModule {
             .addInterceptor(authInterceptor)
 
         if (BuildConfig.DEBUG) {
+            // Level.HEADERS avoids leaking passwords or access tokens in /auth/* request/response bodies.
             val logging = HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
+                level = HttpLoggingInterceptor.Level.HEADERS
                 redactHeader("Authorization")
             }
             builder.addInterceptor(logging)
@@ -125,7 +115,8 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideFakeBackendStore(): FakeBackendStore = FakeBackendStore()
+    fun provideFakeBackendStore(tokenStore: SessionTokenStore): FakeBackendStore =
+        FakeBackendStore(tokenProvider = tokenStore::currentToken)
 
     @Provides
     @Singleton

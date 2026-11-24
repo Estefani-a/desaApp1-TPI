@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -5,6 +7,22 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.androidx.room)
 }
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.isFile) {
+        file.inputStream().use(::load)
+    }
+}
+
+fun readConfigProperty(name: String, default: String): String =
+    providers.gradleProperty(name).orNull
+        ?: localProperties.getProperty(name)
+        ?: default
+
+val debugApiBaseUrl = readConfigProperty("apiBaseUrl", "http://10.0.2.2:8080/api/v1/")
+val debugUseFakeBackend = readConfigProperty("useFakeBackend", "true").toBooleanStrictOrNull() ?: true
+val releaseApiBaseUrl = readConfigProperty("releaseApiBaseUrl", "https://REPLACE_WITH_API_BASE_URL/api/v1/")
 
 android {
     namespace = "com.example.uniride"
@@ -24,11 +42,11 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8080/api/v1/\"")
-            buildConfigField("boolean", "USE_FAKE_BACKEND", "true")
+            buildConfigField("String", "API_BASE_URL", "\"$debugApiBaseUrl\"")
+            buildConfigField("boolean", "USE_FAKE_BACKEND", debugUseFakeBackend.toString())
         }
         release {
-            buildConfigField("String", "API_BASE_URL", "\"https://api.uniride.uade.edu.ar/api/v1/\"")
+            buildConfigField("String", "API_BASE_URL", "\"$releaseApiBaseUrl\"")
             buildConfigField("boolean", "USE_FAKE_BACKEND", "false")
             optimization {
                 enable = false

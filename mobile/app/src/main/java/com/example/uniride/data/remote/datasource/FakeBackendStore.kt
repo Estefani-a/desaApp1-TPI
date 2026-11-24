@@ -20,8 +20,13 @@ import java.time.format.DateTimeFormatter
 /**
  * Shared in-memory backend fixture used by all Fake*RemoteDataSource implementations (A2).
  * Enables working on screens and demos without a running server while preserving contract rules.
+ *
+ * When [tokenProvider] returns a persisted fake token (`fake-jwt-<userId>`), the store restores
+ * the matching user after process restart so `USE_FAKE_BACKEND` stays logged in seamlessly.
  */
-class FakeBackendStore {
+class FakeBackendStore(
+    private val tokenProvider: (() -> String?)? = null,
+) {
 
     internal data class StoredUser(
         val user: UserDto,
@@ -122,7 +127,7 @@ class FakeBackendStore {
     }
 
     internal fun requireCurrentUser(): StoredUser {
-        val userId = currentUserId ?: throw apiError(
+        val userId = resolveCurrentUserId() ?: throw apiError(
             httpCode = 401,
             code = ApiErrorCode.UNAUTHENTICATED,
             message = "Sesión no iniciada.",
@@ -132,6 +137,14 @@ class FakeBackendStore {
             code = ApiErrorCode.UNAUTHENTICATED,
             message = "Sesión no iniciada.",
         )
+    }
+
+    private fun resolveCurrentUserId(): String? {
+        val provider = tokenProvider ?: return currentUserId
+        val token = provider() ?: return null
+        if (!token.startsWith(FAKE_TOKEN_PREFIX)) return null
+        val userId = token.removePrefix(FAKE_TOKEN_PREFIX)
+        return userId.takeIf { it in users }
     }
 
     internal fun toPublicTripDto(trip: StoredTrip, viewerId: String): TripDto {
@@ -336,6 +349,7 @@ class FakeBackendStore {
     }
 
     companion object {
+        const val FAKE_TOKEN_PREFIX = "fake-jwt-"
         const val DEMO_PASSWORD = "Secreta123"
         const val DEFAULT_DRIVER_ID = "6f1c2a4e-1b0e-4a8e-9a55-2c1f3e7b9d10"
         const val DEFAULT_PASSENGER_ID = "9a2e5c7b-3d8f-4b1a-a6e0-1c4f7d9b2e58"
