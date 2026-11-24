@@ -7,7 +7,7 @@ import com.example.uniride.R
 import com.example.uniride.domain.model.AppMode
 import com.example.uniride.presentation.navigation.PlaceholderAction
 import com.example.uniride.presentation.navigation.PlaceholderScreen
-import com.example.uniride.ui.theme.UniRideTheme
+import com.example.uniride.presentation.theme.UniRideTheme
 
 /**
  * Dynamic start. Passenger: B6 card of the active trip or an invitation to explore. Driver:

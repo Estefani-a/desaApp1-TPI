@@ -23,7 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.uniride.R
 import com.example.uniride.domain.model.AppMode
-import com.example.uniride.ui.theme.UniRideTheme
+import com.example.uniride.presentation.theme.UniRideTheme
 
 /**
  * Bottom bar: mode selector (pasajero / conductor) on top of the tabs of that mode. The

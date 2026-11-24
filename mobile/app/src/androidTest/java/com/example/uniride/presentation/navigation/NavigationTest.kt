@@ -16,7 +16,7 @@ import com.example.uniride.domain.model.Profile
 import com.example.uniride.presentation.auth.AuthGraphRoute
 import com.example.uniride.presentation.auth.WelcomeRoute
 import com.example.uniride.presentation.home.HomeRoute
-import com.example.uniride.ui.theme.UniRideTheme
+import com.example.uniride.presentation.theme.UniRideTheme
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule

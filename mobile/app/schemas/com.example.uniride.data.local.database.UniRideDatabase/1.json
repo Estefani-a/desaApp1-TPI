@@ -1,0 +1,342 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "b9047b1e1561be13191cb138c8160f1f",
+    "entities": [
+      {
+        "tableName": "users",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `email` TEXT NOT NULL, `fullName` TEXT NOT NULL, `career` TEXT NOT NULL, `phone` TEXT NOT NULL, `preferredMode` TEXT NOT NULL, `ratingAvg` REAL, `ratingCount` INTEGER NOT NULL, `vehicleBrand` TEXT, `vehicleModel` TEXT, `vehicleColor` TEXT, `vehiclePlate` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fullName",
+            "columnName": "fullName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "career",
+            "columnName": "career",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "phone",
+            "columnName": "phone",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "preferredMode",
+            "columnName": "preferredMode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ratingAvg",
+            "columnName": "ratingAvg",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "ratingCount",
+            "columnName": "ratingCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vehicleBrand",
+            "columnName": "vehicleBrand",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "vehicleModel",
+            "columnName": "vehicleModel",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "vehicleColor",
+            "columnName": "vehicleColor",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "vehiclePlate",
+            "columnName": "vehiclePlate",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "trips",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`tripId` TEXT NOT NULL, `driverId` TEXT NOT NULL, `driverName` TEXT NOT NULL, `driverRating` REAL, `driverPhone` TEXT, `direction` TEXT NOT NULL, `campus` TEXT NOT NULL, `meetingPoint` TEXT NOT NULL, `destinationNeighborhood` TEXT NOT NULL, `destinationReference` TEXT, `departureDate` TEXT NOT NULL, `departureTime` TEXT NOT NULL, `estimatedArrivalTime` TEXT, `totalSeats` INTEGER NOT NULL, `availableSeats` INTEGER NOT NULL, `contributionPerSeat` INTEGER NOT NULL, `vehicleModel` TEXT NOT NULL, `vehicleColor` TEXT NOT NULL, `vehiclePlate` TEXT, `status` TEXT NOT NULL, `isSync` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`tripId`))",
+        "fields": [
+          {
+            "fieldPath": "tripId",
+            "columnName": "tripId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "driverId",
+            "columnName": "driverId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "driverName",
+            "columnName": "driverName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "driverRating",
+            "columnName": "driverRating",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "driverPhone",
+            "columnName": "driverPhone",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "direction",
+            "columnName": "direction",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "campus",
+            "columnName": "campus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "meetingPoint",
+            "columnName": "meetingPoint",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "destinationNeighborhood",
+            "columnName": "destinationNeighborhood",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "destinationReference",
+            "columnName": "destinationReference",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "departureDate",
+            "columnName": "departureDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "departureTime",
+            "columnName": "departureTime",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "estimatedArrivalTime",
+            "columnName": "estimatedArrivalTime",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "totalSeats",
+            "columnName": "totalSeats",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "availableSeats",
+            "columnName": "availableSeats",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "contributionPerSeat",
+            "columnName": "contributionPerSeat",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vehicleModel",
+            "columnName": "vehicleModel",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vehicleColor",
+            "columnName": "vehicleColor",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vehiclePlate",
+            "columnName": "vehiclePlate",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSync",
+            "columnName": "isSync",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "tripId"
+          ]
+        }
+      },
+      {
+        "tableName": "reservations",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`reservationId` TEXT NOT NULL, `tripId` TEXT NOT NULL, `passengerId` TEXT NOT NULL, `passengerName` TEXT NOT NULL, `passengerRating` REAL, `passengerPhone` TEXT, `status` TEXT NOT NULL, `reservedAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `isSync` INTEGER NOT NULL, PRIMARY KEY(`reservationId`))",
+        "fields": [
+          {
+            "fieldPath": "reservationId",
+            "columnName": "reservationId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tripId",
+            "columnName": "tripId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "passengerId",
+            "columnName": "passengerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "passengerName",
+            "columnName": "passengerName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "passengerRating",
+            "columnName": "passengerRating",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "passengerPhone",
+            "columnName": "passengerPhone",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reservedAt",
+            "columnName": "reservedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSync",
+            "columnName": "isSync",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "reservationId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_reservations_tripId",
+            "unique": false,
+            "columnNames": [
+              "tripId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_reservations_tripId` ON `${TABLE_NAME}` (`tripId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "campuses",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`code` TEXT NOT NULL, `name` TEXT NOT NULL, `meetingPoints` TEXT NOT NULL, PRIMARY KEY(`code`))",
+        "fields": [
+          {
+            "fieldPath": "code",
+            "columnName": "code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "meetingPoints",
+            "columnName": "meetingPoints",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "code"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b9047b1e1561be13191cb138c8160f1f')"
+    ]
+  }
+}
