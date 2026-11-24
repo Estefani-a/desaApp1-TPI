@@ -5,9 +5,10 @@ import com.example.uniride.core.result.DataError
 import com.example.uniride.domain.repository.PasswordRecoveryRepository
 import com.example.uniride.domain.validation.PasswordPolicy
 import com.example.uniride.domain.validation.PasswordValidationResult
+import javax.inject.Inject
 
 /** Confirms a password reset after checking that the new password satisfies [PasswordPolicy] (RF01). */
-class ConfirmPasswordResetUseCase(
+class ConfirmPasswordResetUseCase @Inject constructor(
     private val passwordRecoveryRepository: PasswordRecoveryRepository,
 ) {
     suspend operator fun invoke(resetCode: String, newPassword: String): AppResult<Unit> {

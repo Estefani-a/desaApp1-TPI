@@ -11,7 +11,7 @@ import com.example.uniride.fake.FakeProfileRepository
 import com.example.uniride.fake.FakeSessionRepository
 import com.example.uniride.fake.sampleUser
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -29,7 +29,7 @@ class AuthUseCasesTest {
     )
 
     @Test
-    fun `registrar con dominio externo falla por validacion sin llamar al repositorio`() = runBlocking {
+    fun `registrar con dominio externo falla por validacion sin llamar al repositorio`() = runTest {
         val repo = FakeAccountRepository()
         val useCase = RegisterUseCase(repo)
 
@@ -40,7 +40,7 @@ class AuthUseCasesTest {
     }
 
     @Test
-    fun `registrar con datos validos normaliza correo y perfil antes de llamar al repositorio`() = runBlocking {
+    fun `registrar con datos validos normaliza correo y perfil antes de llamar al repositorio`() = runTest {
         val repo = FakeAccountRepository()
         val useCase = RegisterUseCase(repo)
 
@@ -53,7 +53,7 @@ class AuthUseCasesTest {
     }
 
     @Test
-    fun `activar cuenta rechaza token vacio y recorta espacios cuando es valido`() = runBlocking {
+    fun `activar cuenta rechaza token vacio y recorta espacios cuando es valido`() = runTest {
         val repo = FakeAccountRepository()
         val useCase = ActivateAccountUseCase(repo)
 
@@ -66,7 +66,7 @@ class AuthUseCasesTest {
     }
 
     @Test
-    fun `login valida dominio institucional y actualiza sesion hasta logout`() = runBlocking {
+    fun `login valida dominio institucional y actualiza sesion hasta logout`() = runTest {
         val repo = FakeSessionRepository()
         val login = LoginUseCase(repo)
         val logout = LogoutUseCase(repo)
@@ -86,7 +86,7 @@ class AuthUseCasesTest {
     }
 
     @Test
-    fun `recuperacion de contrasena valida correo uade y politica de nueva clave`() = runBlocking {
+    fun `recuperacion de contrasena valida correo uade y politica de nueva clave`() = runTest {
         val repo = FakePasswordRecoveryRepository()
         val requestReset = RequestPasswordResetUseCase(repo)
         val confirmReset = ConfirmPasswordResetUseCase(repo)
@@ -102,7 +102,7 @@ class AuthUseCasesTest {
     }
 
     @Test
-    fun `perfil observa usuario refresca y actualiza normalizando datos`() = runBlocking {
+    fun `perfil observa usuario refresca y actualiza normalizando datos`() = runTest {
         val repo = FakeProfileRepository(initialUser = sampleUser())
         val observeUser = ObserveCurrentUserUseCase(repo)
         val refresh = RefreshProfileUseCase(repo)

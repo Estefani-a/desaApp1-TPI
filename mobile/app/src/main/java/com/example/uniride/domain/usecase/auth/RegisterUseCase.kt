@@ -10,11 +10,12 @@ import com.example.uniride.domain.validation.PasswordPolicy
 import com.example.uniride.domain.validation.PasswordValidationResult
 import com.example.uniride.domain.validation.ProfileValidationResult
 import com.example.uniride.domain.validation.ProfileValidator
+import javax.inject.Inject
 
 /**
  * Registers a new UADE student account after enforcing email, password and profile domain rules (RF01).
  */
-class RegisterUseCase(
+class RegisterUseCase @Inject constructor(
     private val accountRepository: AccountRepository,
 ) {
     suspend operator fun invoke(

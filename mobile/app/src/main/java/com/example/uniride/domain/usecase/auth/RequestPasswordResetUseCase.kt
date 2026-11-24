@@ -5,9 +5,10 @@ import com.example.uniride.core.result.DataError
 import com.example.uniride.domain.repository.PasswordRecoveryRepository
 import com.example.uniride.domain.validation.EmailValidationResult
 import com.example.uniride.domain.validation.EmailValidator
+import javax.inject.Inject
 
 /** Requests a password reset email for an institutional UADE address (RF01). */
-class RequestPasswordResetUseCase(
+class RequestPasswordResetUseCase @Inject constructor(
     private val passwordRecoveryRepository: PasswordRecoveryRepository,
 ) {
     suspend operator fun invoke(email: String): AppResult<Unit> {
