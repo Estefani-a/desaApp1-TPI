@@ -30,4 +30,31 @@
     <!-- Estados vacíos genéricos -->
     <string name="common_empty_title">No hay nada para mostrar</string>
     <string name="common_empty_message">Cuando haya información nueva, va a aparecer acá.</string>
+
+    <!-- Glosario: valores de los enums como se muestran en la UI -->
+    <string name="direction_ida">Ida a la sede</string>
+    <string name="direction_vuelta">Vuelta desde la sede</string>
+    <string name="shift_manana">Mañana</string>
+    <string name="shift_tarde">Tarde</string>
+    <string name="shift_noche">Noche</string>
+    <string name="trip_status_abierto">Abierto</string>
+    <string name="trip_status_completo">Completo</string>
+    <string name="trip_status_finalizado">Finalizado</string>
+    <string name="trip_status_cancelado">Cancelado</string>
+    <string name="reservation_status_pendiente">Pendiente</string>
+    <string name="reservation_status_aceptada">Aceptada</string>
+    <string name="reservation_status_rechazada">Rechazada</string>
+    <string name="reservation_status_cancelada">Cancelada</string>
+
+    <!-- Tarjeta de viaje (TripCard), textos de B1 en la guía -->
+    <string name="trip_card_per_seat">por asiento</string>
+    <string name="trip_card_contribution_free">Sin aporte</string>
+    <string name="trip_card_verified">Verificado UADE</string>
+    <string name="trip_card_verified_rating">Verificado UADE · ★ %1$s</string>
+    <string name="trip_card_full">Sin plazas</string>
+    <plurals name="trip_card_seats_available">
+        <item quantity="one">%d libre</item>
+        <item quantity="other">%d libres</item>
+    </plurals>
+    <string name="trip_card_open_description">Ver detalle del viaje de las %1$s</string>
 </resources>
