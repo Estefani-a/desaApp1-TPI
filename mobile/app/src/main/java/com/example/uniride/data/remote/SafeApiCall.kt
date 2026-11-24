@@ -8,27 +8,30 @@ import java.io.IOException
 import java.net.SocketTimeoutException
 
 /**
- * Single translation boundary from remote exceptions / HTTP status codes to [AppResult]
- * (CONVENCIONES §6.3 & §10.4). Always rethrows [CancellationException].
+ * The only place where a failed call becomes a [DataError] (CONVENCIONES §6.3). It works the
+ * same with Retrofit and with the `Fake*RemoteDataSource`, which throw [ApiException].
+ * [CancellationException] is rethrown, so cancelling a coroutine keeps working.
  */
-suspend fun <T> safeApiCall(call: suspend () -> T): AppResult<T> =
+suspend fun <T> safeApiCall(block: suspend () -> T): AppResult<T> =
     try {
-        AppResult.Success(call())
-    } catch (ex: CancellationException) {
-        throw ex
-    } catch (ex: ApiException) {
-        AppResult.Failure(mapHttpStatusToDataError(ex.httpCode))
-    } catch (ex: HttpException) {
-        AppResult.Failure(mapHttpStatusToDataError(ex.code()))
-    } catch (_: SocketTimeoutException) {
+        AppResult.Success(block())
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: ApiException) {
+        AppResult.Failure(httpCodeToDataError(e.httpCode))
+    } catch (e: HttpException) {
+        AppResult.Failure(httpCodeToDataError(e.code()))
+    } catch (e: SocketTimeoutException) {
         AppResult.Failure(DataError.TIMEOUT)
-    } catch (_: IOException) {
+    } catch (e: IOException) {
         AppResult.Failure(DataError.NO_CONNECTION)
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        // An unexpected answer (for example, a field the mapper cannot read) is not a crash
         AppResult.Failure(DataError.UNKNOWN)
     }
 
-internal fun mapHttpStatusToDataError(httpCode: Int): DataError = when (httpCode) {
+/** Table of CONVENCIONES §10.4. */
+internal fun httpCodeToDataError(code: Int): DataError = when (code) {
     400, 422 -> DataError.VALIDATION
     401 -> DataError.UNAUTHORIZED
     404 -> DataError.NOT_FOUND

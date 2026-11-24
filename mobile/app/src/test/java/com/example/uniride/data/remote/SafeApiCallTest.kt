@@ -14,64 +14,48 @@ import java.net.UnknownHostException
 
 class SafeApiCallTest {
 
-    @Test
-    fun `llamada exitosa devuelve AppResult Success`() = runTest {
-        val result = safeApiCall { "ok" }
+    private fun apiError(code: Int) = ApiException(code, ApiErrorDto(code = "X", message = "x"))
 
-        assertEquals(AppResult.Success("ok"), result)
+    @Test
+    fun `una respuesta correcta es Success`() = runTest {
+        assertEquals(AppResult.Success(1), safeApiCall { 1 })
     }
 
     @Test
-    fun `mapea codigos HTTP de ApiException al DataError correspondiente`() = runTest {
-        assertEquals(
-            AppResult.Failure(DataError.VALIDATION),
-            safeApiCall<Unit> { throw ApiException(400, ApiErrorDto("VALIDATION_ERROR", "err")) },
+    fun `los codigos HTTP se traducen como dice CONVENCIONES`() = runTest {
+        val expected = mapOf(
+            400 to DataError.VALIDATION,
+            401 to DataError.UNAUTHORIZED,
+            403 to DataError.UNKNOWN,
+            404 to DataError.NOT_FOUND,
+            409 to DataError.CONFLICT,
+            500 to DataError.SERVER,
+            503 to DataError.SERVER,
         )
-        assertEquals(
-            AppResult.Failure(DataError.UNAUTHORIZED),
-            safeApiCall<Unit> { throw ApiException(401, ApiErrorDto("UNAUTHENTICATED", "err")) },
-        )
-        assertEquals(
-            AppResult.Failure(DataError.UNKNOWN),
-            safeApiCall<Unit> { throw ApiException(403, ApiErrorDto("FORBIDDEN", "err")) },
-        )
-        assertEquals(
-            AppResult.Failure(DataError.NOT_FOUND),
-            safeApiCall<Unit> { throw ApiException(404, ApiErrorDto("NOT_FOUND", "err")) },
-        )
-        assertEquals(
-            AppResult.Failure(DataError.CONFLICT),
-            safeApiCall<Unit> { throw ApiException(409, ApiErrorDto("NO_SEATS_AVAILABLE", "err")) },
-        )
-        assertEquals(
-            AppResult.Failure(DataError.SERVER),
-            safeApiCall<Unit> { throw ApiException(500, ApiErrorDto("INTERNAL_ERROR", "err")) },
-        )
+        expected.forEach { (http, error) ->
+            assertEquals("HTTP $http", AppResult.Failure(error), safeApiCall<Unit> { throw apiError(http) })
+        }
     }
 
     @Test
-    fun `mapea errores de red a TIMEOUT y NO_CONNECTION`() = runTest {
-        assertEquals(
-            AppResult.Failure(DataError.TIMEOUT),
-            safeApiCall<Unit> { throw SocketTimeoutException("timeout") },
-        )
-        assertEquals(
-            AppResult.Failure(DataError.NO_CONNECTION),
-            safeApiCall<Unit> { throw UnknownHostException("offline") },
-        )
-        assertEquals(
-            AppResult.Failure(DataError.NO_CONNECTION),
-            safeApiCall<Unit> { throw IOException("network error") },
-        )
+    fun `sin red es NO_CONNECTION y un timeout es TIMEOUT`() = runTest {
+        assertEquals(AppResult.Failure(DataError.NO_CONNECTION), safeApiCall<Unit> { throw IOException() })
+        assertEquals(AppResult.Failure(DataError.TIMEOUT), safeApiCall<Unit> { throw SocketTimeoutException() })
+        assertEquals(AppResult.Failure(DataError.NO_CONNECTION), safeApiCall<Unit> { throw UnknownHostException("offline") })
     }
 
     @Test
-    fun `nunca atrapa CancellationException y la relanza`() = runTest {
+    fun `una respuesta que no se puede leer es UNKNOWN`() = runTest {
+        assertEquals(AppResult.Failure(DataError.UNKNOWN), safeApiCall<Unit> { throw IllegalArgumentException() })
+    }
+
+    @Test
+    fun `la cancelacion de la coroutine no se traga`() = runTest {
         try {
-            safeApiCall<Unit> { throw CancellationException("cancelado") }
-            fail("Se esperaba que CancellationException se relanzara")
-        } catch (_: CancellationException) {
-            // Expected
+            safeApiCall<Unit> { throw CancellationException("cancelada") }
+            fail("Tenía que relanzar la cancelación")
+        } catch (e: CancellationException) {
+            assertEquals("cancelada", e.message)
         }
     }
 }

@@ -22,7 +22,7 @@ App Android de viajes compartidos para estudiantes de UADE (Kotlin, Jetpack Comp
 - `XxxRoute` obtiene el ViewModel; `XxxScreen(state, onAction, modifier)` no tiene estado y tiene `@Preview`.
 - Cada pantalla resuelve cargando, contenido, vacío, error y sin conexión.
 - Sin textos hardcodeados (todo en `strings.xml`), sin colores fuera de `MaterialTheme`, íconos accionables con `contentDescription`, objetivos táctiles de 48 dp.
-- Navegación con rutas `@Serializable` que solo llevan ids. El ViewModel no recibe `Context` ni `NavController`.
+- Navegación con rutas `@Serializable` que solo llevan ids (o el código de un enlace de correo, CONVENCIONES §7.6). El ViewModel no recibe `Context` ni `NavController`.
 - Sin `!!`, sin `GlobalScope`, sin `runBlocking` fuera de tests, sin `Dispatchers.IO` hardcodeado (se inyecta `DispatchersProvider`).
 
 ## Backend
