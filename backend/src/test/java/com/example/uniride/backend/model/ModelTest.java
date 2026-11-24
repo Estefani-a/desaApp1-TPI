@@ -160,11 +160,13 @@ class ModelTest {
 
     @Test
     void turnoSeCalculaConLasFranjasDeA0() {
-        assertThat(Shift.of(LocalTime.of(0, 0))).isEqualTo(Shift.MANANA);
+        assertThat(Shift.of(LocalTime.of(6, 0))).isEqualTo(Shift.MANANA);
         assertThat(Shift.of(LocalTime.of(12, 59, 59))).isEqualTo(Shift.MANANA);
         assertThat(Shift.of(LocalTime.of(13, 0))).isEqualTo(Shift.TARDE);
         assertThat(Shift.of(LocalTime.of(17, 59))).isEqualTo(Shift.TARDE);
         assertThat(Shift.of(LocalTime.of(18, 0))).isEqualTo(Shift.NOCHE);
         assertThat(Shift.of(LocalTime.of(23, 59))).isEqualTo(Shift.NOCHE);
+        assertThat(Shift.of(LocalTime.MIDNIGHT)).isEqualTo(Shift.NOCHE);
+        assertThat(Shift.of(LocalTime.of(5, 59, 59))).isEqualTo(Shift.NOCHE);
     }
 }
