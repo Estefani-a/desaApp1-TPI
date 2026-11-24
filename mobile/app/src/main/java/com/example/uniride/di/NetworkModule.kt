@@ -113,10 +113,20 @@ object NetworkModule {
     fun provideReservationApi(retrofit: Retrofit): ReservationApi =
         retrofit.create(ReservationApi::class.java)
 
+    /**
+     * Provisional until RF01: the login is not merged yet, so with no saved token the fake
+     * backend uses the token of the demo passenger. Without it, every call would answer 401
+     * and the feed would not load.
+     */
     @Provides
     @Singleton
     fun provideFakeBackendStore(tokenStore: SessionTokenStore): FakeBackendStore =
-        FakeBackendStore(tokenProvider = tokenStore::currentToken)
+        FakeBackendStore(
+            tokenProvider = {
+                tokenStore.currentToken()
+                    ?: "${FakeBackendStore.FAKE_TOKEN_PREFIX}${FakeBackendStore.DEFAULT_PASSENGER_ID}"
+            },
+        )
 
     @Provides
     @Singleton
@@ -132,7 +142,12 @@ object NetworkModule {
         real: RetrofitTripRemoteDataSource,
         fakeStore: FakeBackendStore,
     ): TripRemoteDataSource =
-        if (BuildConfig.USE_FAKE_BACKEND) FakeTripRemoteDataSource(fakeStore) else real
+        if (BuildConfig.USE_FAKE_BACKEND) {
+            // Enough delay to see the loading states without making the demo slow
+            FakeTripRemoteDataSource(fakeStore, simulatedDelayMs = 600L)
+        } else {
+            real
+        }
 
     @Provides
     @Singleton
