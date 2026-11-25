@@ -21,9 +21,6 @@ enum class TripDraftError {
     /** The departure is not after now. */
     DEPARTURE_NOT_IN_FUTURE,
 
-    /** The estimated arrival is not after the departure time. */
-    ARRIVAL_NOT_AFTER_DEPARTURE,
-
     /** Seats are not between 1 and 4. */
     INVALID_SEATS,
 
@@ -36,8 +33,9 @@ enum class TripDraftError {
  * (docs/API.md §5.4), so the form catches the errors before the server does. The vehicle is
  * not checked here: `TripRepository.publish` does it.
  *
- * Two rules are not in the API and are only for the form: the meeting point and the
- * neighborhood are not blank, and the arrival is after the departure.
+ * One rule is not in the API and is only for the form: the meeting point and the neighborhood
+ * are not blank. The estimated arrival is not checked: it is only a time of day, and a night
+ * trip may arrive after midnight (leaves 23:30, arrives 00:15), which the server accepts.
  */
 object TripDraftRule {
 
@@ -62,11 +60,6 @@ object TripDraftRule {
 
         val departure = LocalDateTime.of(draft.schedule.departureDate, draft.schedule.departureTime)
         if (!departure.isAfter(now)) add(TripDraftError.DEPARTURE_NOT_IN_FUTURE)
-
-        val arrival = draft.schedule.estimatedArrivalTime
-        if (arrival != null && !arrival.isAfter(draft.schedule.departureTime)) {
-            add(TripDraftError.ARRIVAL_NOT_AFTER_DEPARTURE)
-        }
 
         if (draft.totalSeats !in MIN_SEATS..MAX_SEATS) add(TripDraftError.INVALID_SEATS)
         if (draft.contributionPerSeat < 0) add(TripDraftError.NEGATIVE_CONTRIBUTION)

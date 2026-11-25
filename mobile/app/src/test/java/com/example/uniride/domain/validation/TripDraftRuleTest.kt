@@ -97,17 +97,11 @@ class TripDraftRuleTest {
     }
 
     @Test
-    fun `la llegada tiene que ser posterior a la salida`() {
-        val departure = LocalTime.of(22, 15)
+    fun `un viaje que llega despues de medianoche es valido`() {
         assertEquals(
-            setOf(TripDraftError.ARRIVAL_NOT_AFTER_DEPARTURE),
-            errors(draft(time = departure, arrival = departure.minusMinutes(1))),
+            emptySet<TripDraftError>(),
+            errors(draft(time = LocalTime.of(23, 30), arrival = LocalTime.of(0, 15))),
         )
-        assertEquals(
-            setOf(TripDraftError.ARRIVAL_NOT_AFTER_DEPARTURE),
-            errors(draft(time = departure, arrival = departure)),
-        )
-        assertEquals(emptySet<TripDraftError>(), errors(draft(time = departure, arrival = departure.plusMinutes(1))))
     }
 
     @Test
@@ -125,7 +119,6 @@ class TripDraftRuleTest {
                 neighborhood = " ",
                 date = NOW.toLocalDate().minusDays(1),
                 time = LocalTime.of(22, 15),
-                arrival = LocalTime.of(21, 0),
             ),
         )
 
@@ -136,7 +129,6 @@ class TripDraftRuleTest {
                 TripDraftError.MEETING_POINT_NOT_IN_CAMPUS,
                 TripDraftError.NEIGHBORHOOD_EMPTY,
                 TripDraftError.DEPARTURE_NOT_IN_FUTURE,
-                TripDraftError.ARRIVAL_NOT_AFTER_DEPARTURE,
             ),
             result,
         )
