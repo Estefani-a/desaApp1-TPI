@@ -2,11 +2,9 @@ package com.example.uniride.presentation.auth.resetpassword
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.uniride.core.result.AppResult
+import com.example.uniride.domain.usecase.auth.RequestPasswordResetResult
 import com.example.uniride.domain.usecase.auth.RequestPasswordResetUseCase
 import com.example.uniride.domain.usecase.connectivity.ObserveConnectivityUseCase
-import com.example.uniride.domain.validation.EmailValidationResult
-import com.example.uniride.domain.validation.EmailValidator
 import com.example.uniride.presentation.auth.components.messageRes
 import com.example.uniride.presentation.common.messageRes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -52,22 +50,16 @@ class ForgotPasswordViewModel @Inject constructor(
         val current = formState.value
         if (current.isSubmitting) return
 
-        val emailError = when (val res = EmailValidator.validate(current.email)) {
-            EmailValidationResult.Valid -> null
-            is EmailValidationResult.Invalid -> res.error.messageRes()
-        }
-        if (emailError != null) {
-            formState.update { it.copy(emailErrorRes = emailError) }
-            return
-        }
-
-        formState.update { it.copy(isSubmitting = true, generalErrorRes = null) }
+        formState.update { it.copy(isSubmitting = true, emailErrorRes = null, generalErrorRes = null) }
         viewModelScope.launch {
             when (val result = requestPasswordResetUseCase(current.email)) {
-                is AppResult.Success -> formState.update {
+                RequestPasswordResetResult.Sent -> formState.update {
                     it.copy(isSubmitting = false, isSent = true)
                 }
-                is AppResult.Failure -> formState.update {
+                is RequestPasswordResetResult.InvalidEmail -> formState.update {
+                    it.copy(isSubmitting = false, emailErrorRes = result.error.messageRes())
+                }
+                is RequestPasswordResetResult.Failed -> formState.update {
                     it.copy(isSubmitting = false, generalErrorRes = result.error.messageRes())
                 }
             }

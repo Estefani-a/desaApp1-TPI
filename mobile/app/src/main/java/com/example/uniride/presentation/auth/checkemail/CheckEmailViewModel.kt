@@ -5,11 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.uniride.R
-import com.example.uniride.core.result.AppResult
+import com.example.uniride.domain.usecase.auth.ResendActivationResult
 import com.example.uniride.domain.usecase.auth.ResendActivationUseCase
 import com.example.uniride.domain.usecase.connectivity.ObserveConnectivityUseCase
-import com.example.uniride.domain.validation.EmailValidationResult
-import com.example.uniride.domain.validation.EmailValidator
 import com.example.uniride.presentation.auth.CheckEmailRoute
 import com.example.uniride.presentation.auth.components.messageRes
 import com.example.uniride.presentation.common.messageRes
@@ -63,26 +61,23 @@ class CheckEmailViewModel @Inject constructor(
         val current = formState.value
         if (current.isResending) return
 
-        val emailError = when (val res = EmailValidator.validate(current.email)) {
-            EmailValidationResult.Valid -> null
-            is EmailValidationResult.Invalid -> res.error.messageRes()
-        }
-        if (emailError != null) {
-            formState.update { it.copy(emailErrorRes = emailError) }
-            return
-        }
-
-        formState.update { it.copy(isResending = true, feedbackMessageRes = null) }
+        formState.update { it.copy(isResending = true, emailErrorRes = null, feedbackMessageRes = null) }
         viewModelScope.launch {
             when (val result = resendActivationUseCase(current.email)) {
-                is AppResult.Success -> formState.update {
+                ResendActivationResult.Sent -> formState.update {
                     it.copy(
                         isResending = false,
                         feedbackMessageRes = R.string.auth_check_email_resent,
                         isFeedbackError = false,
                     )
                 }
-                is AppResult.Failure -> formState.update {
+                is ResendActivationResult.InvalidEmail -> formState.update {
+                    it.copy(
+                        isResending = false,
+                        emailErrorRes = result.error.messageRes(),
+                    )
+                }
+                is ResendActivationResult.Failed -> formState.update {
                     it.copy(
                         isResending = false,
                         feedbackMessageRes = result.error.messageRes(),

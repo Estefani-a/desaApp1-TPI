@@ -3,12 +3,10 @@ package com.example.uniride.presentation.auth.login
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.uniride.R
-import com.example.uniride.core.result.AppResult
 import com.example.uniride.core.result.DataError
+import com.example.uniride.domain.usecase.auth.LoginResult
 import com.example.uniride.domain.usecase.auth.LoginUseCase
 import com.example.uniride.domain.usecase.connectivity.ObserveConnectivityUseCase
-import com.example.uniride.domain.validation.EmailValidationResult
-import com.example.uniride.domain.validation.EmailValidator
 import com.example.uniride.presentation.auth.components.messageRes
 import com.example.uniride.presentation.common.messageRes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -63,27 +61,30 @@ class LoginViewModel @Inject constructor(
         val current = formState.value
         if (current.isSubmitting) return
 
-        val emailError = when (val res = EmailValidator.validate(current.email)) {
-            EmailValidationResult.Valid -> null
-            is EmailValidationResult.Invalid -> res.error.messageRes()
+        formState.update {
+            it.copy(
+                isSubmitting = true,
+                emailErrorRes = null,
+                passwordErrorRes = null,
+                generalErrorRes = null,
+            )
         }
-        val passwordError = if (current.password.isBlank()) R.string.auth_error_password_blank else null
-
-        if (emailError != null || passwordError != null) {
-            formState.update {
-                it.copy(emailErrorRes = emailError, passwordErrorRes = passwordError)
-            }
-            return
-        }
-
-        formState.update { it.copy(isSubmitting = true, generalErrorRes = null) }
         viewModelScope.launch {
             when (val result = loginUseCase(current.email, current.password)) {
-                is AppResult.Success -> {
+                is LoginResult.LoggedIn -> {
                     formState.update { it.copy(isSubmitting = false) }
                     _effects.send(LoginEffect.NavigateToMain)
                 }
-                is AppResult.Failure -> {
+                is LoginResult.Invalid -> {
+                    formState.update {
+                        it.copy(
+                            isSubmitting = false,
+                            emailErrorRes = result.emailError?.messageRes(),
+                            passwordErrorRes = if (result.passwordBlank) R.string.auth_error_password_blank else null,
+                        )
+                    }
+                }
+                is LoginResult.Failed -> {
                     val errorRes = if (result.error == DataError.UNAUTHORIZED) {
                         R.string.auth_login_invalid_credentials
                     } else {

@@ -5,8 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.uniride.R
-import com.example.uniride.core.result.AppResult
 import com.example.uniride.core.result.DataError
+import com.example.uniride.domain.usecase.auth.ActivateAccountResult
 import com.example.uniride.domain.usecase.auth.ActivateAccountUseCase
 import com.example.uniride.presentation.auth.ActivateAccountRoute
 import com.example.uniride.presentation.common.messageRes
@@ -57,11 +57,20 @@ class ActivateAccountViewModel @Inject constructor(
         _uiState.update { it.copy(isLoading = true, errorMessageRes = null) }
         viewModelScope.launch {
             when (val result = activateAccountUseCase(activationCode)) {
-                is AppResult.Success -> {
+                is ActivateAccountResult.Activated -> {
                     _uiState.update { it.copy(isLoading = false) }
                     _effects.send(ActivateAccountEffect.NavigateToMain)
                 }
-                is AppResult.Failure -> {
+                ActivateAccountResult.InvalidCode -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessageRes = R.string.auth_activate_invalid_token,
+                            canRetry = false,
+                        )
+                    }
+                }
+                is ActivateAccountResult.Failed -> {
                     val isInvalidToken = result.error == DataError.VALIDATION || result.error == DataError.NOT_FOUND
                     _uiState.update {
                         it.copy(

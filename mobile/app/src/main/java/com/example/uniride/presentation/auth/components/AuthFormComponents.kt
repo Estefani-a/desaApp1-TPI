@@ -60,11 +60,18 @@ fun ProfileValidationError.messageRes(): Int = when (this) {
     ProfileValidationError.FULL_NAME_BLANK -> R.string.auth_error_full_name_blank
     ProfileValidationError.CAREER_BLANK -> R.string.auth_error_career_blank
     ProfileValidationError.PHONE_BLANK -> R.string.auth_error_phone_blank
+    ProfileValidationError.PHONE_INVALID -> R.string.auth_error_phone_invalid
+    ProfileValidationError.VEHICLE_REQUIRED -> R.string.auth_error_vehicle_required
     ProfileValidationError.VEHICLE_BRAND_BLANK -> R.string.auth_error_vehicle_brand_blank
     ProfileValidationError.VEHICLE_MODEL_BLANK -> R.string.auth_error_vehicle_model_blank
     ProfileValidationError.VEHICLE_COLOR_BLANK -> R.string.auth_error_vehicle_color_blank
     ProfileValidationError.VEHICLE_PLATE_BLANK -> R.string.auth_error_vehicle_plate_blank
+    ProfileValidationError.VEHICLE_PLATE_INVALID -> R.string.auth_error_vehicle_plate_invalid
 }
+
+@StringRes
+fun Set<ProfileValidationError>.firstMessageRes(vararg candidates: ProfileValidationError): Int? =
+    candidates.firstOrNull { it in this }?.messageRes()
 
 @StringRes
 fun PreferredMode.labelRes(): Int = when (this) {
@@ -173,6 +180,7 @@ fun VehicleFieldsSection(
     onColorChange: (String) -> Unit,
     onPlateChange: (String) -> Unit,
     modifier: Modifier = Modifier,
+    @StringRes vehicleErrorRes: Int? = null,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -202,6 +210,15 @@ fun VehicleFieldsSection(
                 checked = hasVehicle,
                 onCheckedChange = onToggleHasVehicle,
                 enabled = enabled,
+            )
+        }
+
+        vehicleErrorRes?.let { errorRes ->
+            Text(
+                text = stringResource(errorRes),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
             )
         }
 

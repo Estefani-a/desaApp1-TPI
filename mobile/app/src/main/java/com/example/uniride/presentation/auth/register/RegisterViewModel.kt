@@ -3,20 +3,23 @@ package com.example.uniride.presentation.auth.register
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.uniride.R
-import com.example.uniride.core.result.AppResult
 import com.example.uniride.core.result.DataError
 import com.example.uniride.domain.model.PreferredMode
 import com.example.uniride.domain.model.Profile
 import com.example.uniride.domain.model.Vehicle
+import com.example.uniride.domain.usecase.auth.RegisterResult
 import com.example.uniride.domain.usecase.auth.RegisterUseCase
 import com.example.uniride.domain.usecase.connectivity.ObserveConnectivityUseCase
+import com.example.uniride.domain.validation.EmailValidationError
 import com.example.uniride.domain.validation.EmailValidationResult
 import com.example.uniride.domain.validation.EmailValidator
 import com.example.uniride.domain.validation.PasswordPolicy
+import com.example.uniride.domain.validation.PasswordValidationError
 import com.example.uniride.domain.validation.PasswordValidationResult
 import com.example.uniride.domain.validation.ProfileValidationError
 import com.example.uniride.domain.validation.ProfileValidationResult
 import com.example.uniride.domain.validation.ProfileValidator
+import com.example.uniride.presentation.auth.components.firstMessageRes
 import com.example.uniride.presentation.auth.components.messageRes
 import com.example.uniride.presentation.common.messageRes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -80,12 +83,14 @@ class RegisterViewModel @Inject constructor(
                 it.copy(
                     preferredMode = action.mode,
                     hasVehicle = if (shouldSuggestVehicle) true else it.hasVehicle,
+                    vehicleRequiredErrorRes = null,
                     generalErrorRes = null,
                 )
             }
             is RegisterAction.HasVehicleChanged -> formState.update {
                 it.copy(
                     hasVehicle = action.enabled,
+                    vehicleRequiredErrorRes = null,
                     vehicleBrandErrorRes = null,
                     vehicleModelErrorRes = null,
                     vehicleColorErrorRes = null,
@@ -113,20 +118,6 @@ class RegisterViewModel @Inject constructor(
         val current = formState.value
         if (current.isSubmitting) return
 
-        val emailError = when (val res = EmailValidator.validate(current.email)) {
-            EmailValidationResult.Valid -> null
-            is EmailValidationResult.Invalid -> res.error.messageRes()
-        }
-        val passwordError = when (val res = PasswordPolicy.validate(current.password)) {
-            PasswordValidationResult.Valid -> null
-            is PasswordValidationResult.Invalid -> res.primaryError.messageRes()
-        }
-        val confirmError = when {
-            current.confirmPassword.isBlank() -> R.string.auth_error_password_blank
-            current.confirmPassword != current.password -> R.string.auth_error_password_mismatch
-            else -> null
-        }
-
         val profile = Profile(
             fullName = current.fullName,
             career = current.career,
@@ -144,43 +135,55 @@ class RegisterViewModel @Inject constructor(
             },
         )
 
-        val profileErrors = when (val res = ProfileValidator.validate(profile)) {
-            ProfileValidationResult.Valid -> emptySet()
-            is ProfileValidationResult.Invalid -> res.errors
+        val confirmError = when {
+            current.confirmPassword.isBlank() -> R.string.auth_error_password_blank
+            current.confirmPassword != current.password -> R.string.auth_error_password_mismatch
+            else -> null
         }
 
-        val hasAnyError = emailError != null ||
-            passwordError != null ||
-            confirmError != null ||
-            profileErrors.isNotEmpty()
-
-        if (hasAnyError) {
-            formState.update {
-                it.copy(
-                    emailErrorRes = emailError,
-                    passwordErrorRes = passwordError,
-                    confirmPasswordErrorRes = confirmError,
-                    fullNameErrorRes = profileErrors.errorFor(ProfileValidationError.FULL_NAME_BLANK),
-                    careerErrorRes = profileErrors.errorFor(ProfileValidationError.CAREER_BLANK),
-                    phoneErrorRes = profileErrors.errorFor(ProfileValidationError.PHONE_BLANK),
-                    vehicleBrandErrorRes = profileErrors.errorFor(ProfileValidationError.VEHICLE_BRAND_BLANK),
-                    vehicleModelErrorRes = profileErrors.errorFor(ProfileValidationError.VEHICLE_MODEL_BLANK),
-                    vehicleColorErrorRes = profileErrors.errorFor(ProfileValidationError.VEHICLE_COLOR_BLANK),
-                    vehiclePlateErrorRes = profileErrors.errorFor(ProfileValidationError.VEHICLE_PLATE_BLANK),
-                )
-            }
+        if (confirmError != null) {
+            applyValidationErrors(
+                emailError = (EmailValidator.validate(current.email) as? EmailValidationResult.Invalid)?.error,
+                passwordErrors = (PasswordPolicy.validate(current.password) as? PasswordValidationResult.Invalid)?.errors.orEmpty(),
+                profileErrors = (ProfileValidator.validate(profile) as? ProfileValidationResult.Invalid)?.errors.orEmpty(),
+                confirmErrorRes = confirmError,
+            )
             return
         }
 
         val normalizedEmail = EmailValidator.normalize(current.email)
-        formState.update { it.copy(isSubmitting = true, generalErrorRes = null) }
+        formState.update {
+            it.copy(
+                isSubmitting = true,
+                emailErrorRes = null,
+                passwordErrorRes = null,
+                confirmPasswordErrorRes = null,
+                fullNameErrorRes = null,
+                careerErrorRes = null,
+                phoneErrorRes = null,
+                vehicleRequiredErrorRes = null,
+                vehicleBrandErrorRes = null,
+                vehicleModelErrorRes = null,
+                vehicleColorErrorRes = null,
+                vehiclePlateErrorRes = null,
+                generalErrorRes = null,
+            )
+        }
         viewModelScope.launch {
-            when (val result = registerUseCase(normalizedEmail, current.password, profile)) {
-                is AppResult.Success -> {
+            when (val result = registerUseCase(current.email, current.password, profile)) {
+                RegisterResult.Registered -> {
                     formState.update { it.copy(isSubmitting = false) }
                     _effects.send(RegisterEffect.NavigateToCheckEmail(normalizedEmail))
                 }
-                is AppResult.Failure -> {
+                is RegisterResult.Invalid -> {
+                    applyValidationErrors(
+                        emailError = result.emailError,
+                        passwordErrors = result.passwordErrors,
+                        profileErrors = result.profileErrors,
+                        confirmErrorRes = null,
+                    )
+                }
+                is RegisterResult.Failed -> {
                     val errorRes = if (result.error == DataError.CONFLICT) {
                         R.string.auth_register_email_exists
                     } else {
@@ -192,6 +195,33 @@ class RegisterViewModel @Inject constructor(
         }
     }
 
-    private fun Set<ProfileValidationError>.errorFor(error: ProfileValidationError): Int? =
-        if (error in this) error.messageRes() else null
+    private fun applyValidationErrors(
+        emailError: EmailValidationError?,
+        passwordErrors: Set<PasswordValidationError>,
+        profileErrors: Set<ProfileValidationError>,
+        confirmErrorRes: Int?,
+    ) {
+        formState.update {
+            it.copy(
+                isSubmitting = false,
+                emailErrorRes = emailError?.messageRes(),
+                passwordErrorRes = passwordErrors.firstOrNull()?.messageRes(),
+                confirmPasswordErrorRes = confirmErrorRes,
+                fullNameErrorRes = profileErrors.firstMessageRes(ProfileValidationError.FULL_NAME_BLANK),
+                careerErrorRes = profileErrors.firstMessageRes(ProfileValidationError.CAREER_BLANK),
+                phoneErrorRes = profileErrors.firstMessageRes(
+                    ProfileValidationError.PHONE_BLANK,
+                    ProfileValidationError.PHONE_INVALID,
+                ),
+                vehicleRequiredErrorRes = profileErrors.firstMessageRes(ProfileValidationError.VEHICLE_REQUIRED),
+                vehicleBrandErrorRes = profileErrors.firstMessageRes(ProfileValidationError.VEHICLE_BRAND_BLANK),
+                vehicleModelErrorRes = profileErrors.firstMessageRes(ProfileValidationError.VEHICLE_MODEL_BLANK),
+                vehicleColorErrorRes = profileErrors.firstMessageRes(ProfileValidationError.VEHICLE_COLOR_BLANK),
+                vehiclePlateErrorRes = profileErrors.firstMessageRes(
+                    ProfileValidationError.VEHICLE_PLATE_BLANK,
+                    ProfileValidationError.VEHICLE_PLATE_INVALID,
+                ),
+            )
+        }
+    }
 }

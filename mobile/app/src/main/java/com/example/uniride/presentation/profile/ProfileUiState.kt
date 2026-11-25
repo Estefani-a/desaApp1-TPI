@@ -21,6 +21,7 @@ data class ProfileUiState(
     @param:StringRes val fullNameErrorRes: Int? = null,
     @param:StringRes val careerErrorRes: Int? = null,
     @param:StringRes val phoneErrorRes: Int? = null,
+    @param:StringRes val vehicleRequiredErrorRes: Int? = null,
     @param:StringRes val vehicleBrandErrorRes: Int? = null,
     @param:StringRes val vehicleModelErrorRes: Int? = null,
     @param:StringRes val vehicleColorErrorRes: Int? = null,

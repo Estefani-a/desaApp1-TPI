@@ -5,8 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.uniride.R
-import com.example.uniride.core.result.AppResult
 import com.example.uniride.core.result.DataError
+import com.example.uniride.domain.usecase.auth.ConfirmPasswordResetResult
 import com.example.uniride.domain.usecase.auth.ConfirmPasswordResetUseCase
 import com.example.uniride.domain.usecase.connectivity.ObserveConnectivityUseCase
 import com.example.uniride.domain.validation.PasswordPolicy
@@ -67,35 +67,49 @@ class ResetPasswordViewModel @Inject constructor(
         val current = formState.value
         if (current.isSubmitting) return
 
-        val passwordError = when (val res = PasswordPolicy.validate(current.newPassword)) {
-            PasswordValidationResult.Valid -> null
-            is PasswordValidationResult.Invalid -> res.primaryError.messageRes()
-        }
         val confirmError = when {
             current.confirmPassword.isBlank() -> R.string.auth_error_password_blank
             current.confirmPassword != current.newPassword -> R.string.auth_error_password_mismatch
             else -> null
         }
 
-        if (passwordError != null || confirmError != null) {
+        if (confirmError != null) {
+            val passwordError = (PasswordPolicy.validate(current.newPassword) as? PasswordValidationResult.Invalid)
+                ?.primaryError?.messageRes()
             formState.update {
-                it.copy(passwordErrorRes = passwordError, confirmPasswordErrorRes = confirmError)
+                it.copy(
+                    passwordErrorRes = passwordError,
+                    confirmPasswordErrorRes = confirmError,
+                )
             }
             return
         }
 
-        if (resetCode.isBlank()) {
-            formState.update { it.copy(generalErrorRes = R.string.auth_reset_password_invalid_token) }
-            return
+        formState.update {
+            it.copy(
+                isSubmitting = true,
+                passwordErrorRes = null,
+                confirmPasswordErrorRes = null,
+                generalErrorRes = null,
+            )
         }
-
-        formState.update { it.copy(isSubmitting = true, generalErrorRes = null) }
         viewModelScope.launch {
             when (val result = confirmPasswordResetUseCase(resetCode, current.newPassword)) {
-                is AppResult.Success -> formState.update {
+                ConfirmPasswordResetResult.Confirmed -> formState.update {
                     it.copy(isSubmitting = false, isSuccess = true)
                 }
-                is AppResult.Failure -> {
+                is ConfirmPasswordResetResult.Invalid -> formState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        passwordErrorRes = result.passwordErrors.firstOrNull()?.messageRes(),
+                        generalErrorRes = if (result.codeBlank) {
+                            R.string.auth_reset_password_invalid_token
+                        } else {
+                            null
+                        },
+                    )
+                }
+                is ConfirmPasswordResetResult.Failed -> {
                     val errorRes = if (result.error == DataError.VALIDATION || result.error == DataError.NOT_FOUND) {
                         R.string.auth_reset_password_invalid_token
                     } else {

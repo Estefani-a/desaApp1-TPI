@@ -260,6 +260,7 @@ private fun ProfileFormContent(
             model = state.vehicleModel,
             color = state.vehicleColor,
             plate = state.vehiclePlate,
+            vehicleErrorRes = state.vehicleRequiredErrorRes,
             brandErrorRes = state.vehicleBrandErrorRes,
             modelErrorRes = state.vehicleModelErrorRes,
             colorErrorRes = state.vehicleColorErrorRes,

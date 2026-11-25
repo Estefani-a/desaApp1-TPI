@@ -3,8 +3,8 @@ package com.example.uniride.presentation.navigation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.uniride.domain.model.Profile
-import com.example.uniride.domain.usecase.auth.ObserveCurrentUserUseCase
 import com.example.uniride.domain.usecase.auth.ObserveIsLoggedInUseCase
+import com.example.uniride.domain.usecase.profile.ObserveCurrentUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

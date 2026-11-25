@@ -94,4 +94,58 @@ class RegisterViewModelTest {
         assertEquals(R.string.auth_register_email_exists, vm.uiState.first().generalErrorRes)
         collector.cancel()
     }
+
+    @Test
+    fun `registro rechaza modo conductor sin vehiculo y telefono invalido`() = runTest {
+        val accountRepo = FakeAccountRepository()
+        val vm = RegisterViewModel(
+            registerUseCase = RegisterUseCase(accountRepo),
+            observeConnectivity = ObserveConnectivityUseCase(FakeNetworkMonitor(true)),
+        )
+
+        val collector = backgroundScope.launch { vm.uiState.collect {} }
+        vm.onAction(RegisterAction.EmailChanged("jperez@uade.edu.ar"))
+        vm.onAction(RegisterAction.PasswordChanged("Secreta123"))
+        vm.onAction(RegisterAction.ConfirmPasswordChanged("Secreta123"))
+        vm.onAction(RegisterAction.FullNameChanged("Juan Pérez"))
+        vm.onAction(RegisterAction.CareerChanged("Ingeniería"))
+        vm.onAction(RegisterAction.PhoneChanged("hola"))
+        vm.onAction(RegisterAction.PreferredModeChanged(PreferredMode.CONDUCTOR))
+        vm.onAction(RegisterAction.HasVehicleChanged(false))
+        vm.onAction(RegisterAction.Submit)
+
+        val state = vm.uiState.first()
+        assertEquals(R.string.auth_error_phone_invalid, state.phoneErrorRes)
+        assertEquals(R.string.auth_error_vehicle_required, state.vehicleRequiredErrorRes)
+        assertNull(accountRepo.lastRegisteredEmail)
+        collector.cancel()
+    }
+
+    @Test
+    fun `registro rechaza patente con formato invalido`() = runTest {
+        val accountRepo = FakeAccountRepository()
+        val vm = RegisterViewModel(
+            registerUseCase = RegisterUseCase(accountRepo),
+            observeConnectivity = ObserveConnectivityUseCase(FakeNetworkMonitor(true)),
+        )
+
+        val collector = backgroundScope.launch { vm.uiState.collect {} }
+        vm.onAction(RegisterAction.EmailChanged("jperez@uade.edu.ar"))
+        vm.onAction(RegisterAction.PasswordChanged("Secreta123"))
+        vm.onAction(RegisterAction.ConfirmPasswordChanged("Secreta123"))
+        vm.onAction(RegisterAction.FullNameChanged("Juan Pérez"))
+        vm.onAction(RegisterAction.CareerChanged("Ingeniería"))
+        vm.onAction(RegisterAction.PhoneChanged("+5491144445555"))
+        vm.onAction(RegisterAction.HasVehicleChanged(true))
+        vm.onAction(RegisterAction.VehicleBrandChanged("Ford"))
+        vm.onAction(RegisterAction.VehicleModelChanged("Ka"))
+        vm.onAction(RegisterAction.VehicleColorChanged("Rojo"))
+        vm.onAction(RegisterAction.VehiclePlateChanged("AB 123-CD"))
+        vm.onAction(RegisterAction.Submit)
+
+        val state = vm.uiState.first()
+        assertEquals(R.string.auth_error_vehicle_plate_invalid, state.vehiclePlateErrorRes)
+        assertNull(accountRepo.lastRegisteredEmail)
+        collector.cancel()
+    }
 }

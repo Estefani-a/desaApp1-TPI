@@ -7,11 +7,11 @@ import com.example.uniride.core.result.AppResult
 import com.example.uniride.core.result.DataError
 import com.example.uniride.domain.usecase.auth.ActivateAccountUseCase
 import com.example.uniride.domain.usecase.auth.ConfirmPasswordResetUseCase
-import com.example.uniride.domain.usecase.auth.ObserveCurrentUserUseCase
 import com.example.uniride.domain.usecase.auth.ObserveIsLoggedInUseCase
 import com.example.uniride.domain.usecase.auth.RequestPasswordResetUseCase
 import com.example.uniride.domain.usecase.auth.ResendActivationUseCase
 import com.example.uniride.domain.usecase.connectivity.ObserveConnectivityUseCase
+import com.example.uniride.domain.usecase.profile.ObserveCurrentUserUseCase
 import com.example.uniride.fake.FakeAccountRepository
 import com.example.uniride.fake.FakeNetworkMonitor
 import com.example.uniride.fake.FakePasswordRecoveryRepository
@@ -75,6 +75,19 @@ class AuthFlowsViewModelTest {
             assertEquals(ActivateAccountEffect.NavigateToMain, awaitItem())
             assertEquals("token-activacion-1", accountRepo.lastActivatedCode)
         }
+    }
+
+    @Test
+    fun `ActivateAccount con codigo vacio muestra error no reintentable sin llamar al repositorio`() = runTest {
+        val accountRepo = FakeAccountRepository()
+        val vm = ActivateAccountViewModel(
+            savedStateHandle = SavedStateHandle(mapOf("activationCode" to "   ")),
+            activateAccountUseCase = ActivateAccountUseCase(accountRepo),
+        )
+
+        assertEquals(R.string.auth_activate_invalid_token, vm.uiState.value.errorMessageRes)
+        assertFalse(vm.uiState.value.canRetry)
+        assertEquals(null, accountRepo.lastActivatedCode)
     }
 
     @Test

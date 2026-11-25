@@ -9,14 +9,13 @@ import com.example.uniride.domain.model.Profile
 import com.example.uniride.domain.model.User
 import com.example.uniride.domain.model.Vehicle
 import com.example.uniride.domain.usecase.auth.LogoutUseCase
-import com.example.uniride.domain.usecase.auth.ObserveCurrentUserUseCase
-import com.example.uniride.domain.usecase.auth.RefreshProfileUseCase
-import com.example.uniride.domain.usecase.auth.UpdateProfileUseCase
 import com.example.uniride.domain.usecase.connectivity.ObserveConnectivityUseCase
+import com.example.uniride.domain.usecase.profile.ObserveCurrentUserUseCase
+import com.example.uniride.domain.usecase.profile.RefreshProfileUseCase
+import com.example.uniride.domain.usecase.profile.UpdateProfileResult
+import com.example.uniride.domain.usecase.profile.UpdateProfileUseCase
 import com.example.uniride.domain.validation.ProfileValidationError
-import com.example.uniride.domain.validation.ProfileValidationResult
-import com.example.uniride.domain.validation.ProfileValidator
-import com.example.uniride.presentation.auth.components.messageRes
+import com.example.uniride.presentation.auth.components.firstMessageRes
 import com.example.uniride.presentation.common.messageRes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -79,12 +78,14 @@ class ProfileViewModel @Inject constructor(
                 it.copy(
                     preferredMode = action.mode,
                     hasVehicle = if (shouldSuggestVehicle) true else it.hasVehicle,
+                    vehicleRequiredErrorRes = null,
                     feedbackMessageRes = null,
                 )
             }
             is ProfileAction.HasVehicleChanged -> edit {
                 it.copy(
                     hasVehicle = action.enabled,
+                    vehicleRequiredErrorRes = null,
                     vehicleBrandErrorRes = null,
                     vehicleModelErrorRes = null,
                     vehicleColorErrorRes = null,
@@ -195,31 +196,25 @@ class ProfileViewModel @Inject constructor(
             },
         )
 
-        val errors = when (val res = ProfileValidator.validate(profile)) {
-            ProfileValidationResult.Valid -> emptySet()
-            is ProfileValidationResult.Invalid -> res.errors
+        formState.update {
+            it.copy(
+                isSaving = true,
+                fullNameErrorRes = null,
+                careerErrorRes = null,
+                phoneErrorRes = null,
+                vehicleRequiredErrorRes = null,
+                vehicleBrandErrorRes = null,
+                vehicleModelErrorRes = null,
+                vehicleColorErrorRes = null,
+                vehiclePlateErrorRes = null,
+                feedbackMessageRes = null,
+            )
         }
-        if (errors.isNotEmpty()) {
-            formState.update {
-                it.copy(
-                    fullNameErrorRes = errors.errorFor(ProfileValidationError.FULL_NAME_BLANK),
-                    careerErrorRes = errors.errorFor(ProfileValidationError.CAREER_BLANK),
-                    phoneErrorRes = errors.errorFor(ProfileValidationError.PHONE_BLANK),
-                    vehicleBrandErrorRes = errors.errorFor(ProfileValidationError.VEHICLE_BRAND_BLANK),
-                    vehicleModelErrorRes = errors.errorFor(ProfileValidationError.VEHICLE_MODEL_BLANK),
-                    vehicleColorErrorRes = errors.errorFor(ProfileValidationError.VEHICLE_COLOR_BLANK),
-                    vehiclePlateErrorRes = errors.errorFor(ProfileValidationError.VEHICLE_PLATE_BLANK),
-                )
-            }
-            return
-        }
-
-        formState.update { it.copy(isSaving = true, feedbackMessageRes = null) }
         viewModelScope.launch {
             when (val result = updateProfileUseCase(profile)) {
-                is AppResult.Success -> {
+                is UpdateProfileResult.Updated -> {
                     hasUnsavedEdits = false
-                    applyUser(result.data)
+                    applyUser(result.user)
                     formState.update {
                         it.copy(
                             isSaving = false,
@@ -228,7 +223,29 @@ class ProfileViewModel @Inject constructor(
                         )
                     }
                 }
-                is AppResult.Failure -> formState.update {
+                is UpdateProfileResult.Invalid -> {
+                    val errors = result.errors
+                    formState.update {
+                        it.copy(
+                            isSaving = false,
+                            fullNameErrorRes = errors.firstMessageRes(ProfileValidationError.FULL_NAME_BLANK),
+                            careerErrorRes = errors.firstMessageRes(ProfileValidationError.CAREER_BLANK),
+                            phoneErrorRes = errors.firstMessageRes(
+                                ProfileValidationError.PHONE_BLANK,
+                                ProfileValidationError.PHONE_INVALID,
+                            ),
+                            vehicleRequiredErrorRes = errors.firstMessageRes(ProfileValidationError.VEHICLE_REQUIRED),
+                            vehicleBrandErrorRes = errors.firstMessageRes(ProfileValidationError.VEHICLE_BRAND_BLANK),
+                            vehicleModelErrorRes = errors.firstMessageRes(ProfileValidationError.VEHICLE_MODEL_BLANK),
+                            vehicleColorErrorRes = errors.firstMessageRes(ProfileValidationError.VEHICLE_COLOR_BLANK),
+                            vehiclePlateErrorRes = errors.firstMessageRes(
+                                ProfileValidationError.VEHICLE_PLATE_BLANK,
+                                ProfileValidationError.VEHICLE_PLATE_INVALID,
+                            ),
+                        )
+                    }
+                }
+                is UpdateProfileResult.Failed -> formState.update {
                     it.copy(
                         isSaving = false,
                         feedbackMessageRes = result.error.messageRes(),
@@ -248,7 +265,4 @@ class ProfileViewModel @Inject constructor(
             _effects.send(ProfileEffect.NavigateToAuth)
         }
     }
-
-    private fun Set<ProfileValidationError>.errorFor(error: ProfileValidationError): Int? =
-        if (error in this) error.messageRes() else null
 }

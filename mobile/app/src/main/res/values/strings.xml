@@ -132,10 +132,13 @@
     <string name="auth_error_full_name_blank">Ingresá tu nombre y apellido.</string>
     <string name="auth_error_career_blank">Ingresá tu carrera.</string>
     <string name="auth_error_phone_blank">Ingresá un teléfono de contacto.</string>
+    <string name="auth_error_phone_invalid">Ingresá un teléfono válido (al menos 6 dígitos).</string>
+    <string name="auth_error_vehicle_required">Para el modo Conductor necesitás cargar los datos de tu vehículo.</string>
     <string name="auth_error_vehicle_brand_blank">Ingresá la marca del vehículo.</string>
     <string name="auth_error_vehicle_model_blank">Ingresá el modelo del vehículo.</string>
     <string name="auth_error_vehicle_color_blank">Ingresá el color del vehículo.</string>
     <string name="auth_error_vehicle_plate_blank">Ingresá la patente del vehículo.</string>
+    <string name="auth_error_vehicle_plate_invalid">Ingresá una patente válida de 6 a 8 caracteres sin espacios (ej. AB123CD).</string>
     <string name="auth_check_email_title">Revisá tu correo</string>
     <string name="auth_check_email_message">Te enviamos un enlace a tu correo @uade.edu.ar para activar tu cuenta. Abrilo desde este teléfono para ingresar.</string>
     <string name="auth_check_email_message_with_address">Te enviamos un enlace a %1$s para activar tu cuenta. Abrilo desde este teléfono para ingresar.</string>
