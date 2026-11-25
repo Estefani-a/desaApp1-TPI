@@ -4,10 +4,15 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
-import com.example.uniride.R
+import androidx.navigation.navDeepLink
+import com.example.uniride.presentation.auth.activate.ActivateAccountRoute as ActivateAccountScreenRoute
+import com.example.uniride.presentation.auth.checkemail.CheckEmailRoute as CheckEmailScreenRoute
+import com.example.uniride.presentation.auth.login.LoginRoute as LoginScreenRoute
+import com.example.uniride.presentation.auth.register.RegisterRoute as RegisterScreenRoute
+import com.example.uniride.presentation.auth.resetpassword.ForgotPasswordRoute as ForgotPasswordScreenRoute
+import com.example.uniride.presentation.auth.resetpassword.ResetPasswordRoute as ResetPasswordScreenRoute
+import com.example.uniride.presentation.auth.welcome.WelcomeScreen
 import com.example.uniride.presentation.navigation.MainGraphRoute
-import com.example.uniride.presentation.navigation.PlaceholderAction
-import com.example.uniride.presentation.navigation.PlaceholderScreen
 import kotlinx.serialization.Serializable
 
 /** Subgraph of RF01: everything that happens without a session. */
@@ -27,7 +32,7 @@ data object RegisterRoute
 
 /** "Revisá tu correo" after registering. */
 @Serializable
-data object CheckEmailRoute
+data class CheckEmailRoute(val email: String = "")
 
 /** Asks for the email to send the reset link. */
 @Serializable
@@ -44,50 +49,75 @@ data class ActivateAccountRoute(val activationCode: String)
 fun NavGraphBuilder.authGraph(navController: NavController) {
     navigation<AuthGraphRoute>(startDestination = WelcomeRoute) {
         composable<WelcomeRoute> {
-            PlaceholderScreen(
-                titleRes = R.string.auth_welcome_title,
-                actions = listOf(
-                    PlaceholderAction(R.string.placeholder_action_login) { navController.navigate(LoginRoute) },
-                    PlaceholderAction(R.string.placeholder_action_register) { navController.navigate(RegisterRoute) },
-                ),
+            WelcomeScreen(
+                onLoginClick = { navController.navigate(LoginRoute) },
+                onRegisterClick = { navController.navigate(RegisterRoute) },
             )
         }
         composable<LoginRoute> {
-            PlaceholderScreen(
-                titleRes = R.string.auth_login_title,
-                actions = listOf(
-                    PlaceholderAction(R.string.placeholder_action_enter) { navController.navigateToMain() },
-                    PlaceholderAction(R.string.placeholder_action_forgot_password) {
-                        navController.navigate(ForgotPasswordRoute)
-                    },
-                ),
+            LoginScreenRoute(
+                onBack = { navController.popBackStack() },
+                onForgotPasswordClick = { navController.navigate(ForgotPasswordRoute) },
+                onRegisterClick = { navController.navigate(RegisterRoute) },
+                onLoginSuccess = { navController.navigateToMain() },
             )
         }
         composable<RegisterRoute> {
-            PlaceholderScreen(
-                titleRes = R.string.auth_register_title,
-                actions = listOf(
-                    PlaceholderAction(R.string.placeholder_action_create_account) {
-                        navController.navigate(CheckEmailRoute)
-                    },
-                ),
+            RegisterScreenRoute(
+                onBack = { navController.popBackStack() },
+                onLoginClick = {
+                    navController.navigate(LoginRoute) {
+                        popUpTo<RegisterRoute> { inclusive = true }
+                    }
+                },
+                onRegistered = { email ->
+                    navController.navigate(CheckEmailRoute(email = email)) {
+                        popUpTo<RegisterRoute> { inclusive = true }
+                    }
+                },
             )
         }
         composable<CheckEmailRoute> {
-            PlaceholderScreen(titleRes = R.string.auth_check_email_title)
+            CheckEmailScreenRoute(
+                onBack = { navController.popBackStack() },
+                onGoToLogin = {
+                    navController.navigate(LoginRoute) {
+                        popUpTo<WelcomeRoute>()
+                    }
+                },
+            )
         }
         composable<ForgotPasswordRoute> {
-            PlaceholderScreen(titleRes = R.string.auth_forgot_password_title)
+            ForgotPasswordScreenRoute(
+                onBack = { navController.popBackStack() },
+                onBackToLogin = { navController.popBackStack() },
+            )
         }
-        composable<ResetPasswordRoute> {
-            PlaceholderScreen(titleRes = R.string.auth_reset_password_title)
+        composable<ResetPasswordRoute>(
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "uniride://reset-password?token={resetCode}" },
+            ),
+        ) {
+            ResetPasswordScreenRoute(
+                onGoToLogin = {
+                    navController.navigate(LoginRoute) {
+                        popUpTo<AuthGraphRoute> { inclusive = false }
+                    }
+                },
+            )
         }
-        composable<ActivateAccountRoute> {
-            PlaceholderScreen(
-                titleRes = R.string.auth_activate_title,
-                actions = listOf(
-                    PlaceholderAction(R.string.placeholder_action_enter) { navController.navigateToMain() },
-                ),
+        composable<ActivateAccountRoute>(
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "uniride://activate?token={activationCode}" },
+            ),
+        ) {
+            ActivateAccountScreenRoute(
+                onActivated = { navController.navigateToMain() },
+                onGoToLogin = {
+                    navController.navigate(LoginRoute) {
+                        popUpTo<AuthGraphRoute> { inclusive = false }
+                    }
+                },
             )
         }
     }

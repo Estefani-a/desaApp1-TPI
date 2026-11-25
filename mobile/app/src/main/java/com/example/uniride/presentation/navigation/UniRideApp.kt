@@ -17,20 +17,18 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.uniride.domain.model.AppMode
 import com.example.uniride.domain.model.Profile
+import com.example.uniride.presentation.auth.AuthGraphRoute
 import com.example.uniride.presentation.home.HomeRoute
 
 /**
  * Shell of the app: the bottom bar with the mode selector around [UniRideNavHost].
- *
- * Provisional until E0 (Hilt) and RF01: the chosen mode lives here with `rememberSaveable`
- * and [profile] is `null`. Then an `AppViewModel` gives both, from `AppModeRepository` and
- * `ProfileRepository`, and this function stays the same.
  */
 @Composable
 fun UniRideApp(
     modifier: Modifier = Modifier,
     profile: Profile? = null,
     navController: NavHostController = rememberNavController(),
+    startDestination: Any = AuthGraphRoute,
 ) {
     var selectedMode by rememberSaveable { mutableStateOf(AppMode.PASAJERO) }
     val modes = availableModes(profile)
@@ -61,6 +59,7 @@ fun UniRideApp(
         UniRideNavHost(
             navController = navController,
             appMode = appMode,
+            startDestination = startDestination,
             modifier = Modifier.padding(innerPadding),
         )
     }
