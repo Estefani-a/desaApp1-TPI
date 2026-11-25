@@ -1,6 +1,6 @@
 package com.example.uniride.backend.exception;
 
-import com.example.uniride.backend.dto.ApiErrorDTO;
+import com.example.uniride.backend.dto.ApiErrorResponseDTO;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,13 +34,13 @@ public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(ApiException.class)
-    public ResponseEntity<ApiErrorDTO> handleApi(ApiException ex) {
-        return ResponseEntity.status(ex.getCode().status()).body(ApiErrorDTO.of(ex.getCode(), ex.getMessage()));
+    public ResponseEntity<ApiErrorResponseDTO> handleApi(ApiException ex) {
+        return ResponseEntity.status(ex.getCode().status()).body(ApiErrorResponseDTO.of(ex.getCode(), ex.getMessage()));
     }
 
     /** {@code @Valid} on a request body. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiErrorDTO> handleInvalidBody(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiErrorResponseDTO> handleInvalidBody(MethodArgumentNotValidException ex) {
         Map<String, String> fields = new LinkedHashMap<>();
         for (FieldError error : ex.getBindingResult().getFieldErrors()) {
             fields.putIfAbsent(error.getField(), error.getDefaultMessage());
@@ -52,7 +52,7 @@ public class GlobalExceptionHandler {
 
     /** Constraints on {@code @RequestParam} / {@code @PathVariable} parameters. */
     @ExceptionHandler(HandlerMethodValidationException.class)
-    public ResponseEntity<ApiErrorDTO> handleInvalidParameters(HandlerMethodValidationException ex) {
+    public ResponseEntity<ApiErrorResponseDTO> handleInvalidParameters(HandlerMethodValidationException ex) {
         Map<String, String> fields = new LinkedHashMap<>();
         ex.getParameterValidationResults().forEach(result -> {
             String name = result.getMethodParameter().getParameterName();
@@ -64,7 +64,7 @@ public class GlobalExceptionHandler {
 
     /** {@code @Validated} on a service. */
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ApiErrorDTO> handleConstraintViolation(ConstraintViolationException ex) {
+    public ResponseEntity<ApiErrorResponseDTO> handleConstraintViolation(ConstraintViolationException ex) {
         Map<String, String> fields = new LinkedHashMap<>();
         ex.getConstraintViolations().forEach(violation -> {
             String path = violation.getPropertyPath().toString();
@@ -76,14 +76,14 @@ public class GlobalExceptionHandler {
 
     /** For example, a path variable that is not a UUID. */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ApiErrorDTO> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+    public ResponseEntity<ApiErrorResponseDTO> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
         return validation(Map.of(ex.getName(), "Valor inválido."));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ApiErrorDTO> handleUnreadableBody(HttpMessageNotReadableException ex) {
+    public ResponseEntity<ApiErrorResponseDTO> handleUnreadableBody(HttpMessageNotReadableException ex) {
         return ResponseEntity.badRequest()
-                .body(ApiErrorDTO.of(ErrorCode.VALIDATION_ERROR, "El cuerpo de la solicitud no es un JSON válido."));
+                .body(ApiErrorResponseDTO.of(ErrorCode.VALIDATION_ERROR, "El cuerpo de la solicitud no es un JSON válido."));
     }
 
     /**
@@ -92,17 +92,17 @@ public class GlobalExceptionHandler {
      * error is a bug and stays a 500. Services translate the cases they know first.
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ApiErrorDTO> handleDataIntegrity(DataIntegrityViolationException ex) {
+    public ResponseEntity<ApiErrorResponseDTO> handleDataIntegrity(DataIntegrityViolationException ex) {
         if (ex.getMostSpecificCause() instanceof SQLException sql && UNIQUE_VIOLATION.equals(sql.getSQLState())) {
-            return ResponseEntity.status(ErrorCode.ID_CONFLICT.status()).body(ApiErrorDTO.of(ErrorCode.ID_CONFLICT));
+            return ResponseEntity.status(ErrorCode.ID_CONFLICT.status()).body(ApiErrorResponseDTO.of(ErrorCode.ID_CONFLICT));
         }
         return handleOther(ex);
     }
 
     /** Thrown by method security ({@code @PreAuthorize}) inside a controller. */
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiErrorDTO> handleAccessDenied(AccessDeniedException ex) {
-        return ResponseEntity.status(ErrorCode.FORBIDDEN.status()).body(ApiErrorDTO.of(ErrorCode.FORBIDDEN));
+    public ResponseEntity<ApiErrorResponseDTO> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity.status(ErrorCode.FORBIDDEN.status()).body(ApiErrorResponseDTO.of(ErrorCode.FORBIDDEN));
     }
 
     /**
@@ -111,7 +111,7 @@ public class GlobalExceptionHandler {
      * closest code of the contract. The rest is a 500 {@code INTERNAL_ERROR}.
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiErrorDTO> handleOther(Exception ex) {
+    public ResponseEntity<ApiErrorResponseDTO> handleOther(Exception ex) {
         if (ex instanceof ErrorResponse errorResponse && errorResponse.getStatusCode().is4xxClientError()) {
             HttpStatusCode status = errorResponse.getStatusCode();
             ErrorCode code = switch (status.value()) {
@@ -122,13 +122,13 @@ public class GlobalExceptionHandler {
                 case 415 -> ErrorCode.UNSUPPORTED_MEDIA_TYPE;
                 default -> ErrorCode.VALIDATION_ERROR;
             };
-            return ResponseEntity.status(status).body(ApiErrorDTO.of(code));
+            return ResponseEntity.status(status).body(ApiErrorResponseDTO.of(code));
         }
         log.error("Error inesperado", ex);
-        return ResponseEntity.internalServerError().body(ApiErrorDTO.of(ErrorCode.INTERNAL_ERROR));
+        return ResponseEntity.internalServerError().body(ApiErrorResponseDTO.of(ErrorCode.INTERNAL_ERROR));
     }
 
-    private ResponseEntity<ApiErrorDTO> validation(Map<String, String> fields) {
-        return ResponseEntity.badRequest().body(ApiErrorDTO.validation(fields));
+    private ResponseEntity<ApiErrorResponseDTO> validation(Map<String, String> fields) {
+        return ResponseEntity.badRequest().body(ApiErrorResponseDTO.validation(fields));
     }
 }

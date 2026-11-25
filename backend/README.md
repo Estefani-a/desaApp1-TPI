@@ -42,7 +42,7 @@ Tests y build: `./mvnw verify` (en Windows, `mvnw.cmd verify`).
 
 Paquetes por capa (CONVENCIONES §10.1): `controller/` → `service/` → `repository/` → `model/`, con los DTOs en `dto/`.
 
-- `exception/`: `ErrorCode` (los códigos de docs/API.md §2), `ApiException` para lanzar errores de negocio desde un Service y `GlobalExceptionHandler`, que arma siempre `ApiErrorDTO` (`{ code, message, fields }`).
+- `exception/`: `ErrorCode` (los códigos de docs/API.md §2), `ApiException` para lanzar errores de negocio desde un Service y `GlobalExceptionHandler`, que arma siempre `ApiErrorResponseDTO` (`{ code, message, fields }`).
 - `security/`: `JwtService` (HS256, id del usuario en `sub`, 30 días), `JwtAuthenticationFilter` y `CurrentUser`, que el Controller usa para obtener el id del usuario y pasárselo al Service.
 - `config/`: rutas públicas (`SecurityConfig`), Swagger con el botón "Authorize" para el JWT (`OpenApiConfig`) y formato de fechas (`TimeConfig`: horas `"22:15"`, instantes con `-03:00`, y un `Clock` inyectable para los tests).
 - `model/`: las entidades no tienen setters de estado. Las vacantes y las transiciones cambian con métodos que validan (`Trip.takeSeat()`, `Reservation.accept()`…).

@@ -15,7 +15,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -134,12 +133,50 @@ public class Trip {
         updatedAt = now;
     }
 
-    /** Open, with seats and not departed yet: a passenger can ask for a seat. */
-    public boolean acceptsRequestsAt(LocalDateTime now) {
-        return status == TripStatus.ABIERTO && availableSeats > 0 && !schedule.hasDepartedAt(now);
+    /**
+     * Checks that a passenger can ask for a seat now.
+     *
+     * @throws ApiException {@code TRIP_NOT_OPEN} if the trip is finished, cancelled or already
+     *                      left; {@code NO_SEATS_AVAILABLE} if it is full
+     */
+    public void requireOpenForRequests(Instant now) {
+        if (isClosed() || hasDepartedAt(now)) {
+            throw new ApiException(ErrorCode.TRIP_NOT_OPEN);
+        }
+        if (availableSeats == 0) {
+            throw new ApiException(ErrorCode.NO_SEATS_AVAILABLE);
+        }
     }
 
-    public boolean hasDepartedAt(LocalDateTime now) {
+    /**
+     * Checks that its reservations can still change (docs/API.md §6.3).
+     *
+     * @throws ApiException {@code INVALID_STATUS_TRANSITION} if the trip is finished or cancelled;
+     *                      {@code TRIP_ALREADY_DEPARTED} if it already left
+     */
+    public void requireReservationsChangeable(Instant now) {
+        requireReservationsChangeable(now, ErrorCode.TRIP_ALREADY_DEPARTED.defaultMessage());
+    }
+
+    /** Same as {@link #requireReservationsChangeable(Instant)}, with the message for a departed trip. */
+    public void requireReservationsChangeable(Instant now, String departedMessage) {
+        if (isClosed()) {
+            throw new ApiException(ErrorCode.INVALID_STATUS_TRANSITION);
+        }
+        if (hasDepartedAt(now)) {
+            throw new ApiException(ErrorCode.TRIP_ALREADY_DEPARTED, departedMessage);
+        }
+    }
+
+    /**
+     * Something that is part of the trip as the API shows it changed (for example, a request).
+     * Moves {@code updatedAt}, so the {@code updatedSince} refresh of RF03 brings it again.
+     */
+    public void touch(Instant now) {
+        updatedAt = now;
+    }
+
+    public boolean hasDepartedAt(Instant now) {
         return schedule.hasDepartedAt(now);
     }
 

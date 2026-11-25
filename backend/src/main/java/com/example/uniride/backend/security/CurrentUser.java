@@ -15,7 +15,7 @@ import java.util.UUID;
  *
  * <pre>{@code
  * @PostMapping("/{reservationId}/accept")
- * ReservationDTO accept(@PathVariable UUID tripId, @PathVariable UUID reservationId) {
+ * ReservationResponseDTO accept(@PathVariable UUID tripId, @PathVariable UUID reservationId) {
  *     return reservationService.accept(currentUser.id(), tripId, reservationId);
  * }
  * }</pre>
