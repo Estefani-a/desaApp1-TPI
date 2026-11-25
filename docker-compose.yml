@@ -10,8 +10,9 @@ services:
       POSTGRES_DB: uniride
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+    # Solo en esta máquina (127.0.0.1): nadie de la red llega a la base
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -22,9 +23,11 @@ services:
 
   mailpit:
     image: axllent/mailpit:v1.27
+    # Solo en esta máquina: Mailpit no tiene login y muestra los enlaces de activación y de
+    # recuperación de contraseña, así que no se expone a la red
     ports:
-      - "8025:8025" # web: http://localhost:8025
-      - "1025:1025" # SMTP
+      - "127.0.0.1:8025:8025" # web: http://localhost:8025
+      - "127.0.0.1:1025:1025" # SMTP
 
   backend:
     build: ./backend
@@ -38,6 +41,10 @@ services:
       MAIL_PORT: 1025
       APP_LINK_BASE_URL: ${APP_LINK_BASE_URL}
       FIREBASE_CREDENTIALS_PATH: ${FIREBASE_CREDENTIALS_PATH:-}
+      # "demo" carga los usuarios de prueba (data-demo.sql). Vacío en un despliegue real.
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE-demo}
+    # La API sí queda en toda la red, para probar desde un teléfono en el mismo Wi-Fi
+    # (el emulador llega por 10.0.2.2). Todo salvo las rutas públicas pide token.
     ports:
       - "8080:8080"
     depends_on:

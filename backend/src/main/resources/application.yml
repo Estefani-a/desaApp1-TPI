@@ -22,6 +22,12 @@ spring:
       # data.sql es idempotente (ON CONFLICT DO NOTHING) y corre en cada arranque
       mode: always
       encoding: UTF-8
+      # Sedes y puntos de encuentro. Los usuarios de demo están en data-demo.sql (perfil "demo").
+      data-locations: classpath:data.sql
+  profiles:
+    group:
+      # Programar desde IntelliJ incluye los usuarios de demo
+      local: demo
   mail:
     host: ${MAIL_HOST:localhost}
     port: ${MAIL_PORT:1025}

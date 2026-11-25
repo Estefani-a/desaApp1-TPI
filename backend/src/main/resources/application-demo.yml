@@ -1,0 +1,7 @@
+# Perfil "demo": agrega los usuarios de prueba con contraseña conocida (data-demo.sql).
+# Lo activa docker-compose.yml para desarrollo y la demo; el perfil "local" lo incluye.
+# Un despliegue real no lo activa, así esas cuentas no existen.
+spring:
+  sql:
+    init:
+      data-locations: classpath:data.sql, classpath:data-demo.sql

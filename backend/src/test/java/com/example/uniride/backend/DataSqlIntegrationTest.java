@@ -11,7 +11,7 @@ import javax.sql.DataSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** data.sql runs against the schema of the entities, and can run again without duplicating. */
+/** data.sql and data-demo.sql run against the schema of the entities, and can run again without duplicating. */
 class DataSqlIntegrationTest extends PostgresIntegrationTest {
 
     @Autowired
@@ -27,13 +27,16 @@ class DataSqlIntegrationTest extends PostgresIntegrationTest {
                 .containsExactlyInAnyOrder("MONSERRAT", "BELGRANO", "RECOLETA");
         assertThat(campusRepository.findById("MONSERRAT").orElseThrow().getMeetingPoints())
                 .containsExactly("Salida Lima 717", "Salida Lima 757", "Salida Chile 1142", "Salida Independencia 1072");
+        assertThat(campusRepository.findById("BELGRANO").orElseThrow().getMeetingPoints())
+                .containsExactly("Salida 11 de Septiembre 1990", "Salida Echeverría");
         assertThat(userRepository.findByEmailIgnoreCase("conductora.demo@uade.edu.ar").orElseThrow().isActive())
                 .isTrue();
     }
 
     @Test
     void ejecutarDataSqlOtraVezNoDuplicaNada() {
-        new ResourceDatabasePopulator(new ClassPathResource("data.sql")).execute(dataSource);
+        new ResourceDatabasePopulator(new ClassPathResource("data.sql"), new ClassPathResource("data-demo.sql"))
+                .execute(dataSource);
 
         assertThat(campusRepository.count()).isEqualTo(3);
         assertThat(userRepository.count()).isEqualTo(3);
