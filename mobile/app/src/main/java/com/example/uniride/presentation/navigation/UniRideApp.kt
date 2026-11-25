@@ -24,6 +24,8 @@ import com.example.uniride.domain.model.AppMode
 import com.example.uniride.domain.model.Profile
 import com.example.uniride.presentation.common.AppSnackbar
 import com.example.uniride.presentation.common.LocalAppSnackbar
+import com.example.uniride.presentation.home.DefaultDriverHome
+import com.example.uniride.presentation.home.DriverHome
 import com.example.uniride.presentation.home.HomeRoute
 
 /**
@@ -32,12 +34,16 @@ import com.example.uniride.presentation.home.HomeRoute
  * Provisional until E0 (Hilt) and RF01: the chosen mode lives here with `rememberSaveable`
  * and [profile] is `null`. Then an `AppViewModel` gives both, from `AppModeRepository` and
  * `ProfileRepository`, and this function stays the same.
+ *
+ * @param driverHome C1 of the driver mode. It only exists so instrumented tests, which have no
+ * Hilt, can replace it with a plain composable; the app uses the default.
  */
 @Composable
 fun UniRideApp(
     modifier: Modifier = Modifier,
     profile: Profile? = null,
     navController: NavHostController = rememberNavController(),
+    driverHome: DriverHome = DefaultDriverHome,
 ) {
     var selectedMode by rememberSaveable { mutableStateOf(AppMode.PASAJERO) }
     val modes = availableModes(profile)
@@ -75,6 +81,7 @@ fun UniRideApp(
                 navController = navController,
                 appMode = appMode,
                 modifier = Modifier.padding(innerPadding),
+                driverHome = driverHome,
             )
         }
     }

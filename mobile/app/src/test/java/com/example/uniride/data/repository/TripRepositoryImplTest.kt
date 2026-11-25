@@ -191,6 +191,29 @@ class TripRepositoryImplTest {
     }
 
     @Test
+    fun `mis viajes publicados son solo los del conductor, no los que reservo`() = runTest {
+        userDao.user.value = userRow(FakeBackendStore.DEFAULT_DRIVER_ID)
+        tripDao.activeReservationTripIds[FakeBackendStore.DEFAULT_DRIVER_ID] = setOf("reservado")
+        tripDao.upsertAll(
+            listOf(
+                tripRow("propio", driverId = FakeBackendStore.DEFAULT_DRIVER_ID),
+                tripRow("reservado", driverId = "otro-conductor"),
+            ),
+        )
+
+        assertEquals(listOf(TripId("propio")), repository.observeMyPublishedTrips().first().map { it.id })
+        assertEquals(2, repository.observeMyTrips().first().size)
+    }
+
+    @Test
+    fun `sin usuario no hay viajes publicados`() = runTest {
+        userDao.user.value = null
+        tripDao.upsert(tripRow("propio"))
+
+        assertTrue(repository.observeMyPublishedTrips().first().isEmpty())
+    }
+
+    @Test
     fun `borrar los datos locales vacia viajes, hora de refresco y motivos de rechazo`() = runTest {
         repository.refreshTrips()
         tripDao.upsert(tripRow("pendiente", isSync = false))
