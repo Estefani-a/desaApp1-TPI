@@ -32,6 +32,10 @@ class TripRejectionStore @Inject constructor(
         }
     }
 
+    suspend fun clear() {
+        dataStore.edit { prefs -> prefs.remove(KEY) }
+    }
+
     suspend fun remove(tripId: TripId) {
         dataStore.edit { prefs -> prefs[KEY] = prefs[KEY].orEmpty().withoutTrip(tripId) }
     }

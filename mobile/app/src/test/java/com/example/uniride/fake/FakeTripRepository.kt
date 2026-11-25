@@ -59,6 +59,12 @@ class FakeTripRepository(
 
     override suspend fun dismissRejection(tripId: TripId) = Unit
 
+    override suspend fun clearLocalData(): AppResult<Unit> {
+        trips.value = emptyList()
+        lastRefreshedAt.value = null
+        return AppResult.Success(Unit)
+    }
+
     override suspend fun publish(draft: TripDraft): AppResult<TripId> = error("No se usa en estos tests")
 
     override suspend fun finish(tripId: TripId): AppResult<Unit> = error("No se usa en estos tests")

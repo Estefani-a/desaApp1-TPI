@@ -96,6 +96,12 @@ class TripRepositoryImpl @Inject constructor(
         safeApiCall { tripDao.deleteByIds(listOf(tripId.value)) }
     }
 
+    override suspend fun clearLocalData(): AppResult<Unit> = safeApiCall {
+        tripDao.deleteAll()
+        rejections.clear()
+        dataStore.edit { it.remove(LAST_REFRESHED_AT) }
+    }
+
     override suspend fun refreshTrips(): AppResult<Unit> {
         val since = observeLastRefreshedAt().first()
         val startedAt = clock.instant()

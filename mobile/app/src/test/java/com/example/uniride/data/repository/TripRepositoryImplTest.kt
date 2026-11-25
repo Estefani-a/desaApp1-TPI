@@ -190,6 +190,29 @@ class TripRepositoryImplTest {
         assertEquals(2, repository.observeMyTrips().first().size)
     }
 
+    @Test
+    fun `borrar los datos locales vacia viajes, hora de refresco y motivos de rechazo`() = runTest {
+        repository.refreshTrips()
+        tripDao.upsert(tripRow("pendiente", isSync = false))
+        rejections.add(TripId("rechazado"), DataError.VALIDATION)
+
+        assertEquals(AppResult.Success(Unit), repository.clearLocalData())
+
+        assertTrue(tripDao.getAll().isEmpty())
+        assertNull(repository.observeLastRefreshedAt().first())
+        assertTrue(repository.observeRejectedTrips().first().isEmpty())
+    }
+
+    @Test
+    fun `despues de borrar los datos locales el refresco vuelve a ser completo`() = runTest {
+        repository.refreshTrips()
+        repository.clearLocalData()
+
+        repository.refreshTrips()
+
+        assertEquals(3, tripDao.getAll().size)
+    }
+
     // --- Publish ---
 
     @Test

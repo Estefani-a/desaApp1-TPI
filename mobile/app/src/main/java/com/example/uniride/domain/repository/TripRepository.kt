@@ -52,6 +52,13 @@ interface TripRepository {
     suspend fun dismissRejection(tripId: TripId)
 
     /**
+     * Forgets everything this repository keeps on the device: the trips, when they were last
+     * refreshed and the reasons of rejected trips. The logout calls it, so the next user does
+     * not get a partial refresh on top of an empty catalog. Pending trips are lost too.
+     */
+    suspend fun clearLocalData(): AppResult<Unit>
+
+    /**
      * Offers a new trip. Works offline: the trip is visible right away, appears in
      * [observePendingTripIds] and is sent when there is connection. Returns its id.
      *

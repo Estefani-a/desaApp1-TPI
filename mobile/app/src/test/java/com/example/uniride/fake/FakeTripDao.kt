@@ -68,6 +68,10 @@ class FakeTripDao : TripDao {
 
     override suspend fun getAll(): List<TripEntity> = rows.value.values.toList()
 
+    override suspend fun deleteAll() {
+        rows.value = emptyMap()
+    }
+
     override suspend fun deleteByIds(tripIds: List<String>) {
         rows.value = rows.value - tripIds.toSet()
     }

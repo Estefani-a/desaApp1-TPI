@@ -76,6 +76,9 @@ interface TripDao {
     @Query("SELECT * FROM trips")
     suspend fun getAll(): List<TripEntity>
 
+    @Query("DELETE FROM trips")
+    suspend fun deleteAll()
+
     @Query("DELETE FROM trips WHERE tripId IN (:tripIds)")
     suspend fun deleteByIds(tripIds: List<String>)
 
