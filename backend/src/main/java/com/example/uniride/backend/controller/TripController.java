@@ -1,7 +1,7 @@
 package com.example.uniride.backend.controller;
 
 import com.example.uniride.backend.security.CurrentUser;
-import com.example.uniride.backend.dto.TripDTO;
+import com.example.uniride.backend.dto.TripResponseDTO;
 import com.example.uniride.backend.service.TripService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,7 +28,7 @@ public class TripController {
 
     @GetMapping("/{tripId}")
     @Operation(summary = "Detalle del viaje (patente y teléfono solo con reserva aceptada)")
-    public TripDTO getDetail(@PathVariable UUID tripId) {
+    public TripResponseDTO getDetail(@PathVariable UUID tripId) {
         return tripService.getDetail(currentUser.id(), tripId);
     }
 }

@@ -1,6 +1,6 @@
 package com.example.uniride.backend.security;
 
-import com.example.uniride.backend.dto.ApiErrorDTO;
+import com.example.uniride.backend.dto.ApiErrorResponseDTO;
 import com.example.uniride.backend.exception.ErrorCode;
 import com.example.uniride.backend.exception.GlobalExceptionHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,6 +45,6 @@ public class ApiErrorSecurityHandler implements AuthenticationEntryPoint, Access
         response.setStatus(code.status().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        objectMapper.writeValue(response.getOutputStream(), ApiErrorDTO.of(code));
+        objectMapper.writeValue(response.getOutputStream(), ApiErrorResponseDTO.of(code));
     }
 }

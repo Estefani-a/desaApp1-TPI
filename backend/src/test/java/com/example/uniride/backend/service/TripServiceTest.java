@@ -5,7 +5,7 @@ import com.example.uniride.backend.exception.ErrorCode;
 import com.example.uniride.backend.repository.ReservationRepository;
 import com.example.uniride.backend.model.ReservationStatus;
 import com.example.uniride.backend.model.Trip;
-import com.example.uniride.backend.dto.TripDTO;
+import com.example.uniride.backend.dto.TripResponseDTO;
 import com.example.uniride.backend.repository.TripRepository;
 import com.example.uniride.backend.model.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,7 +61,7 @@ class TripServiceTest {
     void conReservaPendienteNoSeVenPatenteNiTelefono() {
         givenMyReservations(ReservationStatus.PENDIENTE);
 
-        TripDTO response = service.getDetail(passenger.getId(), trip.getId());
+        TripResponseDTO response = service.getDetail(passenger.getId(), trip.getId());
 
         assertThat(response.vehiclePlate()).isNull();
         assertThat(response.driverPhone()).isNull();
@@ -73,7 +73,7 @@ class TripServiceTest {
     void conReservaAceptadaSeVenPatenteYTelefono() {
         givenMyReservations(ReservationStatus.ACEPTADA);
 
-        TripDTO response = service.getDetail(passenger.getId(), trip.getId());
+        TripResponseDTO response = service.getDetail(passenger.getId(), trip.getId());
 
         assertThat(response.vehiclePlate()).isEqualTo("AB123CD");
         assertThat(response.driverPhone()).isEqualTo("+5491155550000");
@@ -83,7 +83,7 @@ class TripServiceTest {
     void miReservaEsLaActivaAunqueHayaUnaRechazadaMasNueva() {
         givenMyReservations(ReservationStatus.RECHAZADA, ReservationStatus.PENDIENTE);
 
-        TripDTO response = service.getDetail(passenger.getId(), trip.getId());
+        TripResponseDTO response = service.getDetail(passenger.getId(), trip.getId());
 
         assertThat(response.myReservation().status()).isEqualTo(ReservationStatus.PENDIENTE);
     }

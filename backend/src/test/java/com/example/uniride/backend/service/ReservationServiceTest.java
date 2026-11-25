@@ -1,6 +1,6 @@
 package com.example.uniride.backend.service;
 
-import com.example.uniride.backend.dto.ReservationDTO;
+import com.example.uniride.backend.dto.ReservationResponseDTO;
 import com.example.uniride.backend.exception.ApiException;
 import com.example.uniride.backend.exception.ErrorCode;
 import com.example.uniride.backend.model.Reservation;
@@ -198,7 +198,7 @@ class ReservationServiceTest {
         Reservation pending = reservation(trip, passenger, ReservationStatus.PENDIENTE);
         givenReservation(pending);
 
-        ReservationDTO response = service.accept(driver.getId(), trip.getId(), pending.getId());
+        ReservationResponseDTO response = service.accept(driver.getId(), trip.getId(), pending.getId());
 
         assertThat(response.status()).isEqualTo(ReservationStatus.ACEPTADA);
         assertThat(response.passengerPhone()).isEqualTo("+5491155550001");
@@ -280,7 +280,7 @@ class ReservationServiceTest {
         Reservation accepted = reservation(trip, passenger, ReservationStatus.ACEPTADA);
         givenReservation(accepted);
 
-        ReservationDTO response = service.cancel(passenger.getId(), trip.getId(), accepted.getId());
+        ReservationResponseDTO response = service.cancel(passenger.getId(), trip.getId(), accepted.getId());
 
         assertThat(response.status()).isEqualTo(ReservationStatus.CANCELADA);
         assertThat(trip.getStatus()).isEqualTo(TripStatus.ABIERTO);
@@ -308,9 +308,9 @@ class ReservationServiceTest {
                 reservation(trip, passenger, ReservationStatus.ACEPTADA),
                 reservation(trip, passenger(), ReservationStatus.PENDIENTE)));
 
-        List<ReservationDTO> list = service.listForTrip(driver.getId(), trip.getId());
+        List<ReservationResponseDTO> list = service.listForTrip(driver.getId(), trip.getId());
 
-        assertThat(list).extracting(ReservationDTO::passengerPhone).containsExactly("+5491155550001", null);
+        assertThat(list).extracting(ReservationResponseDTO::passengerPhone).containsExactly("+5491155550001", null);
     }
 
     @Test

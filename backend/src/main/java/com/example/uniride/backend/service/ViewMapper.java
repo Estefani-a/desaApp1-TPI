@@ -1,7 +1,7 @@
 package com.example.uniride.backend.service;
 
-import com.example.uniride.backend.dto.ReservationDTO;
-import com.example.uniride.backend.dto.TripDTO;
+import com.example.uniride.backend.dto.ReservationResponseDTO;
+import com.example.uniride.backend.dto.TripResponseDTO;
 import com.example.uniride.backend.model.Reservation;
 import com.example.uniride.backend.model.Trip;
 import org.springframework.stereotype.Component;
@@ -22,13 +22,13 @@ public class ViewMapper {
         this.contactVisibility = contactVisibility;
     }
 
-    public ReservationDTO reservation(Reservation reservation, UUID viewerId) {
-        return ReservationDTO.from(reservation, contactVisibility.canSeePassengerContact(reservation, viewerId));
+    public ReservationResponseDTO reservation(Reservation reservation, UUID viewerId) {
+        return ReservationResponseDTO.from(reservation, contactVisibility.canSeePassengerContact(reservation, viewerId));
     }
 
     /** @param myReservation reservation of the viewer on the trip, or {@code null} */
-    public TripDTO trip(Trip trip, UUID viewerId, Reservation myReservation) {
-        ReservationDTO mine = myReservation == null ? null : reservation(myReservation, viewerId);
-        return TripDTO.from(trip, mine, contactVisibility.canSeeDriverContact(trip, viewerId, myReservation));
+    public TripResponseDTO trip(Trip trip, UUID viewerId, Reservation myReservation) {
+        ReservationResponseDTO mine = myReservation == null ? null : reservation(myReservation, viewerId);
+        return TripResponseDTO.from(trip, mine, contactVisibility.canSeeDriverContact(trip, viewerId, myReservation));
     }
 }

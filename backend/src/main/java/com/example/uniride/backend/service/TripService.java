@@ -5,7 +5,7 @@ import com.example.uniride.backend.exception.ErrorCode;
 import com.example.uniride.backend.model.Reservation;
 import com.example.uniride.backend.repository.ReservationRepository;
 import com.example.uniride.backend.model.Trip;
-import com.example.uniride.backend.dto.TripDTO;
+import com.example.uniride.backend.dto.TripResponseDTO;
 import com.example.uniride.backend.repository.TripRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +30,7 @@ public class TripService {
 
     /** {@code GET /trips/{tripId}}: plate and phone only for the driver or an accepted passenger. */
     @Transactional(readOnly = true)
-    public TripDTO getDetail(UUID viewerId, UUID tripId) {
+    public TripResponseDTO getDetail(UUID viewerId, UUID tripId) {
         Trip trip = tripRepository.findById(tripId).orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND));
         return viewMapper.trip(trip, viewerId, findMyReservation(tripId, viewerId));
     }

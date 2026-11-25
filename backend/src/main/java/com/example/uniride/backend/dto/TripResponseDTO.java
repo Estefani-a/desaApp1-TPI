@@ -15,7 +15,7 @@ import java.util.UUID;
  * {@code vehiclePlate} and {@code driverPhone} are {@code null} unless the caller decided,
  * with {@code ContactVisibilityPolicy}, that the viewer can see them (RNF07).
  */
-public record TripDTO(
+public record TripResponseDTO(
         UUID tripId,
         UUID driverId,
         String driverName,
@@ -36,7 +36,7 @@ public record TripDTO(
         String vehiclePlate,
         String driverPhone,
         TripStatus status,
-        ReservationDTO myReservation,
+        ReservationResponseDTO myReservation,
         Instant updatedAt
 ) {
 
@@ -44,8 +44,8 @@ public record TripDTO(
      * @param myReservation reservation of the viewer, already mapped, or {@code null}
      * @param showContact   decided by {@code ContactVisibilityPolicy}; this record only copies values
      */
-    public static TripDTO from(Trip trip, ReservationDTO myReservation, boolean showContact) {
-        return new TripDTO(
+    public static TripResponseDTO from(Trip trip, ReservationResponseDTO myReservation, boolean showContact) {
+        return new TripResponseDTO(
                 trip.getId(),
                 trip.getDriver().getId(),
                 PublicName.of(trip.getDriver().getFullName()),

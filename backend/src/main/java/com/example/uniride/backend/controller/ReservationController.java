@@ -1,7 +1,7 @@
 package com.example.uniride.backend.controller;
 
 import com.example.uniride.backend.security.CurrentUser;
-import com.example.uniride.backend.dto.ReservationDTO;
+import com.example.uniride.backend.dto.ReservationResponseDTO;
 import com.example.uniride.backend.service.ReservationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,7 +33,7 @@ public class ReservationController {
 
     @PutMapping("/{reservationId}")
     @Operation(summary = "Solicitar un asiento (idempotente: 201 al crear, 200 en un reintento)")
-    public ResponseEntity<ReservationDTO> requestSeat(@PathVariable UUID tripId,
+    public ResponseEntity<ReservationResponseDTO> requestSeat(@PathVariable UUID tripId,
                                                            @PathVariable UUID reservationId) {
         var result = reservationService.requestSeat(currentUser.id(), tripId, reservationId);
         return ResponseEntity.status(result.created() ? HttpStatus.CREATED : HttpStatus.OK)
@@ -42,25 +42,25 @@ public class ReservationController {
 
     @GetMapping
     @Operation(summary = "Solicitudes del viaje (solo el conductor)")
-    public List<ReservationDTO> list(@PathVariable UUID tripId) {
+    public List<ReservationResponseDTO> list(@PathVariable UUID tripId) {
         return reservationService.listForTrip(currentUser.id(), tripId);
     }
 
     @PostMapping("/{reservationId}/accept")
     @Operation(summary = "Aceptar una solicitud (conductor): descuenta una vacante")
-    public ReservationDTO accept(@PathVariable UUID tripId, @PathVariable UUID reservationId) {
+    public ReservationResponseDTO accept(@PathVariable UUID tripId, @PathVariable UUID reservationId) {
         return reservationService.accept(currentUser.id(), tripId, reservationId);
     }
 
     @PostMapping("/{reservationId}/reject")
     @Operation(summary = "Rechazar una solicitud (conductor)")
-    public ReservationDTO reject(@PathVariable UUID tripId, @PathVariable UUID reservationId) {
+    public ReservationResponseDTO reject(@PathVariable UUID tripId, @PathVariable UUID reservationId) {
         return reservationService.reject(currentUser.id(), tripId, reservationId);
     }
 
     @PostMapping("/{reservationId}/cancel")
     @Operation(summary = "Cancelar mi reserva (pasajero): si estaba aceptada, devuelve la vacante")
-    public ReservationDTO cancel(@PathVariable UUID tripId, @PathVariable UUID reservationId) {
+    public ReservationResponseDTO cancel(@PathVariable UUID tripId, @PathVariable UUID reservationId) {
         return reservationService.cancel(currentUser.id(), tripId, reservationId);
     }
 }

@@ -2,7 +2,7 @@ package com.example.uniride.backend.controller;
 
 import com.example.uniride.backend.config.SecurityConfig;
 import com.example.uniride.backend.config.TimeConfig;
-import com.example.uniride.backend.dto.TripDTO;
+import com.example.uniride.backend.dto.TripResponseDTO;
 import com.example.uniride.backend.exception.ApiException;
 import com.example.uniride.backend.exception.ErrorCode;
 import com.example.uniride.backend.model.Direction;
@@ -57,8 +57,8 @@ class TripControllerTest {
         return "Bearer " + jwtService.issue(USER_ID).accessToken();
     }
 
-    private TripDTO tripWithoutContact() {
-        return new TripDTO(TRIP_ID, UUID.randomUUID(), "Lucía F.", 4.8, Direction.VUELTA, "MONSERRAT",
+    private TripResponseDTO tripWithoutContact() {
+        return new TripResponseDTO(TRIP_ID, UUID.randomUUID(), "Lucía F.", 4.8, Direction.VUELTA, "MONSERRAT",
                 "Salida Lima 717", "Ramos Mejía", null, LocalDate.of(2026, 11, 20), LocalTime.of(22, 15), null,
                 3, 2, 3500, "Gol Trend", "Gris", null, null, TripStatus.ABIERTO, null,
                 Instant.parse("2026-11-21T00:40:12Z"));

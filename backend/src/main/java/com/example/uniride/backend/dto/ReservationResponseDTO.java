@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 /** {@code ReservationDto} of docs/API.md §3.4. */
-public record ReservationDTO(
+public record ReservationResponseDTO(
         UUID reservationId,
         UUID tripId,
         UUID passengerId,
@@ -23,8 +23,8 @@ public record ReservationDTO(
     /**
      * @param showPhone decided by {@code ContactVisibilityPolicy}; this record only copies values
      */
-    public static ReservationDTO from(Reservation reservation, boolean showPhone) {
-        return new ReservationDTO(
+    public static ReservationResponseDTO from(Reservation reservation, boolean showPhone) {
+        return new ReservationResponseDTO(
                 reservation.getId(),
                 reservation.getTrip().getId(),
                 reservation.getPassenger().getId(),

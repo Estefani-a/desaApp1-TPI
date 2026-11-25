@@ -7,7 +7,7 @@ import com.example.uniride.backend.exception.ErrorCode;
 import com.example.uniride.backend.security.JwtAuthenticationFilter;
 import com.example.uniride.backend.security.JwtProperties;
 import com.example.uniride.backend.security.JwtService;
-import com.example.uniride.backend.dto.ReservationDTO;
+import com.example.uniride.backend.dto.ReservationResponseDTO;
 import com.example.uniride.backend.service.ReservationService;
 import com.example.uniride.backend.model.ReservationStatus;
 import com.example.uniride.backend.config.SecurityConfig;
@@ -57,9 +57,9 @@ class ReservationControllerTest {
         return "Bearer " + jwtService.issue(USER_ID).accessToken();
     }
 
-    private ReservationDTO response(ReservationStatus status) {
+    private ReservationResponseDTO response(ReservationStatus status) {
         Instant at = Instant.parse("2026-11-21T00:41:03Z");
-        return new ReservationDTO(RESERVATION_ID, TRIP_ID, USER_ID, "Martín G.", 4.5, null, status, at, at);
+        return new ReservationResponseDTO(RESERVATION_ID, TRIP_ID, USER_ID, "Martín G.", 4.5, null, status, at, at);
     }
 
     private String url() {

@@ -1,6 +1,6 @@
 package com.example.uniride.backend.service;
 
-import com.example.uniride.backend.dto.ReservationDTO;
+import com.example.uniride.backend.dto.ReservationResponseDTO;
 import com.example.uniride.backend.exception.ApiException;
 import com.example.uniride.backend.exception.ErrorCode;
 import com.example.uniride.backend.model.Reservation;
@@ -81,7 +81,7 @@ public class ReservationService {
 
     /** {@code GET /trips/{tripId}/reservations}: only for the driver. */
     @Transactional(readOnly = true)
-    public List<ReservationDTO> listForTrip(UUID userId, UUID tripId) {
+    public List<ReservationResponseDTO> listForTrip(UUID userId, UUID tripId) {
         Trip trip = tripRepository.findById(tripId).orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND));
         requireDriver(trip, userId);
         return reservationRepository.findByTripIdOrderByReservedAtAsc(tripId).stream()
@@ -91,7 +91,7 @@ public class ReservationService {
 
     /** The driver accepts: takes a seat; the trip becomes {@code COMPLETO} at 0. */
     @Transactional
-    public ReservationDTO accept(UUID userId, UUID tripId, UUID reservationId) {
+    public ReservationResponseDTO accept(UUID userId, UUID tripId, UUID reservationId) {
         Reservation reservation = findForDriver(userId, tripId, reservationId);
         reservation.accept(clock.instant());
         // TODO(push, D5): enviar SOLICITUD_ACEPTADA al pasajero (docs/API.md §9)
@@ -100,7 +100,7 @@ public class ReservationService {
 
     /** The driver rejects. Does not touch the seats. */
     @Transactional
-    public ReservationDTO reject(UUID userId, UUID tripId, UUID reservationId) {
+    public ReservationResponseDTO reject(UUID userId, UUID tripId, UUID reservationId) {
         Reservation reservation = findForDriver(userId, tripId, reservationId);
         reservation.reject(clock.instant());
         // TODO(push, D5): enviar SOLICITUD_RECHAZADA al pasajero (docs/API.md §9)
@@ -109,7 +109,7 @@ public class ReservationService {
 
     /** The passenger cancels. An accepted reservation gives the seat back. */
     @Transactional
-    public ReservationDTO cancel(UUID userId, UUID tripId, UUID reservationId) {
+    public ReservationResponseDTO cancel(UUID userId, UUID tripId, UUID reservationId) {
         Reservation reservation = findReservation(lockTrip(tripId), reservationId);
         if (!reservation.belongsTo(userId)) {
             throw new ApiException(ErrorCode.FORBIDDEN);
@@ -159,6 +159,6 @@ public class ReservationService {
     }
 
     /** {@code created} decides between 201 (new) and 200 (retry of the same request). */
-    public record RequestSeatResult(ReservationDTO reservation, boolean created) {
+    public record RequestSeatResult(ReservationResponseDTO reservation, boolean created) {
     }
 }
