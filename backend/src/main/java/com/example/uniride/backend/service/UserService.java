@@ -5,13 +5,12 @@ import com.example.uniride.backend.dto.UserResponseDTO;
 import com.example.uniride.backend.exception.ApiException;
 import com.example.uniride.backend.exception.ErrorCode;
 import com.example.uniride.backend.model.User;
-import com.example.uniride.backend.model.UserProfile;
-import com.example.uniride.backend.model.Vehicle;
 import com.example.uniride.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -36,15 +35,7 @@ public class UserService {
     @Transactional
     public UserResponseDTO updateProfile(UUID userId, UpdateProfileRequestDTO request) {
         User user = requireUser(userId);
-        Vehicle vehicle = request.vehicle() != null ? request.vehicle().toEntity() : null;
-        UserProfile updatedProfile = new UserProfile(
-                request.fullName().trim(),
-                request.career().trim(),
-                request.phone().trim(),
-                request.preferredMode(),
-                vehicle
-        );
-        user.updateProfile(updatedProfile, clock.instant());
+        user.updateProfile(request.toProfile(), clock.instant());
         userRepository.save(user);
         return UserResponseDTO.from(user);
     }
@@ -52,7 +43,11 @@ public class UserService {
     @Transactional
     public void updateDeviceToken(UUID userId, String fcmToken) {
         User user = requireUser(userId);
-        user.updateFcmToken(fcmToken.trim(), clock.instant());
+        String normalizedToken = fcmToken.trim();
+        Instant now = clock.instant();
+        // Detach the token from any previous account on the same device (e.g. after offline logout).
+        userRepository.clearFcmTokenFromOtherUsers(normalizedToken, userId, now);
+        user.updateFcmToken(normalizedToken, now);
         userRepository.save(user);
     }
 

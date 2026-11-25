@@ -9,7 +9,7 @@ public record ConfirmPasswordResetRequestDTO(
         String token,
 
         @NotBlank(message = "La nueva contraseña es obligatoria.")
-        @Size(max = 128, message = "Máximo 128 caracteres.")
+        @Size(max = 72, message = "Máximo 72 caracteres.")
         String newPassword
 ) {
 }

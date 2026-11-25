@@ -30,7 +30,6 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -92,6 +91,25 @@ class AuthAndUserControllerTest {
     }
 
     @Test
+    void registroConCorreoDeFormatoInvalidoDevuelve400ConFieldsEmail() throws Exception {
+        mvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "no-es-un-correo",
+                                  "password": "Secreta123",
+                                  "fullName": "Lucía Fernández",
+                                  "career": "Ingeniería",
+                                  "phone": "+5491155550000",
+                                  "preferredMode": "PASAJERO"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.fields.email").exists());
+    }
+
+    @Test
     void registroConCamposVaciosDevuelve400ValidationError() throws Exception {
         mvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -142,11 +160,14 @@ class AuthAndUserControllerTest {
     }
 
     @Test
-    void perfilSinTokenDevuelve401YConTokenDevuelve200() throws Exception {
+    void perfilSinTokenDevuelve401() throws Exception {
         mvc.perform(get("/api/v1/users/me"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
+    }
 
+    @Test
+    void perfilConTokenDevuelve200() throws Exception {
         UserResponseDTO user = new UserResponseDTO(
                 USER_ID, "Lucía Fernández", "lfernandez@uade.edu.ar",
                 "Ingeniería en Informática", "+5491155550000",
@@ -161,14 +182,17 @@ class AuthAndUserControllerTest {
     }
 
     @Test
-    void guardarYBorrarDeviceTokenDevuelven204() throws Exception {
+    void guardarDeviceTokenDevuelve204() throws Exception {
         mvc.perform(put("/api/v1/users/me/device-token")
                         .header("Authorization", bearer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"fcmToken\":\"token-fcm-1\"}"))
                 .andExpect(status().isNoContent());
         verify(userService).updateDeviceToken(USER_ID, "token-fcm-1");
+    }
 
+    @Test
+    void borrarDeviceTokenDevuelve204() throws Exception {
         mvc.perform(delete("/api/v1/users/me/device-token").header("Authorization", bearer()))
                 .andExpect(status().isNoContent());
         verify(userService).deleteDeviceToken(USER_ID);

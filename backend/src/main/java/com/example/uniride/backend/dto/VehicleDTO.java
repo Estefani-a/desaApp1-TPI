@@ -35,6 +35,6 @@ public record VehicleDTO(
     }
 
     public Vehicle toEntity() {
-        return new Vehicle(brand.trim(), model.trim(), color.trim(), plate.trim().toUpperCase());
+        return new Vehicle(brand, model, color, plate);
     }
 }

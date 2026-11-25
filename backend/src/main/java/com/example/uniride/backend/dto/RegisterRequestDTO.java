@@ -1,7 +1,9 @@
 package com.example.uniride.backend.dto;
 
 import com.example.uniride.backend.model.PreferredMode;
+import com.example.uniride.backend.model.UserProfile;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -9,11 +11,12 @@ import jakarta.validation.constraints.Size;
 /** Request body for POST /auth/register (docs/API.md §4.1). */
 public record RegisterRequestDTO(
         @NotBlank(message = "El correo es obligatorio.")
+        @Email(message = "El correo electrónico no tiene un formato válido.")
         @Size(max = 120, message = "Máximo 120 caracteres.")
         String email,
 
         @NotBlank(message = "La contraseña es obligatoria.")
-        @Size(max = 128, message = "Máximo 128 caracteres.")
+        @Size(max = 72, message = "Máximo 72 caracteres.")
         String password,
 
         @NotBlank(message = "El nombre completo es obligatorio.")
@@ -34,4 +37,13 @@ public record RegisterRequestDTO(
         @Valid
         VehicleDTO vehicle
 ) {
+    public UserProfile toProfile() {
+        return new UserProfile(
+                fullName,
+                career,
+                phone,
+                preferredMode,
+                vehicle != null ? vehicle.toEntity() : null
+        );
+    }
 }

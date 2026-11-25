@@ -1,5 +1,7 @@
 package com.example.uniride.backend.model;
 
+import com.example.uniride.backend.exception.ApiException;
+import com.example.uniride.backend.exception.ErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -48,23 +50,25 @@ public class AuthToken {
     protected AuthToken() {
     }
 
-    public AuthToken(String tokenHash, User user, AuthTokenType type, Instant expiresAt, Instant now) {
+    public AuthToken(String tokenHash, User user, AuthTokenType type, Instant now) {
         this.id = UUID.randomUUID();
         this.tokenHash = Objects.requireNonNull(tokenHash);
         this.user = Objects.requireNonNull(user);
         this.type = Objects.requireNonNull(type);
-        this.expiresAt = Objects.requireNonNull(expiresAt);
         this.createdAt = Objects.requireNonNull(now);
+        this.expiresAt = now.plus(type.ttl());
     }
 
     public boolean isUsable(Instant now) {
         return usedAt == null && expiresAt.isAfter(now);
     }
 
-    public void markUsed(Instant now) {
-        if (usedAt == null) {
-            usedAt = Objects.requireNonNull(now);
+    /** Marks the token as used if still valid; throws {@code INVALID_OR_EXPIRED_TOKEN} otherwise. */
+    public void consume(Instant now) {
+        if (!isUsable(now)) {
+            throw new ApiException(ErrorCode.INVALID_OR_EXPIRED_TOKEN);
         }
+        this.usedAt = Objects.requireNonNull(now);
     }
 
     public UUID getId() {

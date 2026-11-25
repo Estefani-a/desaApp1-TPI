@@ -1,6 +1,7 @@
 package com.example.uniride.backend.dto;
 
 import com.example.uniride.backend.model.PreferredMode;
+import com.example.uniride.backend.model.UserProfile;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -26,4 +27,13 @@ public record UpdateProfileRequestDTO(
         @Valid
         VehicleDTO vehicle
 ) {
+    public UserProfile toProfile() {
+        return new UserProfile(
+                fullName,
+                career,
+                phone,
+                preferredMode,
+                vehicle != null ? vehicle.toEntity() : null
+        );
+    }
 }

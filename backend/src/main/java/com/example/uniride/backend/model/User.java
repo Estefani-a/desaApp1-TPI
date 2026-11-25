@@ -84,6 +84,19 @@ public class User {
         updatedAt = now;
     }
 
+    /**
+     * Replaces credentials and profile of an account that is still {@code PENDIENTE}, preventing
+     * pre-registration hijacking of an institutional email before the real student activates it.
+     */
+    public void reregisterPending(String newPasswordHash, UserProfile newProfile, Instant now) {
+        if (isActive()) {
+            throw new IllegalStateException("No se puede re-registrar una cuenta activa.");
+        }
+        passwordHash = Objects.requireNonNull(newPasswordHash);
+        profile = Objects.requireNonNull(newProfile);
+        updatedAt = now;
+    }
+
     public void updateFcmToken(String newFcmToken, Instant now) {
         fcmToken = Objects.requireNonNull(newFcmToken);
         updatedAt = now;
