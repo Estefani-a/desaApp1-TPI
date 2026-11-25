@@ -41,7 +41,13 @@ interface SessionTokenStore {
      */
     val hasToken: Flow<Boolean>
 
-    /** Emits whenever the backend rejects an authenticated request with HTTP 401. */
+    /**
+     * Emits whenever the backend rejects an authenticated request with HTTP 401.
+     *
+     * `SessionRepositoryImpl` listens to this flow in `@ApplicationScope` to clear Room
+     * (`clearAllTables()`) and user preferences (CONVENCIONES §6.4); the UI observes
+     * `SessionRepository.observeIsLoggedIn()` to navigate back to the login graph.
+     */
     val unauthorizedEvents: SharedFlow<Unit>
 
     /**

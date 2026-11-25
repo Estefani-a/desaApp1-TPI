@@ -1,6 +1,11 @@
 package com.example.uniride.data.mapper
 
 import com.example.uniride.data.local.entity.UserEntity
+import com.example.uniride.data.remote.dto.RegisterRequest
+import com.example.uniride.data.remote.dto.UpdateProfileRequest
+import com.example.uniride.data.remote.dto.UserDto
+import com.example.uniride.data.remote.dto.VehicleDto
+import com.example.uniride.domain.model.PreferredMode
 import com.example.uniride.domain.model.Profile
 import com.example.uniride.domain.model.Rating
 import com.example.uniride.domain.model.User
@@ -39,4 +44,51 @@ fun User.toEntity(): UserEntity = UserEntity(
     vehicleModel = profile.vehicle?.model,
     vehicleColor = profile.vehicle?.color,
     vehiclePlate = profile.vehicle?.plate,
+)
+
+fun VehicleDto.toDomain(): Vehicle = Vehicle(
+    brand = brand,
+    model = model,
+    color = color,
+    plate = plate,
+)
+
+fun Vehicle.toDto(): VehicleDto = VehicleDto(
+    brand = brand,
+    model = model,
+    color = color,
+    plate = plate,
+)
+
+fun UserDto.toDomain(): User = User(
+    id = UserId(id),
+    email = email,
+    profile = Profile(
+        fullName = fullName,
+        career = career,
+        phone = phone,
+        preferredMode = PreferredMode.valueOf(preferredMode),
+        vehicle = vehicle?.toDomain(),
+    ),
+    rating = ratingAvg?.let { Rating(it, ratingCount) },
+)
+
+fun UserDto.toEntity(): UserEntity = toDomain().toEntity()
+
+fun Profile.toRegisterRequest(email: String, password: String): RegisterRequest = RegisterRequest(
+    email = email,
+    password = password,
+    fullName = fullName,
+    career = career,
+    phone = phone,
+    preferredMode = preferredMode.name,
+    vehicle = vehicle?.toDto(),
+)
+
+fun Profile.toUpdateProfileRequest(): UpdateProfileRequest = UpdateProfileRequest(
+    fullName = fullName,
+    career = career,
+    phone = phone,
+    preferredMode = preferredMode.name,
+    vehicle = vehicle?.toDto(),
 )
