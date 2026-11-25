@@ -132,4 +132,70 @@ class TripDaoTest {
 
         assertEquals(listOf("trip-1"), flow.first())
     }
+
+    @Test
+    fun `replaceCatalog completo conserva lo pendiente y lo que tiene reserva activa del usuario`() = runTest {
+        database.reservationDao().upsert(reservationEntity(id = "r1", tripId = "reservado", passengerId = "yo"))
+        dao.upsertAll(
+            listOf(
+                tripEntity(id = "pendiente", isSync = false),
+                tripEntity(id = "reservado"),
+                tripEntity(id = "ajeno"),
+                tripEntity(id = "viejo"),
+            ),
+        )
+
+        dao.replaceCatalog(listOf(tripEntity(id = "nuevo")), full = true, userId = "yo", keepTripIds = setOf("ajeno"))
+
+        assertEquals(setOf("nuevo", "pendiente", "reservado", "ajeno"), dao.getAll().map { it.tripId }.toSet())
+    }
+
+    @Test
+    fun `replaceCatalog parcial saca los finalizados salvo los que el usuario tiene reservados`() = runTest {
+        database.reservationDao().upsert(reservationEntity(id = "r1", tripId = "reservado", passengerId = "yo"))
+        dao.upsertAll(listOf(tripEntity(id = "a"), tripEntity(id = "b"), tripEntity(id = "reservado")))
+
+        dao.replaceCatalog(
+            listOf(
+                tripEntity(id = "a", status = TripStatus.CANCELADO),
+                tripEntity(id = "reservado", status = TripStatus.FINALIZADO),
+                tripEntity(id = "c"),
+            ),
+            full = false,
+            userId = "yo",
+            keepTripIds = emptySet(),
+        )
+
+        val byId = dao.getAll().associateBy { it.tripId }
+        assertEquals(setOf("b", "reservado", "c"), byId.keys)
+        assertEquals(TripStatus.FINALIZADO, byId.getValue("reservado").status)
+    }
+
+    @Test
+    fun `observeMyTrips trae los que ofrece el usuario y los que tiene reservados`() = runTest {
+        database.reservationDao().upsert(reservationEntity(id = "r1", tripId = "reservado", passengerId = "yo"))
+        dao.upsertAll(
+            listOf(
+                tripEntity(id = "propio", driverId = "yo"),
+                tripEntity(id = "reservado"),
+                tripEntity(id = "ajeno"),
+            ),
+        )
+
+        assertEquals(setOf("propio", "reservado"), dao.observeMyTrips("yo").first().map { it.tripId }.toSet())
+    }
+
+    @Test
+    fun `observeListedTrips incluye completos y deja afuera finalizados y cancelados`() = runTest {
+        dao.upsertAll(
+            listOf(
+                tripEntity(id = "abierto"),
+                tripEntity(id = "completo", status = TripStatus.COMPLETO),
+                tripEntity(id = "finalizado", status = TripStatus.FINALIZADO),
+                tripEntity(id = "cancelado", status = TripStatus.CANCELADO),
+            ),
+        )
+
+        assertEquals(setOf("abierto", "completo"), dao.observeListedTrips().first().map { it.tripId }.toSet())
+    }
 }

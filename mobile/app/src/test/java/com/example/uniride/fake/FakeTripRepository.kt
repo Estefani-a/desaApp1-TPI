@@ -1,6 +1,7 @@
 package com.example.uniride.fake
 
 import com.example.uniride.core.result.AppResult
+import com.example.uniride.core.result.DataError
 import com.example.uniride.domain.model.Trip
 import com.example.uniride.domain.model.TripDraft
 import com.example.uniride.domain.model.TripFilters
@@ -53,6 +54,16 @@ class FakeTripRepository(
     override suspend fun refreshTrip(tripId: TripId): AppResult<Unit> = AppResult.Success(Unit)
 
     override suspend fun refreshMyTrips(): AppResult<Unit> = AppResult.Success(Unit)
+
+    override fun observeRejectedTrips(): Flow<Map<TripId, DataError>> = MutableStateFlow(emptyMap())
+
+    override suspend fun dismissRejection(tripId: TripId) = Unit
+
+    override suspend fun clearLocalData(): AppResult<Unit> {
+        trips.value = emptyList()
+        lastRefreshedAt.value = null
+        return AppResult.Success(Unit)
+    }
 
     override suspend fun publish(draft: TripDraft): AppResult<TripId> = error("No se usa en estos tests")
 

@@ -13,6 +13,10 @@ interface UserDao {
     @Query("SELECT * FROM users LIMIT 1")
     fun observeCurrentUser(): Flow<UserEntity?>
 
+    /** One-shot read of [observeCurrentUser]. */
+    @Query("SELECT * FROM users LIMIT 1")
+    suspend fun getCurrentUser(): UserEntity?
+
     @Upsert
     suspend fun upsert(user: UserEntity)
 
