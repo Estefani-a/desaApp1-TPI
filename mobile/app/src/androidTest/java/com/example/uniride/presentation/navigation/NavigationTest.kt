@@ -37,7 +37,14 @@ class NavigationTest {
             navController = TestNavHostController(LocalContext.current).apply {
                 navigatorProvider.addNavigator(ComposeNavigator())
             }
-            UniRideTheme { UniRideApp(profile = profile, navController = navController) }
+            UniRideTheme {
+                UniRideApp(
+                    profile = profile,
+                    navController = navController,
+                    // C1 has a Hilt ViewModel and this test has no Hilt
+                    driverHome = { _, _ -> },
+                )
+            }
         }
     }
 
