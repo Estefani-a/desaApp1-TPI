@@ -2,7 +2,7 @@ package com.example.uniride.di
 
 import com.example.uniride.data.datastore.FeedFiltersDataStore
 import com.example.uniride.data.repository.InMemoryCampusRepository
-import com.example.uniride.data.repository.InMemoryTripRepository
+import com.example.uniride.data.repository.TripRepositoryImpl
 import com.example.uniride.domain.repository.CampusRepository
 import com.example.uniride.domain.repository.FeedFiltersRepository
 import com.example.uniride.domain.repository.TripRepository
@@ -16,9 +16,8 @@ import dagger.hilt.components.SingletonComponent
 @InstallIn(SingletonComponent::class)
 abstract class TripModule {
 
-    /** Provisional until Room (E1): see [InMemoryTripRepository]. */
     @Binds
-    abstract fun bindTripRepository(impl: InMemoryTripRepository): TripRepository
+    abstract fun bindTripRepository(impl: TripRepositoryImpl): TripRepository
 
     @Binds
     abstract fun bindCampusRepository(impl: InMemoryCampusRepository): CampusRepository
