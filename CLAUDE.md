@@ -29,7 +29,7 @@ App Android de viajes compartidos para estudiantes de UADE (Kotlin, Jetpack Comp
 
 - El Controller solo valida y delega; las reglas de negocio y las transacciones están en el Service.
 - Paquetes por capa: `controller/`, `service/`, `repository/`, `model/` (entidades JPA), `dto/`, `exception/`, `security/`, `config/`.
-- Nunca se devuelve una entidad JPA: siempre un `record` `XxxDTO` (respuesta) o `XxxRequestDTO` (request). Inyección por constructor.
+- Nunca se devuelve una entidad JPA: siempre un `record`. Nombres: `XxxRequestDTO` si solo entra, `XxxResponseDTO` si solo sale (aunque vaya anidado), `XxxDTO` solo si se usa en los dos sentidos. Inyección por constructor.
 - Errores con el formato `{ code, message }` desde `GlobalExceptionHandler`, con los códigos HTTP de CONVENCIONES §10.4.
 - Patente y teléfono solo en la respuesta si quien consulta comparte una reserva `ACEPTADA` (RNF07). Aceptar una reserva descuenta la vacante en la misma transacción, con bloqueo.
 - Crear viajes y reservas es `PUT` idempotente con el UUID del cliente.

@@ -436,7 +436,7 @@ backend/src/main/java/com/example/uniride/backend/
 ├── service/             // TripService, ReservationService… y las políticas que usan (ContactVisibilityPolicy)
 ├── repository/          // TripRepository, ReservationRepository… (Spring Data JPA)
 ├── model/               // entidades JPA (Trip, Reservation, User, Campus), sus embeddables y enums
-├── dto/                 // TripDTO, ReservationDTO, ApiErrorDTO, PublishTripRequestDTO…
+├── dto/                 // TripResponseDTO, ApiErrorResponseDTO, PublishTripRequestDTO, VehicleDTO…
 ├── exception/           // ApiException, ErrorCode, GlobalExceptionHandler
 ├── security/            // JwtService, JwtAuthenticationFilter, CurrentUser
 ├── config/              // SecurityConfig, OpenApiConfig, TimeConfig, FirebaseConfig
@@ -449,7 +449,10 @@ Una funcionalidad nueva agrega su `XxxController`, `XxxService`, `XxxRepository`
 
 - El **Controller** solo recibe, valida (`@Valid`) y delega. Nada de lógica de negocio ni acceso a repositorios.
 - El **Service** tiene las reglas de negocio y las transacciones (`@Transactional`). Es lo que se testea.
-- Las entidades JPA **nunca** se devuelven en un controller: siempre se mapean a un DTO. Los DTOs son `record` de Java y se llaman `XxxDTO` (respuesta) o `XxxRequestDTO` (cuerpo de un request).
+- Las entidades JPA **nunca** se devuelven en un controller: siempre se mapean a un DTO. Los DTOs son `record` de Java y el nombre dice en qué sentido viajan:
+  - `XxxRequestDTO` si solo entra (cuerpo de un request): `PublishTripRequestDTO`;
+  - `XxxResponseDTO` si solo sale, aunque también vaya anidado en otra respuesta: `TripResponseDTO`, `ReservationResponseDTO`;
+  - `XxxDTO` solo para las piezas que se usan en los dos sentidos: `VehicleDTO` (en el registro y en el perfil).
 - El flujo es Controller → Service → Repository → Model. Un Controller no usa repositorios ni entidades; un Repository no tiene lógica.
 - Inyección por constructor (campos `private final`). Sin `@Autowired` en campos.
 - Reglas que exige la preentrega y que viven en el Service, no en la app:
@@ -490,6 +493,7 @@ Los `code` son un enum `ErrorCode` en el backend y se listan en `docs/API.md`.
 
 - Las tablas las crea Hibernate a partir de las entidades JPA (`spring.jpa.hibernate.ddl-auto=update`): agregar una tabla o una columna es agregarla a la entidad. No usamos herramientas de migraciones (como Flyway), porque con una semana de desarrollo y sin datos reales que cuidar no se justifican.
 - `update` agrega tablas y columnas, pero **no borra ni renombra**. Si cambiás un nombre o un tipo, avisá en el grupo y que cada uno reinicie su base con `docker compose down -v` (borra el volumen de PostgreSQL).
+- Lo que JPA no puede declarar (por ejemplo, un índice único parcial) va en `data.sql` con `IF NOT EXISTS`, con un comentario que diga qué entidad o enum tiene que coincidir.
 - Los datos iniciales (sedes y puntos de encuentro, usuarios de prueba para la demo) van en `src/main/resources/data.sql`, con `INSERT ... ON CONFLICT DO NOTHING` para que se pueda ejecutar en cada arranque (`spring.sql.init.mode=always` y `spring.jpa.defer-datasource-initialization=true`).
 - Tablas y columnas en snake_case (`trips`, `departure_date`). Los enums se guardan como texto (`@Enumerated(EnumType.STRING)`).
 
