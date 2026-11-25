@@ -127,6 +127,34 @@
 
     <!-- Publicación (RF02) -->
     <string name="publish_title">Publicar un viaje</string>
+    <string name="publish_campus">Sede</string>
+    <string name="publish_direction">Sentido del viaje</string>
+    <string name="publish_meeting_point">Punto de encuentro</string>
+    <string name="publish_neighborhood">Barrio de destino</string>
+    <string name="publish_reference">Referencia (opcional)</string>
+    <string name="publish_departure_date">Fecha de salida</string>
+    <string name="publish_departure_time">Hora de salida</string>
+    <string name="publish_arrival_time">Llegada estimada (opcional)</string>
+    <string name="publish_arrival_clear">Quitar la hora de llegada</string>
+    <string name="publish_seats">Plazas</string>
+    <string name="publish_contribution">Aporte por asiento ($)</string>
+    <string name="publish_contribution_help">En pesos, sin decimales</string>
+    <string name="publish_submit">Publicar viaje</string>
+    <string name="publish_picker_confirm">Aceptar</string>
+    <string name="publish_picker_dismiss">Cancelar</string>
+    <string name="publish_success">Viaje publicado</string>
+    <string name="publish_success_offline">Se publicará cuando vuelva la conexión</string>
+    <string name="publish_error_vehicle">Para publicar necesitás cargar un vehículo en tu perfil</string>
+    <string name="publish_error_campus">Elegí una sede</string>
+    <string name="publish_error_meeting_point">Elegí un punto de encuentro de la sede</string>
+    <string name="publish_error_neighborhood">Ingresá el barrio de destino</string>
+    <string name="publish_error_departure_missing">Elegí la fecha y la hora de salida</string>
+    <string name="publish_error_departure_past">La salida tiene que ser más tarde que ahora</string>
+    <string name="publish_error_seats">Elegí entre 1 y 4 plazas</string>
+    <string name="publish_error_contribution">Ingresá el aporte por asiento</string>
+    <string name="publish_campuses_offline">Necesitás conexión la primera vez para cargar las sedes. Cuando tengas internet, tocá Reintentar.</string>
+    <string name="publish_campuses_empty_title">No hay sedes disponibles</string>
+    <string name="publish_campuses_empty_message">Probá de nuevo más tarde.</string>
 
     <!-- Perfil (RF01) -->
     <string name="profile_title">Perfil</string>
