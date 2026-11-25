@@ -1,12 +1,8 @@
 package com.example.uniride.domain.usecase.connectivity
 
+import app.cash.turbine.test
 import com.example.uniride.fake.FakeNetworkMonitor
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import org.junit.Assert.assertEquals
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -14,38 +10,39 @@ import org.junit.Test
 class ObserveConnectivityUseCaseTest {
 
     @Test
-    fun `emite true inicialmente cuando hay conexion`() = runBlocking {
+    fun `emite true inicialmente cuando hay conexion`() = runTest {
         val fakeMonitor = FakeNetworkMonitor(initialOnline = true)
         val useCase = ObserveConnectivityUseCase(fakeMonitor)
 
-        assertTrue(useCase().first())
+        useCase().test {
+            assertTrue(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
-    fun `emite false inicialmente cuando no hay conexion`() = runBlocking {
+    fun `emite false inicialmente cuando no hay conexion`() = runTest {
         val fakeMonitor = FakeNetworkMonitor(initialOnline = false)
         val useCase = ObserveConnectivityUseCase(fakeMonitor)
 
-        assertFalse(useCase().first())
+        useCase().test {
+            assertFalse(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
-    fun `emite los cambios de conectividad al perder y recuperar red`() = runBlocking {
+    fun `emite los cambios de conectividad al perder y recuperar red`() = runTest {
         val fakeMonitor = FakeNetworkMonitor(initialOnline = true)
         val useCase = ObserveConnectivityUseCase(fakeMonitor)
-        val emissions = mutableListOf<Boolean>()
 
-        val job = launch {
-            useCase().take(3).toList(emissions)
+        useCase().test {
+            assertTrue(awaitItem())
+            fakeMonitor.setOnline(false)
+            assertFalse(awaitItem())
+            fakeMonitor.setOnline(true)
+            assertTrue(awaitItem())
+            cancelAndIgnoreRemainingEvents()
         }
-
-        // Wait until the collector starts receiving the initial value, then toggle states.
-        kotlinx.coroutines.yield()
-        fakeMonitor.setOnline(false)
-        kotlinx.coroutines.yield()
-        fakeMonitor.setOnline(true)
-        job.join()
-
-        assertEquals(listOf(true, false, true), emissions)
     }
 }

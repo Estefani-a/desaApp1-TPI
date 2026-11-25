@@ -32,19 +32,22 @@ enum class ReservationStatus {
  */
 enum class AppMode { PASAJERO, CONDUCTOR }
 
-/** Time slot of the day. Each one goes from its start to the start of the next one. */
+/**
+ * Time slot of the day, from the departure time. Half-open intervals, as in the API contract;
+ * NOCHE crosses midnight.
+ */
 enum class Shift(val start: LocalTime) {
-    /** 00:00 to 12:59. */
-    MANANA(LocalTime.MIDNIGHT),
+    /** [06:00, 13:00). */
+    MANANA(LocalTime.of(6, 0)),
 
-    /** 13:00 to 17:59. */
+    /** [13:00, 18:00). */
     TARDE(LocalTime.of(13, 0)),
 
-    /** 18:00 to 23:59. */
+    /** [18:00, 06:00): before 06:00 it is still the night of the previous evening. */
     NOCHE(LocalTime.of(18, 0)),
     ;
 
     companion object {
-        fun of(time: LocalTime): Shift = entries.last { !time.isBefore(it.start) }
+        fun of(time: LocalTime): Shift = entries.lastOrNull { !time.isBefore(it.start) } ?: NOCHE
     }
 }

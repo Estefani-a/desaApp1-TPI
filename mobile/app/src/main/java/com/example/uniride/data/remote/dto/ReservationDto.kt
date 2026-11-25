@@ -1,9 +1,12 @@
 package com.example.uniride.data.remote.dto
 
+import com.squareup.moshi.JsonClass
+
 /**
  * Reservation payload returned by /trips/{tripId}/reservations endpoints (docs/API.md §3.4).
  * [passengerPhone] is non-null only for the driver when [status] is ACEPTADA (RNF07).
  */
+@JsonClass(generateAdapter = true)
 data class ReservationDto(
     val reservationId: String,
     val tripId: String,

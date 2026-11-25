@@ -22,13 +22,14 @@ App Android de viajes compartidos para estudiantes de UADE (Kotlin, Jetpack Comp
 - `XxxRoute` obtiene el ViewModel; `XxxScreen(state, onAction, modifier)` no tiene estado y tiene `@Preview`.
 - Cada pantalla resuelve cargando, contenido, vacío, error y sin conexión.
 - Sin textos hardcodeados (todo en `strings.xml`), sin colores fuera de `MaterialTheme`, íconos accionables con `contentDescription`, objetivos táctiles de 48 dp.
-- Navegación con rutas `@Serializable` que solo llevan ids. El ViewModel no recibe `Context` ni `NavController`.
+- Navegación con rutas `@Serializable` que solo llevan ids (o el código de un enlace de correo, CONVENCIONES §7.6). El ViewModel no recibe `Context` ni `NavController`.
 - Sin `!!`, sin `GlobalScope`, sin `runBlocking` fuera de tests, sin `Dispatchers.IO` hardcodeado (se inyecta `DispatchersProvider`).
 
 ## Backend
 
 - El Controller solo valida y delega; las reglas de negocio y las transacciones están en el Service.
-- Nunca se devuelve una entidad JPA: siempre un `record` `*Response`. Inyección por constructor.
+- Paquetes por capa: `controller/`, `service/`, `repository/`, `model/` (entidades JPA), `dto/`, `exception/`, `security/`, `config/`.
+- Nunca se devuelve una entidad JPA: siempre un `record`. Nombres: `XxxRequestDTO` si solo entra, `XxxResponseDTO` si solo sale (aunque vaya anidado), `XxxDTO` solo si se usa en los dos sentidos. Inyección por constructor.
 - Errores con el formato `{ code, message }` desde `GlobalExceptionHandler`, con los códigos HTTP de CONVENCIONES §10.4.
 - Patente y teléfono solo en la respuesta si quien consulta comparte una reserva `ACEPTADA` (RNF07). Aceptar una reserva descuenta la vacante en la misma transacción, con bloqueo.
 - Crear viajes y reservas es `PUT` idempotente con el UUID del cliente.

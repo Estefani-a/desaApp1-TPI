@@ -247,4 +247,25 @@ class FakeRemoteDataSourcesTest {
         assertTrue(store.matchesShift("13:00", "TARDE"))
         assertTrue(store.matchesShift("18:00", "NOCHE"))
     }
+
+    @Test
+    fun `al reiniciar la app en modo fake recupera el usuario desde el token persistido`() = runBlocking {
+        var persistedToken: String? = "${FakeBackendStore.FAKE_TOKEN_PREFIX}${FakeBackendStore.DEFAULT_DRIVER_ID}"
+        val freshStoreAfterRestart = FakeBackendStore(tokenProvider = { persistedToken })
+        val auth = FakeAuthRemoteDataSource(freshStoreAfterRestart)
+        val trips = FakeTripRemoteDataSource(freshStoreAfterRestart)
+
+        assertEquals("lfernandez@uade.edu.ar", auth.getProfile().email)
+        assertTrue(trips.getTrips().isNotEmpty())
+
+        // Al limpiarse el token (logout), vuelve a responder 401 igual que el backend real
+        persistedToken = null
+        try {
+            auth.getProfile()
+            fail("Se esperaba ApiException 401")
+        } catch (ex: ApiException) {
+            assertEquals(401, ex.httpCode)
+            assertEquals(ApiErrorCode.UNAUTHENTICATED, ex.apiError.errorCode)
+        }
+    }
 }

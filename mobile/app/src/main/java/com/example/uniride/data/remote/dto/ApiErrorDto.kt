@@ -1,8 +1,11 @@
 package com.example.uniride.data.remote.dto
 
+import com.squareup.moshi.JsonClass
+
 /**
  * Standard error body returned by the backend GlobalExceptionHandler (docs/API.md §2).
  */
+@JsonClass(generateAdapter = true)
 data class ApiErrorDto(
     val code: String,
     val message: String,

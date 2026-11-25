@@ -1,3 +1,167 @@
 <resources>
     <string name="app_name">UniRide</string>
+
+    <!-- Comunes (N3): los usan todas las pantallas a través de presentation/common -->
+    <string name="common_retry">Reintentar</string>
+    <string name="common_back">Volver</string>
+    <string name="common_loading">Cargando…</string>
+    <string name="common_any">Todos</string>
+    <string name="common_pending_sync">Pendiente de sincronizar</string>
+    <string name="common_today">Hoy</string>
+    <string name="common_tomorrow">Mañana</string>
+
+    <!-- Errores por DataError (CONVENCIONES §6.3) -->
+    <string name="common_error_no_connection">No hay conexión a internet. Revisá tu red y volvé a intentar.</string>
+    <string name="common_error_timeout">El servidor tardó demasiado en responder. Probá de nuevo en unos segundos.</string>
+    <string name="common_error_unauthorized">Tu sesión venció. Volvé a iniciar sesión.</string>
+    <string name="common_error_not_found">No encontramos lo que buscabas. Puede que ya no exista.</string>
+    <string name="common_error_conflict">No se pudo completar la acción porque los datos cambiaron. Actualizá e intentá de nuevo.</string>
+    <string name="common_error_validation">Hay datos con errores. Revisalos y volvé a intentar.</string>
+    <string name="common_error_server">Tuvimos un problema en el servidor. Probá de nuevo más tarde.</string>
+    <string name="common_error_unknown">Ocurrió un error inesperado. Probá de nuevo.</string>
+    <string name="common_error_title">Algo salió mal</string>
+
+    <!-- Banner sin conexión (12.1) -->
+    <string name="common_offline_title">Sin conexión</string>
+    <string name="common_offline_message">Estás viendo los últimos datos guardados.</string>
+    <string name="common_offline_message_updated_at">Estás viendo los datos actualizados a las %1$s.</string>
+    <string name="common_last_updated_at">Actualizado %1$s</string>
+
+    <!-- Estados vacíos genéricos -->
+    <string name="common_empty_title">No hay nada para mostrar</string>
+    <string name="common_empty_message">Cuando haya información nueva, va a aparecer acá.</string>
+
+    <!-- Glosario: valores de los enums como se muestran en la UI -->
+    <string name="direction_ida">Ida a la sede</string>
+    <string name="direction_vuelta">Vuelta desde la sede</string>
+    <string name="shift_manana">Mañana</string>
+    <string name="shift_tarde">Tarde</string>
+    <string name="shift_noche">Noche</string>
+    <string name="trip_status_abierto">Abierto</string>
+    <string name="trip_status_completo">Completo</string>
+    <string name="trip_status_finalizado">Finalizado</string>
+    <string name="trip_status_cancelado">Cancelado</string>
+    <string name="reservation_status_pendiente">Pendiente</string>
+    <string name="reservation_status_aceptada">Aceptada</string>
+    <string name="reservation_status_rechazada">Rechazada</string>
+    <string name="reservation_status_cancelada">Cancelada</string>
+
+    <!-- Tarjeta de viaje (TripCard), textos de B1 en la guía -->
+    <string name="trip_card_per_seat">por asiento</string>
+    <string name="trip_card_contribution_free">Sin aporte</string>
+    <string name="trip_card_verified">Verificado UADE</string>
+    <string name="trip_card_verified_rating">Verificado UADE · ★ %1$s</string>
+    <string name="trip_card_full">Sin plazas</string>
+    <plurals name="trip_card_seats_available">
+        <item quantity="one">%d libre</item>
+        <item quantity="other">%d libres</item>
+    </plurals>
+    <string name="trip_card_open_description">Ver detalle del viaje de las %1$s</string>
+
+    <!-- Navegación (G3): barra inferior y selector de modo -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_feed">Explorar</string>
+    <string name="nav_publish">Publicar</string>
+    <string name="nav_profile">Perfil</string>
+    <string name="nav_mode_passenger">Pasajero</string>
+    <string name="nav_mode_driver">Conductor</string>
+    <string name="nav_mode_selector_description">Modo de uso</string>
+
+    <!-- Placeholders de G3: cada RF los reemplaza por su pantalla -->
+    <string name="placeholder_message">Pantalla en construcción</string>
+    <string name="placeholder_action_login">Iniciar sesión</string>
+    <string name="placeholder_action_register">Crear cuenta</string>
+    <string name="placeholder_action_enter">Entrar</string>
+    <string name="placeholder_action_forgot_password">Olvidé mi contraseña</string>
+    <string name="placeholder_action_create_account">Registrarme</string>
+    <string name="placeholder_action_trip_detail">Ver detalle de un viaje</string>
+    <string name="placeholder_action_request_seat">Solicitar asiento</string>
+    <string name="placeholder_action_back">Volver</string>
+    <string name="placeholder_action_my_trip">Ver mi viaje</string>
+    <string name="placeholder_action_logout">Cerrar sesión</string>
+
+    <!-- Auth (RF01) -->
+    <string name="auth_welcome_title">Bienvenida</string>
+    <string name="auth_login_title">Iniciar sesión</string>
+    <string name="auth_register_title">Crear cuenta</string>
+    <string name="auth_check_email_title">Revisá tu correo</string>
+    <string name="auth_forgot_password_title">Recuperar contraseña</string>
+    <string name="auth_reset_password_title">Nueva contraseña</string>
+    <string name="auth_activate_title">Activar cuenta</string>
+
+    <!-- Inicio -->
+    <string name="home_passenger_title">Inicio del pasajero</string>
+
+    <!-- Feed (RF03) -->
+    <string name="feed_title">Explorar viajes</string>
+    <string name="feed_question_vuelta">¿Volvés a casa?</string>
+    <string name="feed_question_ida">¿Vas a la sede?</string>
+    <string name="feed_direction_vuelta">Vuelta a casa</string>
+    <string name="feed_direction_ida">Ida a la sede</string>
+    <string name="feed_filter_campus">Sede</string>
+    <string name="feed_filter_date">Fecha</string>
+    <string name="feed_filter_shift">Turno</string>
+    <string name="feed_filter_shift_selected">Turno %1$s</string>
+    <string name="feed_filter_any_campus">Todas las sedes</string>
+    <string name="feed_filter_any_date">Cualquier día</string>
+    <string name="feed_filter_any_shift">Todo el día</string>
+    <string name="feed_clear_filters">Restablecer filtros</string>
+    <plurals name="feed_trips_available">
+        <item quantity="one">%d viaje disponible</item>
+        <item quantity="other">%d viajes disponibles</item>
+    </plurals>
+    <string name="feed_empty_filtered_title">No hay viajes con estos filtros</string>
+    <string name="feed_empty_filtered_message">Probá con otra sede, fecha o turno.</string>
+    <string name="feed_empty_title">Todavía no hay viajes publicados</string>
+    <string name="feed_empty_message">Cuando alguien publique un viaje lo vas a ver acá. Deslizá hacia abajo para actualizar.</string>
+    <string name="feed_first_start_offline">Necesitás conexión la primera vez para ver los viajes. Cuando tengas internet, tocá Reintentar.</string>
+
+    <!-- Detalle y reserva (RF04) -->
+    <string name="detail_title">Detalle del viaje</string>
+    <string name="seat_requested_title">Solicitud enviada</string>
+    <string name="my_trip_title">Mi viaje</string>
+    <string name="driver_panel_title">Panel del conductor</string>
+
+    <!-- Publicación (RF02) -->
+    <string name="publish_title">Publicar un viaje</string>
+    <string name="publish_campus">Sede</string>
+    <string name="publish_direction">Sentido del viaje</string>
+    <string name="publish_meeting_point">Punto de encuentro</string>
+    <string name="publish_neighborhood">Barrio de destino</string>
+    <string name="publish_reference">Referencia (opcional)</string>
+    <string name="publish_departure_date">Fecha de salida</string>
+    <string name="publish_departure_time">Hora de salida</string>
+    <string name="publish_arrival_time">Llegada estimada (opcional)</string>
+    <string name="publish_arrival_clear">Quitar la hora de llegada</string>
+    <string name="publish_seats">Plazas</string>
+    <string name="publish_contribution">Aporte por asiento ($)</string>
+    <string name="publish_contribution_help">En pesos, sin decimales</string>
+    <string name="publish_submit">Publicar viaje</string>
+    <string name="publish_picker_confirm">Aceptar</string>
+    <string name="publish_picker_dismiss">Cancelar</string>
+    <string name="publish_success">Viaje publicado</string>
+    <string name="publish_success_offline">Se publicará cuando vuelva la conexión</string>
+    <string name="publish_error_vehicle">Para publicar necesitás cargar un vehículo en tu perfil</string>
+    <string name="publish_error_campus">Elegí una sede</string>
+    <string name="publish_error_meeting_point">Elegí un punto de encuentro de la sede</string>
+    <string name="publish_error_neighborhood">Ingresá el barrio de destino</string>
+    <string name="publish_error_departure_missing">Elegí la fecha y la hora de salida</string>
+    <string name="publish_error_departure_past">La salida tiene que ser más tarde que ahora</string>
+    <string name="publish_error_seats">Elegí entre 1 y 4 plazas</string>
+    <string name="publish_error_contribution">Ingresá el aporte por asiento</string>
+    <string name="publish_campuses_offline">Necesitás conexión la primera vez para cargar las sedes. Cuando tengas internet, tocá Reintentar.</string>
+    <string name="publish_campuses_empty_title">No hay sedes disponibles</string>
+    <string name="publish_campuses_empty_message">Probá de nuevo más tarde.</string>
+
+    <!-- Inicio del conductor (RF02) -->
+    <string name="driver_home_trips_title">Mis viajes publicados</string>
+    <string name="driver_home_publish">Publicar un viaje</string>
+    <string name="driver_home_empty_title">Todavía no publicaste ningún viaje</string>
+    <string name="driver_home_empty_message">Publicá un trayecto y los estudiantes que van para tu lado podrán pedirte un asiento.</string>
+    <string name="driver_home_rejected_title">No pudimos publicar tu viaje</string>
+    <string name="driver_home_rejected_trip">%1$s a las %2$s, hacia %3$s</string>
+    <string name="driver_home_rejected_dismiss">Entendido</string>
+
+    <!-- Perfil (RF01) -->
+    <string name="profile_title">Perfil</string>
 </resources>

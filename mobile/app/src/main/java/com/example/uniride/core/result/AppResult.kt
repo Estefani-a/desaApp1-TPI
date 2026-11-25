@@ -3,8 +3,7 @@ package com.example.uniride.core.result
 /**
  * Result of a repository operation (CONVENCIONES §6.3): repositories never throw.
  *
- * Copied as is from CONVENCIONES so the repository interfaces of `domain/` compile. The
- * helpers (`map`, `onSuccess`, `safeApiCall`…) come with task E2.
+ * Helpers (`map`, `onSuccess`, `onFailure`, `getOrNull`, `fold`) live in AppResultExtensions.kt.
  */
 sealed interface AppResult<out T> {
     data class Success<T>(val data: T) : AppResult<T>
