@@ -1,5 +1,6 @@
 package com.example.uniride.backend.config;
 
+import com.example.uniride.backend.util.BusinessTime;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializerBase;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
@@ -23,7 +24,7 @@ import java.time.temporal.ChronoUnit;
 @Configuration
 public class TimeConfig {
 
-    public static final ZoneId BUSINESS_ZONE = ZoneId.of("America/Argentina/Buenos_Aires");
+    public static final ZoneId BUSINESS_ZONE = BusinessTime.ZONE;
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter INSTANT_FORMAT =

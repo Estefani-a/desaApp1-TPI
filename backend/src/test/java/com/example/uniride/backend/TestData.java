@@ -8,14 +8,15 @@ import com.example.uniride.backend.model.ReservationStatus;
 import com.example.uniride.backend.model.Trip;
 import com.example.uniride.backend.model.TripRoute;
 import com.example.uniride.backend.model.TripSchedule;
+import com.example.uniride.backend.model.TripStatus;
 import com.example.uniride.backend.model.User;
 import com.example.uniride.backend.model.UserProfile;
 import com.example.uniride.backend.model.Vehicle;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -27,7 +28,8 @@ public final class TestData {
     public static final Clock CLOCK =
             Clock.fixed(Instant.parse("2026-11-20T21:00:00Z"), ZoneId.of("America/Argentina/Buenos_Aires"));
     public static final Instant NOW = CLOCK.instant();
-    public static final LocalDateTime LOCAL_NOW = LocalDateTime.now(CLOCK);
+    /** A moment after the trips of {@link #trip(User, int)} left. */
+    public static final Instant AFTER_DEPARTURE = Instant.parse("2026-11-21T03:00:00Z");
 
     public static final Campus MONSERRAT = new Campus("MONSERRAT", "Sede Monserrat", List.of("Salida Lima 717"));
 
@@ -55,6 +57,18 @@ public final class TestData {
     /** Trip of [driver] today at 22:15 (after "now") with [seats] seats. */
     public static Trip trip(User driver, int seats) {
         return trip(driver, seats, LocalDate.of(2026, 11, 20));
+    }
+
+    /** Leaves [trip] without seats, accepting one request per seat. */
+    public static void fill(Trip trip) {
+        while (trip.getAvailableSeats() > 0) {
+            reservation(trip, passenger(), ReservationStatus.ACEPTADA);
+        }
+    }
+
+    /** Puts [trip] in [status] directly: finishing and cancelling trips belong to RF02. */
+    public static void close(Trip trip, TripStatus status) {
+        ReflectionTestUtils.setField(trip, "status", status);
     }
 
     /** Reservation of [passenger] on [trip] taken to [status] through its transitions. */

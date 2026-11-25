@@ -1,8 +1,10 @@
 package com.example.uniride.backend.model;
 
+import com.example.uniride.backend.util.BusinessTime;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -30,8 +32,8 @@ public class TripSchedule {
         this.estimatedArrivalTime = estimatedArrivalTime;
     }
 
-    public boolean hasDepartedAt(LocalDateTime now) {
-        return LocalDateTime.of(departureDate, departureTime).isBefore(now);
+    public boolean hasDepartedAt(Instant now) {
+        return LocalDateTime.of(departureDate, departureTime).isBefore(LocalDateTime.ofInstant(now, BusinessTime.ZONE));
     }
 
     public LocalDate getDepartureDate() {
