@@ -382,7 +382,7 @@ Los hace Nicolás en los primeros días y todos los usan. Antes de crear un comp
 
 ### 7.6 Navegación
 
-- Rutas tipadas con `@Serializable` (Navigation Compose 2.8+). **Solo se pasan ids** (`TripDetailRoute(tripId: String)`), nunca objetos: la pantalla destino lee el resto de Room.
+- Rutas tipadas con `@Serializable` (Navigation Compose 2.8+). **Solo se pasan ids** (`TripDetailRoute(tripId: String)`), nunca objetos: la pantalla destino lee el resto de Room. La única excepción son las pantallas que abre un enlace de correo (activar la cuenta, restablecer la contraseña), que reciben el código del enlace porque no hay nada en Room que buscar.
 - Cada área registra su propio subgrafo como extensión: `fun NavGraphBuilder.authGraph(navController: NavController)`. `UniRideNavHost` solo llama a esos subgrafos. Así no nos pisamos todos en el mismo archivo.
 - Los deep links (activación de cuenta, restablecer contraseña, tocar una push) se declaran en la ruta correspondiente y se documentan en `docs/API.md`.
 - Los códigos de pantalla de Figma (A2 Login, B1 Explorar, B3 Detalle, C4 Panel del conductor, B5 Asiento confirmado, B6 Mi viaje…) se mencionan en el KDoc de cada `*Screen` para poder rastrear diseño ↔ código.
