@@ -7,7 +7,7 @@ import com.example.uniride.backend.model.UserProfile;
 import java.util.UUID;
 
 /** Authenticated user's own profile (docs/API.md §3.2). */
-public record UserResponse(
+public record UserResponseDTO(
         UUID id,
         String fullName,
         String email,
@@ -18,9 +18,9 @@ public record UserResponse(
         int ratingCount,
         VehicleDTO vehicle
 ) {
-    public static UserResponse from(User user) {
+    public static UserResponseDTO from(User user) {
         UserProfile profile = user.getProfile();
-        return new UserResponse(
+        return new UserResponseDTO(
                 user.getId(),
                 profile.getFullName(),
                 user.getEmail(),

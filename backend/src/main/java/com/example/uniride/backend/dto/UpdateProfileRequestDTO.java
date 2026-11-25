@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /** Request body for PUT /users/me (docs/API.md §4.6). Email cannot be changed. */
-public record UpdateProfileRequest(
+public record UpdateProfileRequestDTO(
         @NotBlank(message = "El nombre completo es obligatorio.")
         @Size(max = 100, message = "Máximo 100 caracteres.")
         String fullName,

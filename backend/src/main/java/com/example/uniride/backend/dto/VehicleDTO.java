@@ -4,7 +4,7 @@ import com.example.uniride.backend.model.Vehicle;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-/** Vehicle DTO shared by registration, profile update and UserResponse (docs/API.md §3.2). */
+/** Vehicle DTO shared by registration, profile update and UserResponseDTO (docs/API.md §3.2). */
 public record VehicleDTO(
         @NotBlank(message = "La marca es obligatoria.")
         @Size(max = 50, message = "Máximo 50 caracteres.")

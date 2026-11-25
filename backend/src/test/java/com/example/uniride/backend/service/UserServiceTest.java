@@ -1,7 +1,7 @@
 package com.example.uniride.backend.service;
 
-import com.example.uniride.backend.dto.UpdateProfileRequest;
-import com.example.uniride.backend.dto.UserResponse;
+import com.example.uniride.backend.dto.UpdateProfileRequestDTO;
+import com.example.uniride.backend.dto.UserResponseDTO;
 import com.example.uniride.backend.dto.VehicleDTO;
 import com.example.uniride.backend.exception.ApiException;
 import com.example.uniride.backend.exception.ErrorCode;
@@ -51,7 +51,7 @@ class UserServiceTest {
         );
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
-        UpdateProfileRequest request = new UpdateProfileRequest(
+        UpdateProfileRequestDTO request = new UpdateProfileRequestDTO(
                 "Lucía Fernández",
                 "Ingeniería en Informática",
                 "+5491155550000",
@@ -59,7 +59,7 @@ class UserServiceTest {
                 new VehicleDTO("Volkswagen", "Gol Trend", "Gris", "ab123cd")
         );
 
-        UserResponse updated = userService.updateProfile(user.getId(), request);
+        UserResponseDTO updated = userService.updateProfile(user.getId(), request);
 
         assertThat(updated.email()).isEqualTo("lfernandez@uade.edu.ar");
         assertThat(updated.fullName()).isEqualTo("Lucía Fernández");

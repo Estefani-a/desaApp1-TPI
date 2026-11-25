@@ -1,14 +1,14 @@
 package com.example.uniride.backend.service;
 
-import com.example.uniride.backend.dto.ActivateRequest;
-import com.example.uniride.backend.dto.AuthResponse;
-import com.example.uniride.backend.dto.ConfirmPasswordResetRequest;
-import com.example.uniride.backend.dto.LoginRequest;
-import com.example.uniride.backend.dto.MessageResponse;
-import com.example.uniride.backend.dto.PasswordResetRequest;
-import com.example.uniride.backend.dto.RegisterRequest;
-import com.example.uniride.backend.dto.ResendActivationRequest;
-import com.example.uniride.backend.dto.UserResponse;
+import com.example.uniride.backend.dto.ActivateRequestDTO;
+import com.example.uniride.backend.dto.AuthResponseDTO;
+import com.example.uniride.backend.dto.ConfirmPasswordResetRequestDTO;
+import com.example.uniride.backend.dto.LoginRequestDTO;
+import com.example.uniride.backend.dto.MessageResponseDTO;
+import com.example.uniride.backend.dto.PasswordResetRequestDTO;
+import com.example.uniride.backend.dto.RegisterRequestDTO;
+import com.example.uniride.backend.dto.ResendActivationRequestDTO;
+import com.example.uniride.backend.dto.UserResponseDTO;
 import com.example.uniride.backend.exception.ApiException;
 import com.example.uniride.backend.exception.ErrorCode;
 import com.example.uniride.backend.model.AuthToken;
@@ -78,7 +78,7 @@ public class AuthService {
     }
 
     @Transactional
-    public MessageResponse register(RegisterRequest request) {
+    public MessageResponseDTO register(RegisterRequestDTO request) {
         String email = normalizeEmail(request.email());
         validateInstitutionalEmail(email);
         validatePasswordStrength(request.password());
@@ -102,11 +102,11 @@ public class AuthService {
         String rawToken = issueToken(user, AuthTokenType.ACTIVATION, ACTIVATION_TTL, now);
         authMailService.sendActivationEmail(user.getEmail(), user.getFullName(), rawToken);
 
-        return new MessageResponse(REGISTER_MESSAGE);
+        return new MessageResponseDTO(REGISTER_MESSAGE);
     }
 
     @Transactional
-    public AuthResponse activate(ActivateRequest request) {
+    public AuthResponseDTO activate(ActivateRequestDTO request) {
         Instant now = clock.instant();
         AuthToken token = findUsableToken(request.token(), AuthTokenType.ACTIVATION, now);
 
@@ -120,7 +120,7 @@ public class AuthService {
     }
 
     @Transactional
-    public void resendActivation(ResendActivationRequest request) {
+    public void resendActivation(ResendActivationRequestDTO request) {
         String email = normalizeEmail(request.email());
         userRepository.findByEmailIgnoreCase(email)
                 .filter(user -> !user.isActive())
@@ -133,7 +133,7 @@ public class AuthService {
     }
 
     @Transactional(readOnly = true)
-    public AuthResponse login(LoginRequest request) {
+    public AuthResponseDTO login(LoginRequestDTO request) {
         String email = normalizeEmail(request.email());
         User user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new ApiException(ErrorCode.INVALID_CREDENTIALS));
@@ -149,7 +149,7 @@ public class AuthService {
     }
 
     @Transactional
-    public MessageResponse requestPasswordReset(PasswordResetRequest request) {
+    public MessageResponseDTO requestPasswordReset(PasswordResetRequestDTO request) {
         String email = normalizeEmail(request.email());
         userRepository.findByEmailIgnoreCase(email)
                 .filter(User::isActive)
@@ -160,11 +160,11 @@ public class AuthService {
                     authMailService.sendPasswordResetEmail(user.getEmail(), user.getFullName(), rawToken);
                 });
 
-        return new MessageResponse(PASSWORD_RESET_MESSAGE);
+        return new MessageResponseDTO(PASSWORD_RESET_MESSAGE);
     }
 
     @Transactional
-    public void confirmPasswordReset(ConfirmPasswordResetRequest request) {
+    public void confirmPasswordReset(ConfirmPasswordResetRequestDTO request) {
         validatePasswordStrength(request.newPassword());
 
         Instant now = clock.instant();
@@ -177,9 +177,9 @@ public class AuthService {
         userRepository.save(user);
     }
 
-    private AuthResponse buildAuthResponse(User user) {
+    private AuthResponseDTO buildAuthResponse(User user) {
         JwtService.IssuedToken issued = jwtService.issue(user.getId());
-        return new AuthResponse(issued.accessToken(), issued.expiresAt(), UserResponse.from(user));
+        return new AuthResponseDTO(issued.accessToken(), issued.expiresAt(), UserResponseDTO.from(user));
     }
 
     private String issueToken(User user, AuthTokenType type, Duration ttl, Instant now) {

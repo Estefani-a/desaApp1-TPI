@@ -2,9 +2,9 @@ package com.example.uniride.backend.controller;
 
 import com.example.uniride.backend.config.SecurityConfig;
 import com.example.uniride.backend.config.TimeConfig;
-import com.example.uniride.backend.dto.AuthResponse;
-import com.example.uniride.backend.dto.MessageResponse;
-import com.example.uniride.backend.dto.UserResponse;
+import com.example.uniride.backend.dto.AuthResponseDTO;
+import com.example.uniride.backend.dto.MessageResponseDTO;
+import com.example.uniride.backend.dto.UserResponseDTO;
 import com.example.uniride.backend.exception.ApiException;
 import com.example.uniride.backend.exception.ErrorCode;
 import com.example.uniride.backend.model.PreferredMode;
@@ -72,7 +72,7 @@ class AuthAndUserControllerTest {
     @Test
     void registroValidoDevuelve201YMensaje() throws Exception {
         when(authService.register(any()))
-                .thenReturn(new MessageResponse("Te enviamos un correo para activar la cuenta."));
+                .thenReturn(new MessageResponseDTO("Te enviamos un correo para activar la cuenta."));
 
         mvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -113,13 +113,13 @@ class AuthAndUserControllerTest {
 
     @Test
     void loginExitosoDevuelve200ConTokenYUsuario() throws Exception {
-        UserResponse user = new UserResponse(
+        UserResponseDTO user = new UserResponseDTO(
                 USER_ID, "Lucía Fernández", "lfernandez@uade.edu.ar",
                 "Ingeniería en Informática", "+5491155550000",
                 PreferredMode.AMBOS, 4.8, 12, null
         );
         when(authService.login(any()))
-                .thenReturn(new AuthResponse("jwt-123", Instant.parse("2026-12-21T00:40:12Z"), user));
+                .thenReturn(new AuthResponseDTO("jwt-123", Instant.parse("2026-12-21T00:40:12Z"), user));
 
         mvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -147,7 +147,7 @@ class AuthAndUserControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
 
-        UserResponse user = new UserResponse(
+        UserResponseDTO user = new UserResponseDTO(
                 USER_ID, "Lucía Fernández", "lfernandez@uade.edu.ar",
                 "Ingeniería en Informática", "+5491155550000",
                 PreferredMode.AMBOS, 4.8, 12, null

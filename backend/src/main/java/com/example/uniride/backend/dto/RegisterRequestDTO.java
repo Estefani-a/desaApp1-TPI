@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /** Request body for POST /auth/register (docs/API.md §4.1). */
-public record RegisterRequest(
+public record RegisterRequestDTO(
         @NotBlank(message = "El correo es obligatorio.")
         @Size(max = 120, message = "Máximo 120 caracteres.")
         String email,

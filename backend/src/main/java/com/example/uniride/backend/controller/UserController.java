@@ -1,8 +1,8 @@
 package com.example.uniride.backend.controller;
 
-import com.example.uniride.backend.dto.DeviceTokenRequest;
-import com.example.uniride.backend.dto.UpdateProfileRequest;
-import com.example.uniride.backend.dto.UserResponse;
+import com.example.uniride.backend.dto.DeviceTokenRequestDTO;
+import com.example.uniride.backend.dto.UpdateProfileRequestDTO;
+import com.example.uniride.backend.dto.UserResponseDTO;
 import com.example.uniride.backend.security.CurrentUser;
 import com.example.uniride.backend.service.UserService;
 import jakarta.validation.Valid;
@@ -29,18 +29,18 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public UserResponse getProfile() {
+    public UserResponseDTO getProfile() {
         return userService.getProfile(currentUser.id());
     }
 
     @PutMapping("/me")
-    public UserResponse updateProfile(@Valid @RequestBody UpdateProfileRequest request) {
+    public UserResponseDTO updateProfile(@Valid @RequestBody UpdateProfileRequestDTO request) {
         return userService.updateProfile(currentUser.id(), request);
     }
 
     @PutMapping("/me/device-token")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void updateDeviceToken(@Valid @RequestBody DeviceTokenRequest request) {
+    public void updateDeviceToken(@Valid @RequestBody DeviceTokenRequestDTO request) {
         userService.updateDeviceToken(currentUser.id(), request.fcmToken());
     }
 

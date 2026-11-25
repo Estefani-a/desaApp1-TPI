@@ -1,13 +1,13 @@
 package com.example.uniride.backend.service;
 
-import com.example.uniride.backend.dto.ActivateRequest;
-import com.example.uniride.backend.dto.AuthResponse;
-import com.example.uniride.backend.dto.ConfirmPasswordResetRequest;
-import com.example.uniride.backend.dto.LoginRequest;
-import com.example.uniride.backend.dto.MessageResponse;
-import com.example.uniride.backend.dto.PasswordResetRequest;
-import com.example.uniride.backend.dto.RegisterRequest;
-import com.example.uniride.backend.dto.ResendActivationRequest;
+import com.example.uniride.backend.dto.ActivateRequestDTO;
+import com.example.uniride.backend.dto.AuthResponseDTO;
+import com.example.uniride.backend.dto.ConfirmPasswordResetRequestDTO;
+import com.example.uniride.backend.dto.LoginRequestDTO;
+import com.example.uniride.backend.dto.MessageResponseDTO;
+import com.example.uniride.backend.dto.PasswordResetRequestDTO;
+import com.example.uniride.backend.dto.RegisterRequestDTO;
+import com.example.uniride.backend.dto.ResendActivationRequestDTO;
 import com.example.uniride.backend.dto.VehicleDTO;
 import com.example.uniride.backend.exception.ApiException;
 import com.example.uniride.backend.exception.ErrorCode;
@@ -75,7 +75,7 @@ class AuthServiceTest {
 
     @Test
     void registroConCorreoUadeCreaCuentaPendienteYEnviaCorreo() {
-        RegisterRequest request = new RegisterRequest(
+        RegisterRequestDTO request = new RegisterRequestDTO(
                 "  Lucia.F@UADE.EDU.AR ",
                 "ñandú123",
                 "Lucía Fernández",
@@ -87,7 +87,7 @@ class AuthServiceTest {
         when(userRepository.existsByEmailIgnoreCase("lucia.f@uade.edu.ar")).thenReturn(false);
         when(passwordEncoder.encode("ñandú123")).thenReturn("$2a$10$hash");
 
-        MessageResponse response = authService.register(request);
+        MessageResponseDTO response = authService.register(request);
 
         assertThat(response.message()).contains("activar");
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
@@ -103,7 +103,7 @@ class AuthServiceTest {
 
     @Test
     void registroConDominioExternoDevuelveInvalidEmailDomain() {
-        RegisterRequest request = new RegisterRequest(
+        RegisterRequestDTO request = new RegisterRequestDTO(
                 "usuario@gmail.com",
                 "Secreta123",
                 "Juan Pérez",
@@ -122,7 +122,7 @@ class AuthServiceTest {
 
     @Test
     void registroConContrasenaDebilDevuelveWeakPassword() {
-        RegisterRequest request = new RegisterRequest(
+        RegisterRequestDTO request = new RegisterRequestDTO(
                 "usuario@uade.edu.ar",
                 "sololetas",
                 "Juan Pérez",
@@ -141,7 +141,7 @@ class AuthServiceTest {
 
     @Test
     void registroConCorreoDuplicadoDevuelveEmailAlreadyRegistered() {
-        RegisterRequest request = new RegisterRequest(
+        RegisterRequestDTO request = new RegisterRequestDTO(
                 "lfernandez@uade.edu.ar",
                 "Secreta123",
                 "Lucía Fernández",
@@ -175,7 +175,7 @@ class AuthServiceTest {
                 .thenReturn(Optional.of(token));
         when(jwtService.issue(user.getId())).thenReturn(new JwtService.IssuedToken("jwt-token", expiresAt));
 
-        AuthResponse response = authService.activate(new ActivateRequest(rawToken));
+        AuthResponseDTO response = authService.activate(new ActivateRequestDTO(rawToken));
 
         assertThat(user.isActive()).isTrue();
         assertThat(token.getUsedAt()).isEqualTo(NOW);
@@ -198,7 +198,7 @@ class AuthServiceTest {
         when(authTokenRepository.findByTokenHashAndType(AuthService.hashToken(rawToken), AuthTokenType.ACTIVATION))
                 .thenReturn(Optional.of(expired));
 
-        assertThatThrownBy(() -> authService.activate(new ActivateRequest(rawToken)))
+        assertThatThrownBy(() -> authService.activate(new ActivateRequestDTO(rawToken)))
                 .isInstanceOf(ApiException.class)
                 .extracting("code")
                 .isEqualTo(ErrorCode.INVALID_OR_EXPIRED_TOKEN);
@@ -211,7 +211,7 @@ class AuthServiceTest {
         when(userRepository.findByEmailIgnoreCase("pendiente@uade.edu.ar")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("Secreta123", user.getPasswordHash())).thenReturn(true);
 
-        assertThatThrownBy(() -> authService.login(new LoginRequest("pendiente@uade.edu.ar", "Secreta123")))
+        assertThatThrownBy(() -> authService.login(new LoginRequestDTO("pendiente@uade.edu.ar", "Secreta123")))
                 .isInstanceOf(ApiException.class)
                 .extracting("code")
                 .isEqualTo(ErrorCode.ACCOUNT_NOT_ACTIVATED);
@@ -223,7 +223,7 @@ class AuthServiceTest {
         when(userRepository.findByEmailIgnoreCase("activa@uade.edu.ar")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("MalaClave9", user.getPasswordHash())).thenReturn(false);
 
-        assertThatThrownBy(() -> authService.login(new LoginRequest("activa@uade.edu.ar", "MalaClave9")))
+        assertThatThrownBy(() -> authService.login(new LoginRequestDTO("activa@uade.edu.ar", "MalaClave9")))
                 .isInstanceOf(ApiException.class)
                 .extracting("code")
                 .isEqualTo(ErrorCode.INVALID_CREDENTIALS);
@@ -237,7 +237,7 @@ class AuthServiceTest {
         when(passwordEncoder.matches("Secreta123", user.getPasswordHash())).thenReturn(true);
         when(jwtService.issue(user.getId())).thenReturn(new JwtService.IssuedToken("jwt-activo", expiresAt));
 
-        AuthResponse response = authService.login(new LoginRequest("ACTIVA@uade.edu.ar", "Secreta123"));
+        AuthResponseDTO response = authService.login(new LoginRequestDTO("ACTIVA@uade.edu.ar", "Secreta123"));
 
         assertThat(response.accessToken()).isEqualTo("jwt-activo");
         assertThat(response.user().id()).isEqualTo(user.getId());
@@ -247,8 +247,8 @@ class AuthServiceTest {
     void recuperarContrasenaNoRevelaSiElCorreoExiste() {
         when(userRepository.findByEmailIgnoreCase("inexistente@uade.edu.ar")).thenReturn(Optional.empty());
 
-        MessageResponse response = authService.requestPasswordReset(
-                new PasswordResetRequest("inexistente@uade.edu.ar")
+        MessageResponseDTO response = authService.requestPasswordReset(
+                new PasswordResetRequestDTO("inexistente@uade.edu.ar")
         );
 
         assertThat(response.message()).contains("Si el correo está registrado");
@@ -260,7 +260,7 @@ class AuthServiceTest {
         User pending = createUser("pendiente@uade.edu.ar", false);
         when(userRepository.findByEmailIgnoreCase("pendiente@uade.edu.ar")).thenReturn(Optional.of(pending));
 
-        authService.resendActivation(new ResendActivationRequest("pendiente@uade.edu.ar"));
+        authService.resendActivation(new ResendActivationRequestDTO("pendiente@uade.edu.ar"));
 
         verify(authTokenRepository).deleteByUserIdAndType(pending.getId(), AuthTokenType.ACTIVATION);
         verify(authTokenRepository).save(any(AuthToken.class));
@@ -282,7 +282,7 @@ class AuthServiceTest {
                 .thenReturn(Optional.of(token));
         when(passwordEncoder.encode("NuevaClave9")).thenReturn("$2a$10$nuevoHash");
 
-        authService.confirmPasswordReset(new ConfirmPasswordResetRequest(rawToken, "NuevaClave9"));
+        authService.confirmPasswordReset(new ConfirmPasswordResetRequestDTO(rawToken, "NuevaClave9"));
 
         assertThat(user.getPasswordHash()).isEqualTo("$2a$10$nuevoHash");
         assertThat(token.getUsedAt()).isEqualTo(NOW);

@@ -1,7 +1,7 @@
 package com.example.uniride.backend.service;
 
-import com.example.uniride.backend.dto.UpdateProfileRequest;
-import com.example.uniride.backend.dto.UserResponse;
+import com.example.uniride.backend.dto.UpdateProfileRequestDTO;
+import com.example.uniride.backend.dto.UserResponseDTO;
 import com.example.uniride.backend.exception.ApiException;
 import com.example.uniride.backend.exception.ErrorCode;
 import com.example.uniride.backend.model.User;
@@ -29,12 +29,12 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public UserResponse getProfile(UUID userId) {
-        return UserResponse.from(requireUser(userId));
+    public UserResponseDTO getProfile(UUID userId) {
+        return UserResponseDTO.from(requireUser(userId));
     }
 
     @Transactional
-    public UserResponse updateProfile(UUID userId, UpdateProfileRequest request) {
+    public UserResponseDTO updateProfile(UUID userId, UpdateProfileRequestDTO request) {
         User user = requireUser(userId);
         Vehicle vehicle = request.vehicle() != null ? request.vehicle().toEntity() : null;
         UserProfile updatedProfile = new UserProfile(
@@ -46,7 +46,7 @@ public class UserService {
         );
         user.updateProfile(updatedProfile, clock.instant());
         userRepository.save(user);
-        return UserResponse.from(user);
+        return UserResponseDTO.from(user);
     }
 
     @Transactional
