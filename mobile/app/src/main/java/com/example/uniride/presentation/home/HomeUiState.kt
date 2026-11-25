@@ -13,5 +13,5 @@ data class HomeUiState(
 sealed interface HomeAction {
     data object OpenMyTrip : HomeAction
     data object PublishTrip : HomeAction
-    data object OpenDriverPanel : HomeAction
+    data class OpenDriverPanel(val tripId: String) : HomeAction
 }

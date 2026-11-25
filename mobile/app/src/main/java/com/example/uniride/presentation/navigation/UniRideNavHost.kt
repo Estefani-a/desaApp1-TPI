@@ -10,6 +10,8 @@ import com.example.uniride.presentation.auth.AuthGraphRoute
 import com.example.uniride.presentation.auth.authGraph
 import com.example.uniride.presentation.detail.detailGraph
 import com.example.uniride.presentation.feed.feedGraph
+import com.example.uniride.presentation.home.DefaultDriverHome
+import com.example.uniride.presentation.home.DriverHome
 import com.example.uniride.presentation.home.HomeRoute
 import com.example.uniride.presentation.home.homeGraph
 import com.example.uniride.presentation.profile.profileGraph
@@ -26,6 +28,7 @@ data object MainGraphRoute
  * area adds its screens in its own `xxxGraph` file, not here.
  *
  * @param startDestination [AuthGraphRoute] without session, [MainGraphRoute] with one
+ * @param driverHome C1 of the driver mode; only instrumented tests without Hilt replace it
  */
 @Composable
 fun UniRideNavHost(
@@ -33,11 +36,12 @@ fun UniRideNavHost(
     appMode: AppMode,
     modifier: Modifier = Modifier,
     startDestination: Any = AuthGraphRoute,
+    driverHome: DriverHome = DefaultDriverHome,
 ) {
     NavHost(navController = navController, startDestination = startDestination, modifier = modifier) {
         authGraph(navController)
         navigation<MainGraphRoute>(startDestination = HomeRoute) {
-            homeGraph(navController, appMode = { appMode })
+            homeGraph(navController, appMode = { appMode }, driverHome = driverHome)
             feedGraph(navController)
             detailGraph(navController)
             publishGraph(navController)

@@ -14,15 +14,24 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object HomeRoute
 
-fun NavGraphBuilder.homeGraph(navController: NavController, appMode: () -> AppMode) {
+/**
+ * @param driverHome C1 of the driver mode. Only instrumented tests, which have no Hilt, pass
+ * another one.
+ */
+fun NavGraphBuilder.homeGraph(
+    navController: NavController,
+    appMode: () -> AppMode,
+    driverHome: DriverHome = DefaultDriverHome,
+) {
     composable<HomeRoute> {
         HomeScreen(
             state = HomeUiState(appMode = appMode()),
+            driverHome = driverHome,
             onAction = { action ->
                 when (action) {
                     HomeAction.OpenMyTrip -> navController.navigate(MyTripRoute(PLACEHOLDER_TRIP_ID))
                     HomeAction.PublishTrip -> navController.navigate(PublishTripRoute)
-                    HomeAction.OpenDriverPanel -> navController.navigate(DriverPanelRoute(PLACEHOLDER_TRIP_ID))
+                    is HomeAction.OpenDriverPanel -> navController.navigate(DriverPanelRoute(action.tripId))
                 }
             },
         )
