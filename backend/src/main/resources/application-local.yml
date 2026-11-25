@@ -1,0 +1,12 @@
+# Perfil "local": backend desde IntelliJ con la base y el correo en Docker
+#   docker compose up db mailpit
+# Lee las variables del .env de la raíz del repo (el directorio de trabajo es backend/).
+spring:
+  config:
+    import: optional:file:../.env[.properties]
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    com.example.uniride.backend: DEBUG
