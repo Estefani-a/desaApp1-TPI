@@ -2,9 +2,14 @@ package com.example.uniride.presentation.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -18,10 +23,17 @@ import androidx.navigation.compose.rememberNavController
 import com.example.uniride.domain.model.AppMode
 import com.example.uniride.domain.model.Profile
 import com.example.uniride.presentation.auth.AuthGraphRoute
+import com.example.uniride.presentation.common.AppSnackbar
+import com.example.uniride.presentation.common.LocalAppSnackbar
+import com.example.uniride.presentation.home.DefaultDriverHome
+import com.example.uniride.presentation.home.DriverHome
 import com.example.uniride.presentation.home.HomeRoute
 
 /**
  * Shell of the app: the bottom bar with the mode selector around [UniRideNavHost].
+ *
+ * @param driverHome C1 of the driver mode. It only exists so instrumented tests, which have no
+ * Hilt, can replace it with a plain composable; the app uses the default.
  */
 @Composable
 fun UniRideApp(
@@ -29,6 +41,7 @@ fun UniRideApp(
     profile: Profile? = null,
     navController: NavHostController = rememberNavController(),
     startDestination: Any = AuthGraphRoute,
+    driverHome: DriverHome = DefaultDriverHome,
 ) {
     var selectedMode by rememberSaveable { mutableStateOf(AppMode.PASAJERO) }
     val modes = availableModes(profile)
@@ -37,8 +50,13 @@ fun UniRideApp(
     val currentDestination = navController.currentBackStackEntryAsState().value?.destination
     val currentTab = currentDestination?.topLevelDestination(appMode)
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val appSnackbar = remember(snackbarHostState, scope) { AppSnackbar(snackbarHostState, scope) }
+
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (currentTab != null) {
                 UniRideBottomBar(
@@ -56,12 +74,15 @@ fun UniRideApp(
             }
         },
     ) { innerPadding ->
-        UniRideNavHost(
-            navController = navController,
-            appMode = appMode,
-            startDestination = startDestination,
-            modifier = Modifier.padding(innerPadding),
-        )
+        CompositionLocalProvider(LocalAppSnackbar provides appSnackbar) {
+            UniRideNavHost(
+                navController = navController,
+                appMode = appMode,
+                startDestination = startDestination,
+                modifier = Modifier.padding(innerPadding),
+                driverHome = driverHome,
+            )
+        }
     }
 }
 
