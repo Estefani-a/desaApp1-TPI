@@ -68,6 +68,7 @@ Toda respuesta de error tiene este cuerpo:
 | 409 | `NO_SEATS_AVAILABLE` | No quedan plazas al reservar o al aceptar |
 | 409 | `TRIP_NOT_OPEN` | El viaje está `FINALIZADO` o `CANCELADO`, o ya salió |
 | 409 | `ALREADY_RESERVED` | El pasajero ya tiene una reserva `PENDIENTE` o `ACEPTADA` en ese viaje |
+| 409 | `TRIP_ALREADY_DEPARTED` | El viaje ya empezó (fecha y hora de salida en el pasado): sus reservas no se pueden aceptar, rechazar ni cancelar |
 | 409 | `INVALID_STATUS_TRANSITION` | Por ejemplo, aceptar una reserva `CANCELADA` |
 | 409 | `ALREADY_RATED` | Ya calificó a esa persona en ese viaje |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | El cuerpo no es `application/json` |
@@ -389,9 +390,14 @@ Solicitar no descuenta la vacante: se descuenta al aceptar.
 | `POST /trips/{tripId}/reservations/{reservationId}/reject` | Conductor | `PENDIENTE` → `RECHAZADA`. Envía `SOLICITUD_RECHAZADA` |
 | `POST /trips/{tripId}/reservations/{reservationId}/cancel` | Pasajero | `PENDIENTE` o `ACEPTADA` → `CANCELADA`. Si estaba aceptada, devuelve la vacante y el viaje vuelve a `ABIERTO` |
 
-Respuesta: **200** `ReservationDto` · **403** `FORBIDDEN` · **404** `NOT_FOUND` (el viaje no existe o la reserva no es de ese viaje) · **409** `NO_SEATS_AVAILABLE` (al aceptar), `INVALID_STATUS_TRANSITION`.
+Respuesta: **200** `ReservationDto` · **403** `FORBIDDEN` · **404** `NOT_FOUND` (el viaje no existe o la reserva no es de ese viaje) · **409** `NO_SEATS_AVAILABLE` (al aceptar), `TRIP_ALREADY_DEPARTED`, `INVALID_STATUS_TRANSITION` (estado de origen incorrecto, o viaje `FINALIZADO` o `CANCELADO`).
 
-Una vez que el viaje salió (fecha y hora de salida en el pasado), sus reservas ya no cambian: aceptar, rechazar o cancelar responde **409** `INVALID_STATUS_TRANSITION`, salvo que se repita una transición que ya ocurrió (idempotencia).
+Una vez que el viaje empezó (fecha y hora de salida en el pasado), sus reservas ya no cambian: aceptar, rechazar o cancelar responde **409** `TRIP_ALREADY_DEPARTED`, salvo que se repita una transición que ya ocurrió (idempotencia). Al cancelar, el mensaje es "No se puede cancelar un viaje que ya empezó.": el pasajero conserva el lugar y la reserva sigue `ACEPTADA` (en una versión futura, el aporte se cobra igual).
+
+Cómo lo maneja la app, sobre todo con una cancelación hecha sin conexión que se sincroniza después de la salida:
+- El `SyncWorker` no reintenta: es un rechazo definitivo. Marca la reserva como sincronizada y le devuelve el estado real (`ACEPTADA`), pidiendo otra vez el viaje para actualizar Room.
+- La pantalla muestra el mensaje "No se puede cancelar un viaje que ya empezó" y el viaje sigue en "Mi viaje".
+- Antes de enviar, la app ya oculta "Cancelar" cuando el viaje empezó; el 409 cubre el caso sin conexión.
 
 Cuando la app recibe 409 `NO_SEATS_AVAILABLE` o `TRIP_NOT_OPEN` al sincronizar una reserva hecha sin conexión, muestra el mensaje de la preentrega (12.1) y vuelve a pedir el viaje para actualizar Room.
 

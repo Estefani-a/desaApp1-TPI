@@ -24,6 +24,7 @@ public enum ErrorCode {
     TRIP_NOT_OPEN(HttpStatus.CONFLICT, "El viaje ya no está disponible."),
     ALREADY_RESERVED(HttpStatus.CONFLICT, "Ya tenés una reserva en este viaje."),
     INVALID_STATUS_TRANSITION(HttpStatus.CONFLICT, "No se puede hacer ese cambio de estado."),
+    TRIP_ALREADY_DEPARTED(HttpStatus.CONFLICT, "El viaje ya empezó: sus reservas no se pueden cambiar."),
     ALREADY_RATED(HttpStatus.CONFLICT, "Ya calificaste a esta persona en este viaje."),
     UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "El cuerpo tiene que ser JSON."),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrió un error inesperado. Probá de nuevo más tarde.");

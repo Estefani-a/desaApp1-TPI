@@ -256,7 +256,7 @@ class ReservationServiceTest {
         givenReservation(pending);
 
         assertThat(errorOf(() -> service.accept(driver.getId(), departed.getId(), pending.getId())))
-                .isEqualTo(ErrorCode.INVALID_STATUS_TRANSITION);
+                .isEqualTo(ErrorCode.TRIP_ALREADY_DEPARTED);
     }
 
     @Test
@@ -285,6 +285,20 @@ class ReservationServiceTest {
         assertThat(response.status()).isEqualTo(ReservationStatus.CANCELADA);
         assertThat(trip.getStatus()).isEqualTo(TripStatus.ABIERTO);
         assertThat(trip.getAvailableSeats()).isEqualTo(1);
+    }
+
+    @Test
+    void cancelarDespuesDeLaSalidaDevuelveTripAlreadyDeparted() {
+        Trip departed = trip(driver, 3, LocalDate.of(2026, 11, 19));
+        givenTrip(departed);
+        Reservation accepted = new Reservation(UUID.randomUUID(), departed, passenger,
+                CLOCK.instant().minusSeconds(86_400));
+        accepted.accept(CLOCK.instant().minusSeconds(86_400));
+        givenReservation(accepted);
+
+        assertThat(errorOf(() -> service.cancel(passenger.getId(), departed.getId(), accepted.getId())))
+                .isEqualTo(ErrorCode.TRIP_ALREADY_DEPARTED);
+        assertThat(accepted.getStatus()).isEqualTo(ReservationStatus.ACEPTADA);
     }
 
     @Test

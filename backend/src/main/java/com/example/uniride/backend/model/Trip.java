@@ -149,12 +149,22 @@ public class Trip {
     }
 
     /**
-     * Checks that its reservations can still change: the trip is not finished, cancelled or
-     * already left (docs/API.md §6.3).
+     * Checks that its reservations can still change (docs/API.md §6.3).
+     *
+     * @throws ApiException {@code INVALID_STATUS_TRANSITION} if the trip is finished or cancelled;
+     *                      {@code TRIP_ALREADY_DEPARTED} if it already left
      */
     public void requireReservationsChangeable(Instant now) {
-        if (isClosed() || hasDepartedAt(now)) {
+        requireReservationsChangeable(now, ErrorCode.TRIP_ALREADY_DEPARTED.defaultMessage());
+    }
+
+    /** Same as {@link #requireReservationsChangeable(Instant)}, with the message for a departed trip. */
+    public void requireReservationsChangeable(Instant now, String departedMessage) {
+        if (isClosed()) {
             throw new ApiException(ErrorCode.INVALID_STATUS_TRANSITION);
+        }
+        if (hasDepartedAt(now)) {
+            throw new ApiException(ErrorCode.TRIP_ALREADY_DEPARTED, departedMessage);
         }
     }
 

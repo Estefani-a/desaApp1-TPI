@@ -40,6 +40,12 @@ public class Reservation {
      */
     public static final String ONE_ACTIVE_PER_PASSENGER_INDEX = "uk_reservations_active_passenger";
 
+    /**
+     * Once the trip started the passenger keeps the seat: the reservation stays accepted (in a
+     * later version, the contribution is still paid).
+     */
+    static final String CANCEL_AFTER_DEPARTURE = "No se puede cancelar un viaje que ya empezó.";
+
     @Id
     private UUID id;
 
@@ -102,7 +108,7 @@ public class Reservation {
         if (status == ReservationStatus.CANCELADA) {
             return;
         }
-        trip.requireReservationsChangeable(now);
+        trip.requireReservationsChangeable(now, CANCEL_AFTER_DEPARTURE);
         if (!status.isActive()) {
             throw new ApiException(ErrorCode.INVALID_STATUS_TRANSITION);
         }

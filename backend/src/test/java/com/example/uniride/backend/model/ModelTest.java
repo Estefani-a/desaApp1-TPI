@@ -197,8 +197,31 @@ class ModelTest {
     void despuesDeLaSalidaNoCambianLasReservas() {
         Reservation reservation = pending(trip(driver(), 3));
 
-        assertThat(errorOf(() -> reservation.accept(AFTER_DEPARTURE))).isEqualTo(ErrorCode.INVALID_STATUS_TRANSITION);
+        assertThat(errorOf(() -> reservation.accept(AFTER_DEPARTURE))).isEqualTo(ErrorCode.TRIP_ALREADY_DEPARTED);
         assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.PENDIENTE);
+    }
+
+    @Test
+    void unViajeQueYaEmpezoNoSePuedeCancelarYElPasajeroConservaElLugar() {
+        Trip trip = trip(driver(), 3);
+        Reservation accepted = pending(trip);
+        accepted.accept(NOW);
+
+        ApiException error = assertThrows(ApiException.class, () -> accepted.cancel(AFTER_DEPARTURE));
+
+        assertThat(error.getCode()).isEqualTo(ErrorCode.TRIP_ALREADY_DEPARTED);
+        assertThat(error.getMessage()).isEqualTo("No se puede cancelar un viaje que ya empezó.");
+        assertThat(accepted.getStatus()).isEqualTo(ReservationStatus.ACEPTADA);
+        assertThat(trip.getAvailableSeats()).isEqualTo(2);
+    }
+
+    @Test
+    void enUnViajeCanceladoLaReservaNoCambiaAunqueYaHayaSalido() {
+        Trip trip = trip(driver(), 3);
+        Reservation reservation = pending(trip);
+        close(trip, TripStatus.CANCELADO);
+
+        assertThat(errorOf(() -> reservation.accept(AFTER_DEPARTURE))).isEqualTo(ErrorCode.INVALID_STATUS_TRANSITION);
     }
 
     @Test

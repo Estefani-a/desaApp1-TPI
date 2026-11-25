@@ -117,6 +117,17 @@ class ReservationControllerTest {
     }
 
     @Test
+    void cancelarUnViajeQueYaEmpezoDevuelve409ConElMensajeParaElPasajero() throws Exception {
+        when(reservationService.cancel(USER_ID, TRIP_ID, RESERVATION_ID)).thenThrow(
+                new ApiException(ErrorCode.TRIP_ALREADY_DEPARTED, "No se puede cancelar un viaje que ya empezó."));
+
+        mvc.perform(post(url() + "/cancel").header("Authorization", bearer()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("TRIP_ALREADY_DEPARTED"))
+                .andExpect(jsonPath("$.message").value("No se puede cancelar un viaje que ya empezó."));
+    }
+
+    @Test
     void idQueNoEsUuidDevuelve400() throws Exception {
         mvc.perform(put("/api/v1/trips/" + TRIP_ID + "/reservations/no-es-uuid").header("Authorization", bearer()))
                 .andExpect(status().isBadRequest())
