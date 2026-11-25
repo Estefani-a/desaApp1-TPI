@@ -20,17 +20,22 @@ class FakeFeedFiltersRepository(initial: TripFilters = TripFilters()) : FeedFilt
     }
 }
 
-/** In-memory [CampusRepository]: [refresh] loads [campusesFromServer]. */
+/**
+ * In-memory [CampusRepository]: [refresh] loads [campusesFromServer], unless [refreshResult] is
+ * a failure (for example without connection): then nothing is loaded.
+ */
 class FakeCampusRepository(
     private val campusesFromServer: List<Campus> = emptyList(),
 ) : CampusRepository {
 
     val campuses = MutableStateFlow<List<Campus>>(emptyList())
 
+    var refreshResult: AppResult<Unit> = AppResult.Success(Unit)
+
     override fun observeCampuses(): Flow<List<Campus>> = campuses
 
     override suspend fun refresh(): AppResult<Unit> {
-        campuses.value = campusesFromServer
-        return AppResult.Success(Unit)
+        if (refreshResult is AppResult.Success) campuses.value = campusesFromServer
+        return refreshResult
     }
 }
