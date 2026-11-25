@@ -2,7 +2,6 @@ package com.example.uniride.backend.security;
 
 import com.example.uniride.backend.exception.ApiException;
 import com.example.uniride.backend.exception.ErrorCode;
-import com.example.uniride.backend.dto.ReservationDTO;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;

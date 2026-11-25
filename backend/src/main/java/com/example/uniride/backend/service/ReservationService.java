@@ -1,29 +1,27 @@
 package com.example.uniride.backend.service;
 
+import com.example.uniride.backend.dto.ReservationDTO;
 import com.example.uniride.backend.exception.ApiException;
 import com.example.uniride.backend.exception.ErrorCode;
 import com.example.uniride.backend.model.Reservation;
-import com.example.uniride.backend.dto.ReservationDTO;
-import com.example.uniride.backend.repository.ReservationRepository;
 import com.example.uniride.backend.model.ReservationStatus;
 import com.example.uniride.backend.model.Trip;
-import com.example.uniride.backend.repository.TripRepository;
 import com.example.uniride.backend.model.User;
+import com.example.uniride.backend.repository.ReservationRepository;
+import com.example.uniride.backend.repository.TripRepository;
 import com.example.uniride.backend.repository.UserRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
-import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.BiConsumer;
 
 /**
- * Seat requests (RF04, docs/API.md §6). This service finds, locks and checks permissions;
- * the transitions and the seats are rules of {@link Reservation} and {@link Trip}.
+ * Seat requests (RF04, docs/API.md §6). This service finds, locks and checks who is asking;
+ * the rules of each transition and of the seats live in {@link Reservation} and {@link Trip}.
  *
  * <p>Every write reads the trip with a row lock ({@link TripRepository#findByIdForUpdate}), so
  * everything that touches the same trip runs one after the other: two acceptances never leave
@@ -35,15 +33,15 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final TripRepository tripRepository;
     private final UserRepository userRepository;
-    private final ContactVisibilityPolicy contactVisibility;
+    private final ViewMapper viewMapper;
     private final Clock clock;
 
     public ReservationService(ReservationRepository reservationRepository, TripRepository tripRepository,
-                              UserRepository userRepository, ContactVisibilityPolicy contactVisibility, Clock clock) {
+                              UserRepository userRepository, ViewMapper viewMapper, Clock clock) {
         this.reservationRepository = reservationRepository;
         this.tripRepository = tripRepository;
         this.userRepository = userRepository;
-        this.contactVisibility = contactVisibility;
+        this.viewMapper = viewMapper;
         this.clock = clock;
     }
 
@@ -61,24 +59,24 @@ public class ReservationService {
             if (!reservation.belongsTo(userId) || !reservation.isFor(trip)) {
                 throw new ApiException(ErrorCode.ID_CONFLICT);
             }
-            return new RequestSeatResult(toResponse(reservation, userId), false);
+            return new RequestSeatResult(viewMapper.reservation(reservation, userId), false);
         }
 
         if (trip.isDrivenBy(userId)) {
             throw new ApiException(ErrorCode.CANNOT_RESERVE_OWN_TRIP);
         }
-        if (!trip.acceptsRequestsAt(now())) {
-            throw new ApiException(ErrorCode.TRIP_NOT_OPEN);
-        }
+        // Before the state of the trip: whoever already has a seat gets ALREADY_RESERVED even if
+        // their own acceptance filled the trip.
         if (reservationRepository.existsByTripIdAndPassengerIdAndStatusIn(tripId, userId, ReservationStatus.ACTIVE)) {
             throw new ApiException(ErrorCode.ALREADY_RESERVED);
         }
+        trip.requireOpenForRequests(clock.instant());
         User passenger = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHENTICATED));
 
-        Reservation created = reservationRepository.save(new Reservation(reservationId, trip, passenger, clock.instant()));
+        Reservation created = saveNew(new Reservation(reservationId, trip, passenger, clock.instant()));
         // TODO(push, D5): enviar NUEVA_SOLICITUD al conductor (docs/API.md §9)
-        return new RequestSeatResult(toResponse(created, userId), true);
+        return new RequestSeatResult(viewMapper.reservation(created, userId), true);
     }
 
     /** {@code GET /trips/{tripId}/reservations}: only for the driver. */
@@ -87,56 +85,60 @@ public class ReservationService {
         Trip trip = tripRepository.findById(tripId).orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND));
         requireDriver(trip, userId);
         return reservationRepository.findByTripIdOrderByReservedAtAsc(tripId).stream()
-                .map(reservation -> toResponse(reservation, userId))
+                .map(reservation -> viewMapper.reservation(reservation, userId))
                 .toList();
     }
 
     /** The driver accepts: takes a seat; the trip becomes {@code COMPLETO} at 0. */
     @Transactional
     public ReservationDTO accept(UUID userId, UUID tripId, UUID reservationId) {
+        Reservation reservation = findForDriver(userId, tripId, reservationId);
+        reservation.accept(clock.instant());
         // TODO(push, D5): enviar SOLICITUD_ACEPTADA al pasajero (docs/API.md §9)
-        return asDriver(userId, tripId, reservationId, Reservation::accept, ReservationStatus.ACEPTADA);
+        return viewMapper.reservation(reservation, userId);
     }
 
     /** The driver rejects. Does not touch the seats. */
     @Transactional
     public ReservationDTO reject(UUID userId, UUID tripId, UUID reservationId) {
+        Reservation reservation = findForDriver(userId, tripId, reservationId);
+        reservation.reject(clock.instant());
         // TODO(push, D5): enviar SOLICITUD_RECHAZADA al pasajero (docs/API.md §9)
-        return asDriver(userId, tripId, reservationId, Reservation::reject, ReservationStatus.RECHAZADA);
+        return viewMapper.reservation(reservation, userId);
     }
 
     /** The passenger cancels. An accepted reservation gives the seat back. */
     @Transactional
     public ReservationDTO cancel(UUID userId, UUID tripId, UUID reservationId) {
-        Trip trip = lockTrip(tripId);
-        Reservation reservation = findReservation(trip, reservationId);
+        Reservation reservation = findReservation(lockTrip(tripId), reservationId);
         if (!reservation.belongsTo(userId)) {
             throw new ApiException(ErrorCode.FORBIDDEN);
         }
-        requireNotDeparted(trip, reservation, ReservationStatus.CANCELADA);
         reservation.cancel(clock.instant());
-        return toResponse(reservation, userId);
-    }
-
-    private ReservationDTO asDriver(UUID userId, UUID tripId, UUID reservationId,
-                                         BiConsumer<Reservation, Instant> transition, ReservationStatus target) {
-        Trip trip = lockTrip(tripId);
-        requireDriver(trip, userId);
-        Reservation reservation = findReservation(trip, reservationId);
-        requireNotDeparted(trip, reservation, target);
-        transition.accept(reservation, clock.instant());
-        return toResponse(reservation, userId);
+        return viewMapper.reservation(reservation, userId);
     }
 
     /**
-     * Once the trip left, its reservations do not change anymore. A repeated transition that
-     * already happened is still answered (idempotency), so a reservation that is already in
-     * [target] passes.
+     * Inserts the reservation. The database index is the last guard of "one active reservation
+     * per passenger" (the lock already prevents it): if it trips, the answer is the same as the
+     * check above.
      */
-    private void requireNotDeparted(Trip trip, Reservation reservation, ReservationStatus target) {
-        if (trip.hasDepartedAt(now()) && reservation.getStatus() != target) {
-            throw new ApiException(ErrorCode.INVALID_STATUS_TRANSITION);
+    private Reservation saveNew(Reservation reservation) {
+        try {
+            return reservationRepository.saveAndFlush(reservation);
+        } catch (DataIntegrityViolationException ex) {
+            String detail = String.valueOf(ex.getMostSpecificCause().getMessage());
+            if (detail.contains(Reservation.ONE_ACTIVE_PER_PASSENGER_INDEX)) {
+                throw new ApiException(ErrorCode.ALREADY_RESERVED);
+            }
+            throw ex;
         }
+    }
+
+    private Reservation findForDriver(UUID userId, UUID tripId, UUID reservationId) {
+        Trip trip = lockTrip(tripId);
+        requireDriver(trip, userId);
+        return findReservation(trip, reservationId);
     }
 
     private Trip lockTrip(UUID tripId) {
@@ -154,14 +156,6 @@ public class ReservationService {
         if (!trip.isDrivenBy(userId)) {
             throw new ApiException(ErrorCode.FORBIDDEN);
         }
-    }
-
-    private ReservationDTO toResponse(Reservation reservation, UUID viewerId) {
-        return ReservationDTO.from(reservation, contactVisibility.canSeePassengerContact(reservation, viewerId));
-    }
-
-    private LocalDateTime now() {
-        return LocalDateTime.now(clock);
     }
 
     /** {@code created} decides between 201 (new) and 200 (retry of the same request). */

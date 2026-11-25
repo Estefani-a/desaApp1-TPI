@@ -1,7 +1,6 @@
 package com.example.uniride.backend.service;
 
 import com.example.uniride.backend.model.Reservation;
-import com.example.uniride.backend.model.ReservationStatus;
 import com.example.uniride.backend.model.Trip;
 import org.springframework.stereotype.Component;
 
@@ -10,7 +9,7 @@ import java.util.UUID;
 /**
  * RNF07: the plate and the phones are only shared between people who travel together, that
  * is, the driver and a passenger with an {@code ACEPTADA} reservation. Every response that
- * includes contact data asks this policy; nobody else decides it.
+ * includes contact data goes through {@link ViewMapper}, which asks this policy.
  */
 @Component
 public class ContactVisibilityPolicy {
@@ -27,12 +26,12 @@ public class ContactVisibilityPolicy {
         return myReservation != null
                 && myReservation.belongsTo(viewerId)
                 && myReservation.isFor(trip)
-                && myReservation.getStatus() == ReservationStatus.ACEPTADA;
+                && myReservation.isAccepted();
     }
 
     /** Phone of the passenger: only for the driver of the trip, once the reservation is accepted. */
     public boolean canSeePassengerContact(Reservation reservation, UUID viewerId) {
         return reservation.getTrip().isDrivenBy(viewerId)
-                && reservation.getStatus() == ReservationStatus.ACEPTADA;
+                && reservation.isAccepted();
     }
 }

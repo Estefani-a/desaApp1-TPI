@@ -1,6 +1,7 @@
 package com.example.uniride.backend.service;
 
 import com.example.uniride.backend.exception.ApiException;
+import com.example.uniride.backend.exception.ErrorCode;
 import com.example.uniride.backend.repository.ReservationRepository;
 import com.example.uniride.backend.model.ReservationStatus;
 import com.example.uniride.backend.model.Trip;
@@ -43,7 +44,7 @@ class TripServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new TripService(tripRepository, reservationRepository, new ContactVisibilityPolicy());
+        service = new TripService(tripRepository, reservationRepository, new ViewMapper(new ContactVisibilityPolicy()));
         driver = driver();
         passenger = passenger();
         trip = trip(driver, 3);
@@ -100,6 +101,7 @@ class TripServiceTest {
         UUID unknown = UUID.randomUUID();
         when(tripRepository.findById(unknown)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.getDetail(passenger.getId(), unknown)).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> service.getDetail(passenger.getId(), unknown))
+                .isInstanceOfSatisfying(ApiException.class, ex -> assertThat(ex.getCode()).isEqualTo(ErrorCode.NOT_FOUND));
     }
 }

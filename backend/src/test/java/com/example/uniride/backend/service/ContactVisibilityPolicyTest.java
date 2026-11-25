@@ -5,6 +5,8 @@ import com.example.uniride.backend.model.ReservationStatus;
 import com.example.uniride.backend.model.Trip;
 import com.example.uniride.backend.model.User;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static com.example.uniride.backend.TestData.driver;
 import static com.example.uniride.backend.TestData.passenger;
@@ -26,13 +28,16 @@ class ContactVisibilityPolicyTest {
     }
 
     @Test
-    void sinReservaOConReservaNoAceptadaNoSeVenLosDatosDelConductor() {
+    void sinReservaNoSeVenLosDatosDelConductor() {
         assertThat(policy.canSeeDriverContact(trip, passenger.getId(), null)).isFalse();
-        for (ReservationStatus status : new ReservationStatus[]{
-                ReservationStatus.PENDIENTE, ReservationStatus.RECHAZADA, ReservationStatus.CANCELADA}) {
-            Reservation mine = reservation(trip, passenger, status);
-            assertThat(policy.canSeeDriverContact(trip, passenger.getId(), mine)).as(status.name()).isFalse();
-        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ReservationStatus.class, names = {"PENDIENTE", "RECHAZADA", "CANCELADA"})
+    void conUnaReservaQueNoEstaAceptadaNoSeVenLosDatosDelConductor(ReservationStatus status) {
+        Reservation mine = reservation(trip, passenger, status);
+
+        assertThat(policy.canSeeDriverContact(trip, passenger.getId(), mine)).isFalse();
     }
 
     @Test
@@ -50,12 +55,23 @@ class ContactVisibilityPolicyTest {
     }
 
     @Test
-    void elTelefonoDelPasajeroSoloLoVeElConductorConLaReservaAceptada() {
+    void elConductorNoVeElTelefonoDeUnaSolicitudPendiente() {
         Reservation pending = reservation(trip, passenger, ReservationStatus.PENDIENTE);
-        Reservation accepted = reservation(trip, passenger(), ReservationStatus.ACEPTADA);
 
         assertThat(policy.canSeePassengerContact(pending, driver.getId())).isFalse();
+    }
+
+    @Test
+    void elConductorVeElTelefonoDeUnaReservaAceptada() {
+        Reservation accepted = reservation(trip, passenger, ReservationStatus.ACEPTADA);
+
         assertThat(policy.canSeePassengerContact(accepted, driver.getId())).isTrue();
-        assertThat(policy.canSeePassengerContact(accepted, accepted.getPassenger().getId())).isFalse();
+    }
+
+    @Test
+    void otroPasajeroNoVeElTelefonoDeUnaReservaAceptada() {
+        Reservation accepted = reservation(trip, passenger, ReservationStatus.ACEPTADA);
+
+        assertThat(policy.canSeePassengerContact(accepted, passenger().getId())).isFalse();
     }
 }

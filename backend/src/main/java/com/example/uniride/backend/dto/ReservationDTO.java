@@ -1,6 +1,5 @@
 package com.example.uniride.backend.dto;
 
-import com.example.uniride.backend.service.ContactVisibilityPolicy;
 import com.example.uniride.backend.util.PublicName;
 import com.example.uniride.backend.model.Reservation;
 import com.example.uniride.backend.model.ReservationStatus;
