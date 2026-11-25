@@ -25,6 +25,12 @@ interface TripRepository {
     fun observeMyTrips(): Flow<List<Trip>>
 
     /**
+     * Every trip the current user drives, whatever its status (the ones the server rejected
+     * included), not the ones booked as a passenger. Empty without a user.
+     */
+    fun observeMyPublishedTrips(): Flow<List<Trip>>
+
+    /**
      * Trips created or changed on this device that the server did not confirm yet. The screens
      * combine it with the trips to show "Pendiente de sincronizar".
      */

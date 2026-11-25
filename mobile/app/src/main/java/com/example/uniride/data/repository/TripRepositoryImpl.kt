@@ -82,6 +82,15 @@ class TripRepositoryImpl @Inject constructor(
             }
         }.distinctUntilChanged()
 
+    override fun observeMyPublishedTrips(): Flow<List<Trip>> =
+        userDao.observeCurrentUser().flatMapLatest { user ->
+            if (user == null) {
+                flowOf(emptyList())
+            } else {
+                tripDao.observeTripsByDriver(user.id).map { rows -> rows.map(TripEntity::toDomain) }
+            }
+        }.distinctUntilChanged()
+
     override fun observePendingTripIds(): Flow<Set<TripId>> =
         tripDao.observePendingTripIds().map { ids -> ids.mapTo(HashSet(), ::TripId) }.distinctUntilChanged()
 

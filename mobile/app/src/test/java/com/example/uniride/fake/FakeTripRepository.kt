@@ -42,7 +42,14 @@ class FakeTripRepository(
 
     override fun observeMyTrips(): Flow<List<Trip>> = trips
 
-    override fun observePendingTripIds(): Flow<Set<TripId>> = MutableStateFlow(emptySet())
+    /** The trips the current user drives; plays the part of `observeTripsByDriver` of Room. */
+    val publishedTrips = MutableStateFlow<List<Trip>>(emptyList())
+
+    override fun observeMyPublishedTrips(): Flow<List<Trip>> = publishedTrips
+
+    val pendingTripIds = MutableStateFlow<Set<TripId>>(emptySet())
+
+    override fun observePendingTripIds(): Flow<Set<TripId>> = pendingTripIds
 
     override fun observeLastRefreshedAt(): Flow<Instant?> = lastRefreshedAt
 
@@ -57,11 +64,24 @@ class FakeTripRepository(
 
     override suspend fun refreshTrip(tripId: TripId): AppResult<Unit> = AppResult.Success(Unit)
 
-    override suspend fun refreshMyTrips(): AppResult<Unit> = AppResult.Success(Unit)
+    var refreshMyTripsResult: AppResult<Unit> = AppResult.Success(Unit)
+    var refreshMyTripsCalls = 0
+        private set
 
-    override fun observeRejectedTrips(): Flow<Map<TripId, DataError>> = MutableStateFlow(emptyMap())
+    override suspend fun refreshMyTrips(): AppResult<Unit> {
+        refreshMyTripsCalls++
+        return refreshMyTripsResult
+    }
 
-    override suspend fun dismissRejection(tripId: TripId) = Unit
+    val rejectedTrips = MutableStateFlow<Map<TripId, DataError>>(emptyMap())
+    val dismissedRejections = mutableListOf<TripId>()
+
+    override fun observeRejectedTrips(): Flow<Map<TripId, DataError>> = rejectedTrips
+
+    override suspend fun dismissRejection(tripId: TripId) {
+        dismissedRejections += tripId
+        rejectedTrips.value = rejectedTrips.value - tripId
+    }
 
     override suspend fun clearLocalData(): AppResult<Unit> {
         trips.value = emptyList()
