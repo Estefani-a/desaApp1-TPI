@@ -31,6 +31,10 @@ class FakeTripRepository(
     var refreshCalls = 0
         private set
 
+    /** What [publish] answers, and the drafts it received. */
+    var publishResult: AppResult<TripId> = AppResult.Success(TripId("published-trip"))
+    val publishedDrafts = mutableListOf<TripDraft>()
+
     override fun observeTrips(filters: TripFilters): Flow<List<Trip>> =
         trips.map { list -> list.filter(filters::matches) }
 
@@ -65,7 +69,10 @@ class FakeTripRepository(
         return AppResult.Success(Unit)
     }
 
-    override suspend fun publish(draft: TripDraft): AppResult<TripId> = error("No se usa en estos tests")
+    override suspend fun publish(draft: TripDraft): AppResult<TripId> {
+        publishedDrafts += draft
+        return publishResult
+    }
 
     override suspend fun finish(tripId: TripId): AppResult<Unit> = error("No se usa en estos tests")
 
