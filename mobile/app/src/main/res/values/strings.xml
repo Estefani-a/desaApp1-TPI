@@ -130,7 +130,6 @@
     <string name="publish_campus">Sede</string>
     <string name="publish_direction">Sentido del viaje</string>
     <string name="publish_meeting_point">Punto de encuentro</string>
-    <string name="publish_meeting_point_choose_campus">Elegí primero la sede</string>
     <string name="publish_neighborhood">Barrio de destino</string>
     <string name="publish_reference">Referencia (opcional)</string>
     <string name="publish_departure_date">Fecha de salida</string>
@@ -138,8 +137,7 @@
     <string name="publish_arrival_time">Llegada estimada (opcional)</string>
     <string name="publish_arrival_clear">Quitar la hora de llegada</string>
     <string name="publish_seats">Plazas</string>
-    <string name="publish_contribution">Aporte por asiento</string>
-    <string name="publish_contribution_prefix">$</string>
+    <string name="publish_contribution">Aporte por asiento ($)</string>
     <string name="publish_contribution_help">En pesos, sin decimales</string>
     <string name="publish_submit">Publicar viaje</string>
     <string name="publish_picker_confirm">Aceptar</string>
