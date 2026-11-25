@@ -40,6 +40,9 @@ ON CONFLICT (campus_code, position) DO UPDATE SET meeting_point = EXCLUDED.meeti
 -- =============================================================================
 -- Un pasajero tiene como máximo una reserva activa por viaje (ALREADY_RESERVED). El service
 -- lo controla con el viaje bloqueado; este índice es la red de seguridad en la base.
+-- Excepción a CONVENCIONES §10.5 (DDL en data.sql): JPA no permite declarar índices parciales.
+-- Los estados del WHERE son los de ReservationStatus.ACTIVE; si cambian, cambiar los dos.
+-- El nombre lo usa Reservation.ONE_ACTIVE_PER_PASSENGER_INDEX.
 CREATE UNIQUE INDEX IF NOT EXISTS uk_reservations_active_passenger
     ON reservations (trip_id, passenger_id)
     WHERE status IN ('PENDIENTE', 'ACEPTADA');

@@ -490,6 +490,7 @@ Los `code` son un enum `ErrorCode` en el backend y se listan en `docs/API.md`.
 
 - Las tablas las crea Hibernate a partir de las entidades JPA (`spring.jpa.hibernate.ddl-auto=update`): agregar una tabla o una columna es agregarla a la entidad. No usamos herramientas de migraciones (como Flyway), porque con una semana de desarrollo y sin datos reales que cuidar no se justifican.
 - `update` agrega tablas y columnas, pero **no borra ni renombra**. Si cambiás un nombre o un tipo, avisá en el grupo y que cada uno reinicie su base con `docker compose down -v` (borra el volumen de PostgreSQL).
+- Lo que JPA no puede declarar (por ejemplo, un índice único parcial) va en `data.sql` con `IF NOT EXISTS`, con un comentario que diga qué entidad o enum tiene que coincidir.
 - Los datos iniciales (sedes y puntos de encuentro, usuarios de prueba para la demo) van en `src/main/resources/data.sql`, con `INSERT ... ON CONFLICT DO NOTHING` para que se pueda ejecutar en cada arranque (`spring.sql.init.mode=always` y `spring.jpa.defer-datasource-initialization=true`).
 - Tablas y columnas en snake_case (`trips`, `departure_date`). Los enums se guardan como texto (`@Enumerated(EnumType.STRING)`).
 

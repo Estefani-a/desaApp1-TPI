@@ -66,7 +66,7 @@ Toda respuesta de error tiene este cuerpo:
 | 409 | `EMAIL_ALREADY_REGISTERED` | Registro con un correo que ya existe |
 | 409 | `ID_CONFLICT` | El UUID ya existe y pertenece a otro usuario |
 | 409 | `NO_SEATS_AVAILABLE` | No quedan plazas al reservar o al aceptar |
-| 409 | `TRIP_NOT_OPEN` | El viaje está `COMPLETO`, `FINALIZADO` o `CANCELADO`, o ya salió |
+| 409 | `TRIP_NOT_OPEN` | El viaje está `FINALIZADO` o `CANCELADO`, o ya salió |
 | 409 | `ALREADY_RESERVED` | El pasajero ya tiene una reserva `PENDIENTE` o `ACEPTADA` en ese viaje |
 | 409 | `INVALID_STATUS_TRANSITION` | Por ejemplo, aceptar una reserva `CANCELADA` |
 | 409 | `ALREADY_RATED` | Ya calificó a esa persona en ese viaje |
@@ -372,14 +372,14 @@ En esta entrega cancelar un viaje **no** envía notificación push (se mantienen
 `PUT /trips/{tripId}/reservations/{reservationId}` · pasajero · sin cuerpo · lo envía `SyncWorker`
 
 - **201** `ReservationDto` en `PENDIENTE` · **200** en un reintento.
-- **403** `CANNOT_RESERVE_OWN_TRIP` · **409** `NO_SEATS_AVAILABLE`, `TRIP_NOT_OPEN`, `ALREADY_RESERVED`, `ID_CONFLICT`.
+- **403** `CANNOT_RESERVE_OWN_TRIP` · **404** `NOT_FOUND` · **409** `ALREADY_RESERVED` (el pasajero ya tiene una reserva `PENDIENTE` o `ACEPTADA` en el viaje), `TRIP_NOT_OPEN`, `NO_SEATS_AVAILABLE` (el viaje está `COMPLETO`), `ID_CONFLICT`.
 - Envía `NUEVA_SOLICITUD` al conductor.
 
 Solicitar no descuenta la vacante: se descuenta al aceptar.
 
 ### 6.2 Solicitudes de un viaje (panel del conductor)
 
-`GET /trips/{tripId}/reservations` · conductor → **200** `ReservationDto[]` · **403** `FORBIDDEN`.
+`GET /trips/{tripId}/reservations` · conductor → **200** `ReservationDto[]` · **403** `FORBIDDEN` · **404** `NOT_FOUND`.
 
 ### 6.3 Responder y cancelar
 
@@ -389,7 +389,7 @@ Solicitar no descuenta la vacante: se descuenta al aceptar.
 | `POST /trips/{tripId}/reservations/{reservationId}/reject` | Conductor | `PENDIENTE` → `RECHAZADA`. Envía `SOLICITUD_RECHAZADA` |
 | `POST /trips/{tripId}/reservations/{reservationId}/cancel` | Pasajero | `PENDIENTE` o `ACEPTADA` → `CANCELADA`. Si estaba aceptada, devuelve la vacante y el viaje vuelve a `ABIERTO` |
 
-Respuesta: **200** `ReservationDto` · **403** `FORBIDDEN` · **409** `NO_SEATS_AVAILABLE` (al aceptar), `INVALID_STATUS_TRANSITION`.
+Respuesta: **200** `ReservationDto` · **403** `FORBIDDEN` · **404** `NOT_FOUND` (el viaje no existe o la reserva no es de ese viaje) · **409** `NO_SEATS_AVAILABLE` (al aceptar), `INVALID_STATUS_TRANSITION`.
 
 Una vez que el viaje salió (fecha y hora de salida en el pasado), sus reservas ya no cambian: aceptar, rechazar o cancelar responde **409** `INVALID_STATUS_TRANSITION`, salvo que se repita una transición que ya ocurrió (idempotencia).
 
