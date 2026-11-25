@@ -92,6 +92,7 @@ class FakeProfileRepository(
     var refreshCalls: Int = 0
     var lastUpdatedProfile: Profile? = null
     var refreshResult: AppResult<Unit> = AppResult.Success(Unit)
+    var updateResult: AppResult<User>? = null
 
     override fun observeCurrentUser(): Flow<User?> = currentUser.asStateFlow()
 
@@ -102,6 +103,7 @@ class FakeProfileRepository(
 
     override suspend fun update(profile: Profile): AppResult<User> {
         lastUpdatedProfile = profile
+        updateResult?.let { return it }
         val updated = (currentUser.value ?: sampleUser()).copy(profile = profile)
         currentUser.value = updated
         return AppResult.Success(updated)

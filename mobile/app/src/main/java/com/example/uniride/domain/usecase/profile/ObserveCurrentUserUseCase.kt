@@ -1,4 +1,4 @@
-package com.example.uniride.domain.usecase.auth
+package com.example.uniride.domain.usecase.profile
 
 import com.example.uniride.domain.model.User
 import com.example.uniride.domain.repository.ProfileRepository
