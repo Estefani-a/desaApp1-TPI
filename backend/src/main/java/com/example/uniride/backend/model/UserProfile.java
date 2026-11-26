@@ -36,9 +36,9 @@ public class UserProfile {
     }
 
     public UserProfile(String fullName, String career, String phone, PreferredMode preferredMode, Vehicle vehicle) {
-        this.fullName = Objects.requireNonNull(fullName);
-        this.career = Objects.requireNonNull(career);
-        this.phone = Objects.requireNonNull(phone);
+        this.fullName = Objects.requireNonNull(fullName).trim();
+        this.career = Objects.requireNonNull(career).trim();
+        this.phone = Objects.requireNonNull(phone).trim();
         this.preferredMode = Objects.requireNonNull(preferredMode);
         this.vehicle = vehicle;
     }

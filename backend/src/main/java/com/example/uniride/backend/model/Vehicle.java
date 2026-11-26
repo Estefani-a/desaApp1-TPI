@@ -3,6 +3,9 @@ package com.example.uniride.backend.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 
+import java.util.Locale;
+import java.util.Objects;
+
 /** Vehicle of a driver, stored in the {@code users} table (docs/API.md §3.2). */
 @Embeddable
 public class Vehicle {
@@ -23,10 +26,10 @@ public class Vehicle {
     }
 
     public Vehicle(String brand, String model, String color, String plate) {
-        this.brand = brand;
-        this.model = model;
-        this.color = color;
-        this.plate = plate;
+        this.brand = Objects.requireNonNull(brand).trim();
+        this.model = Objects.requireNonNull(model).trim();
+        this.color = Objects.requireNonNull(color).trim();
+        this.plate = Objects.requireNonNull(plate).trim().toUpperCase(Locale.ROOT);
     }
 
     /** Embeddables cannot be shared between two entities: each one keeps its own copy. */
