@@ -23,12 +23,13 @@ enum class SeatRequestDecision {
 object SeatRequestRule {
 
     /**
+     * @param userId who asks; `null` without a session, and then only the trip is evaluated
      * @param myReservation the user's reservation on this trip, if any
      * @param now current time in Buenos Aires
      */
-    fun evaluate(trip: Trip, userId: UserId, myReservation: Reservation?, now: LocalDateTime): SeatRequestDecision =
+    fun evaluate(trip: Trip, userId: UserId?, myReservation: Reservation?, now: LocalDateTime): SeatRequestDecision =
         when {
-            trip.isDrivenBy(userId) -> SeatRequestDecision.OWN_TRIP
+            userId != null && trip.isDrivenBy(userId) -> SeatRequestDecision.OWN_TRIP
             myReservation?.isActive == true -> SeatRequestDecision.ALREADY_RESERVED
             trip.schedule.hasDepartedAt(now) -> SeatRequestDecision.DEPARTED
             trip.status != TripStatus.ABIERTO && trip.status != TripStatus.COMPLETO -> SeatRequestDecision.TRIP_NOT_OPEN

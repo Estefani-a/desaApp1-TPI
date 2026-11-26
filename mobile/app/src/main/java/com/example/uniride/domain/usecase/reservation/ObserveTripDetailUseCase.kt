@@ -36,7 +36,8 @@ data class TripDetail(
 
 /**
  * The trip detail (RF04, B3), from the phone: it works offline and updates itself when Room
- * changes. `null` if the trip is not on the phone.
+ * changes. `null` if the trip is not on the phone. Without a session the trip is still shown, as
+ * to any passenger; asking for a seat is what needs one.
  */
 class ObserveTripDetailUseCase @Inject constructor(
     private val tripRepository: TripRepository,
@@ -57,13 +58,14 @@ class ObserveTripDetailUseCase @Inject constructor(
             reservationRepository.observePendingReservationIds(),
             reservationRepository.observeRejections(),
         ) { (trip, mine, user), pendingTrips, pendingReservations, rejections ->
-            if (trip == null || user == null) return@combine null
+            if (trip == null) return@combine null
             val now = LocalDateTime.now(clock)
+            val userId = user?.id
             TripDetail(
                 trip = trip,
                 myReservation = mine,
-                isDriver = trip.isDrivenBy(user.id),
-                seatRequest = SeatRequestRule.evaluate(trip, user.id, mine, now),
+                isDriver = userId != null && trip.isDrivenBy(userId),
+                seatRequest = SeatRequestRule.evaluate(trip, userId, mine, now),
                 hasStarted = trip.schedule.hasDepartedAt(now),
                 isPendingSync = trip.id in pendingTrips || (mine != null && mine.id in pendingReservations),
                 rejection = mine?.let { rejections[it.id] },

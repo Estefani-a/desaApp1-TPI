@@ -218,6 +218,16 @@ class ReservationUseCasesTest {
     }
 
     @Test
+    fun `sin sesion el detalle muestra el viaje igual`() = runTest {
+        profiles.user.value = null
+
+        val result = detail(TRIP_ID).first()!!
+
+        assertFalse(result.isDriver)
+        assertEquals(SeatRequestDecision.ALLOWED, result.seatRequest)
+    }
+
+    @Test
     fun `el detalle muestra mi reserva pendiente de sincronizar y el motivo de un rechazo`() = runTest {
         val mine = reservation(ReservationStatus.ACEPTADA)
         reservations.reservations.value = listOf(mine)
