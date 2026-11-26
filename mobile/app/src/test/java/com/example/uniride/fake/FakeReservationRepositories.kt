@@ -1,13 +1,10 @@
 package com.example.uniride.fake
 
 import com.example.uniride.core.result.AppResult
-import com.example.uniride.domain.model.Profile
 import com.example.uniride.domain.model.Reservation
 import com.example.uniride.domain.model.ReservationId
 import com.example.uniride.domain.model.ReservationRejection
 import com.example.uniride.domain.model.TripId
-import com.example.uniride.domain.model.User
-import com.example.uniride.domain.repository.ProfileRepository
 import com.example.uniride.domain.repository.ReservationRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -67,16 +64,4 @@ class FakeReservationRepository(
         calls += "$action:${reservationId.value}"
         return AppResult.Success(Unit)
     }
-}
-
-/** [ProfileRepository] that only says who is logged in. */
-class FakeProfileRepository(user: User? = null) : ProfileRepository {
-
-    val user = MutableStateFlow(user)
-
-    override fun observeCurrentUser(): Flow<User?> = user
-
-    override suspend fun refresh(): AppResult<Unit> = AppResult.Success(Unit)
-
-    override suspend fun update(profile: Profile): AppResult<User> = error("No se usa en estos tests")
 }
