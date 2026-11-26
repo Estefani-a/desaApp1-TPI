@@ -1,5 +1,7 @@
 package com.example.uniride.data.repository
 
+import com.example.uniride.domain.model.ReservationStatus
+import com.example.uniride.data.remote.datasource.FakeReservationRemoteDataSource
 import com.example.uniride.core.result.AppResult
 import com.example.uniride.core.result.DataError
 import com.example.uniride.data.remote.datasource.FakeBackendStore
@@ -14,6 +16,7 @@ import com.example.uniride.domain.model.TripRoute
 import com.example.uniride.domain.model.TripSchedule
 import com.example.uniride.domain.model.TripStatus
 import com.example.uniride.fake.FakeSyncScheduler
+import com.example.uniride.fake.FakeReservationDao
 import com.example.uniride.fake.FakeTripDao
 import com.example.uniride.fake.FakeUserDao
 import com.example.uniride.fake.InMemoryPreferencesDataStore
@@ -40,6 +43,7 @@ class TripRepositoryImplTest {
     private val remote = ToggleableTripRemote(FakeTripRemoteDataSource(store))
     private val tripDao = FakeTripDao()
     private val userDao = FakeUserDao()
+    private val reservationDao = FakeReservationDao()
     private val scheduler = FakeSyncScheduler()
     private val dataStore = InMemoryPreferencesDataStore()
     private val rejections = TripRejectionStore(dataStore)
@@ -48,7 +52,7 @@ class TripRepositoryImplTest {
     private val repository = newRepository()
 
     private fun newRepository() =
-        TripRepositoryImpl(tripDao, userDao, remote, rejections, scheduler, dataStore, clock)
+        TripRepositoryImpl(tripDao, reservationDao, userDao, remote, rejections, scheduler, dataStore, clock)
 
     private fun draft(seats: Int = 3) = TripDraft(
         campus = CampusCode("MONSERRAT"),
@@ -188,6 +192,17 @@ class TripRepositoryImplTest {
 
         assertTrue(tripDao.getAll().all { it.isSync })
         assertEquals(2, repository.observeMyTrips().first().size)
+    }
+
+    @Test
+    fun `refrescar un viaje guarda tambien mi reserva en ese viaje`() = runTest {
+        FakeReservationRemoteDataSource(store).requestSeat(FakeBackendStore.DEMO_TRIP_MONSERRAT_ID, "res-1")
+
+        assertEquals(AppResult.Success(Unit), repository.refreshTrip(TripId(FakeBackendStore.DEMO_TRIP_MONSERRAT_ID)))
+
+        val row = reservationDao.getReservation("res-1")!!
+        assertEquals(ReservationStatus.PENDIENTE, row.status)
+        assertTrue(row.isSync)
     }
 
     @Test

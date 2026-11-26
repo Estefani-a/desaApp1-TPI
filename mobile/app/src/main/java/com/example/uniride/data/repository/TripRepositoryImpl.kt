@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import com.example.uniride.core.result.AppResult
 import com.example.uniride.core.result.DataError
+import com.example.uniride.data.local.dao.ReservationDao
 import com.example.uniride.data.local.dao.TripDao
 import com.example.uniride.data.local.dao.UserDao
 import com.example.uniride.data.local.entity.TripEntity
@@ -47,6 +48,8 @@ import javax.inject.Singleton
  *   that. The retention rule of 11.2 is applied by `TripDao.replaceCatalog`.
  * - [publish] works offline: it saves the trip with `isSync = false` and asks the scheduler to
  *   send it (`TripSyncHandler` does).
+ * - Every refresh also saves the user's reservation that comes inside each trip (`myReservation`,
+ *   docs/API.md §3.3), so the reservations screens read it from Room too.
  * - [finish] and [cancel] are **online only**: they are not queued, because their result (a 409
  *   if the trip already changed) decides what the user sees. Without connection they return the
  *   [DataError] and nothing changes. When they work, the trip the server returns is saved.
@@ -57,6 +60,7 @@ import javax.inject.Singleton
 @OptIn(ExperimentalCoroutinesApi::class)
 class TripRepositoryImpl @Inject constructor(
     private val tripDao: TripDao,
+    private val reservationDao: ReservationDao,
     private val userDao: UserDao,
     private val remote: TripRemoteDataSource,
     private val rejections: TripRejectionStore,
@@ -124,6 +128,7 @@ class TripRepositoryImpl @Inject constructor(
                 userId = userDao.getCurrentUser()?.id,
                 keepTripIds = rejections.ids() + dtos.filter { it.hasActiveReservation() }.map { it.tripId },
             )
+            saveMyReservations(dtos)
         }
         if (result is AppResult.Success) {
             dataStore.edit { it[LAST_REFRESHED_AT] = startedAt.toEpochMilli() }
@@ -131,11 +136,22 @@ class TripRepositoryImpl @Inject constructor(
         return result
     }
 
-    override suspend fun refreshTrip(tripId: TripId): AppResult<Unit> =
-        safeApiCall { tripDao.upsert(remote.getTripDetail(tripId.value).toDomain().toEntity(isSync = true)) }
+    override suspend fun refreshTrip(tripId: TripId): AppResult<Unit> = safeApiCall {
+        val dto = remote.getTripDetail(tripId.value)
+        tripDao.upsert(dto.toDomain().toEntity(isSync = true))
+        saveMyReservations(listOf(dto))
+    }
 
-    override suspend fun refreshMyTrips(): AppResult<Unit> =
-        safeApiCall { tripDao.upsertAll(remote.getMyTrips().map { it.toDomain().toEntity(isSync = true) }) }
+    override suspend fun refreshMyTrips(): AppResult<Unit> = safeApiCall {
+        val dtos = remote.getMyTrips()
+        tripDao.upsertAll(dtos.map { it.toDomain().toEntity(isSync = true) })
+        saveMyReservations(dtos)
+    }
+
+    /** A reservation changed on this device and not sent yet is kept (`upsertFromServer`). */
+    private suspend fun saveMyReservations(dtos: List<TripDto>) {
+        reservationDao.upsertFromServer(dtos.mapNotNull { it.myReservation?.toDomain()?.toEntity(isSync = true) })
+    }
 
     override suspend fun publish(draft: TripDraft): AppResult<TripId> {
         val userEntity = safeApiCall { userDao.getCurrentUser() }.let {
