@@ -20,9 +20,15 @@ data class AppUiState(
 
 sealed interface AppAction {
     data class ChangeMode(val mode: AppMode) : AppAction
+
+    /** A push was tapped: the activity got its intent. */
+    data class OpenFromPush(val destination: PushDestination) : AppAction
 }
 
 sealed interface AppEffect {
     /** The session ended (logout, or a 401 anywhere): back to the start of the auth graph. */
     data object SessionEnded : AppEffect
+
+    /** Open the screen of a tapped push, already in its mode. */
+    data class OpenPush(val destination: PushDestination) : AppEffect
 }

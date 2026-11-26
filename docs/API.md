@@ -465,6 +465,8 @@ El backend envía mensajes **de datos** (no de notificación), así la app decid
 | `NUEVA_SOLICITUD` | Conductor | C4 Panel del conductor | Refresca las solicitudes del viaje |
 | `SOLICITUD_ACEPTADA` | Pasajero | B6 Mi viaje | Refresca el viaje (ahora con patente y teléfono) |
 | `SOLICITUD_RECHAZADA` | Pasajero | B6 Mi viaje | Refresca el viaje |
+En la app, la notificación abre `MainActivity` con los extras `type` y `tripId` (`openFromPushIntent`). Si hay sesión, la app pasa al modo de la pantalla (conductor o pasajero) cuando el perfil lo permite y la abre arriba del inicio. Sin sesión, la push se ignora.
+
 Si el usuario no dio permiso de notificaciones (RNF08), no recibe la push, pero ve el estado actualizado al abrir la app (tarjeta del inicio y panel del conductor). La bandeja (§7.2) y el tipo `CALIFICAR_VIAJE` quedan fuera de esta entrega.
 
 ---

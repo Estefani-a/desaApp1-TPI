@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -53,6 +54,22 @@ class AppViewModel @Inject constructor(
     fun onAction(action: AppAction) {
         when (action) {
             is AppAction.ChangeMode -> viewModelScope.launch { setAppMode(action.mode) }
+            is AppAction.OpenFromPush -> openFromPush(action.destination)
+        }
+    }
+
+    /**
+     * Waits until the session is read (a tapped push can start the app). Without a session the
+     * push is ignored: after logging in, the user sees the same state on the start screen.
+     */
+    private fun openFromPush(destination: PushDestination) {
+        viewModelScope.launch {
+            val state = uiState.first { it.session != SessionStatus.LOADING }
+            if (state.session != SessionStatus.LOGGED_IN) return@launch
+            if (destination.mode != state.appMode && destination.mode in state.availableModes) {
+                setAppMode(destination.mode)
+            }
+            _effects.send(AppEffect.OpenPush(destination))
         }
     }
 

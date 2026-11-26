@@ -12,9 +12,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -47,11 +49,14 @@ fun UniRideAppRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val navController = rememberNavController()
+    // Held until the NavHost exists: the effect can arrive while the session is still loading
+    var pendingPush by remember { mutableStateOf<PushDestination?>(null) }
 
     LaunchedEffect(viewModel, navController) {
         viewModel.effects.collect { effect ->
             when (effect) {
                 AppEffect.SessionEnded -> navController.navigateToAuth()
+                is AppEffect.OpenPush -> pendingPush = effect.destination
             }
         }
     }
@@ -71,6 +76,13 @@ fun UniRideAppRoute(
         startDestination = if (startsLoggedIn) MainGraphRoute else AuthGraphRoute,
         navController = navController,
     )
+
+    LaunchedEffect(pendingPush) {
+        pendingPush?.let { destination ->
+            navController.openFromPush(destination)
+            pendingPush = null
+        }
+    }
 }
 
 /**
@@ -144,6 +156,17 @@ internal fun NavController.navigateToTab(tab: TopLevelDestination) {
         popUpTo<HomeRoute> { saveState = true }
         launchSingleTop = true
         restoreState = true
+    }
+}
+
+/**
+ * Opens the screen of a push on top of the Home tab, so going back leaves the user on the start
+ * of the mode instead of wherever they were before the push.
+ */
+internal fun NavController.openFromPush(destination: PushDestination) {
+    navigate(destination.route) {
+        popUpTo<HomeRoute>()
+        launchSingleTop = true
     }
 }
 
