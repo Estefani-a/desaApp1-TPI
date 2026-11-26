@@ -10,8 +10,8 @@ import com.example.uniride.domain.model.UserId
 import com.example.uniride.domain.model.Vehicle
 import com.example.uniride.domain.usecase.mode.ObserveAppModeUseCase
 import com.example.uniride.domain.usecase.mode.SetAppModeUseCase
-import com.example.uniride.domain.usecase.profile.ObserveCurrentProfileUseCase
-import com.example.uniride.domain.usecase.session.ObserveIsLoggedInUseCase
+import com.example.uniride.domain.usecase.auth.ObserveIsLoggedInUseCase
+import com.example.uniride.domain.usecase.profile.ObserveCurrentUserUseCase
 import com.example.uniride.fake.FakeProfileRepository
 import com.example.uniride.fake.FakeSessionRepository
 import com.example.uniride.fake.InMemoryPreferencesDataStore
@@ -50,7 +50,7 @@ class AppViewModelTest {
     private fun TestScope.viewModel(): AppViewModel {
         val viewModel = AppViewModel(
             observeIsLoggedIn = ObserveIsLoggedInUseCase(session),
-            observeCurrentProfile = ObserveCurrentProfileUseCase(profiles),
+            observeCurrentUser = ObserveCurrentUserUseCase(profiles),
             observeAppMode = ObserveAppModeUseCase(appModes),
             setAppMode = SetAppModeUseCase(appModes),
         )
@@ -66,15 +66,15 @@ class AppViewModelTest {
 
     @Test
     fun `con sesion arranca adentro`() = runTest(mainDispatcherRule.testDispatcher) {
-        session.isLoggedIn.value = true
+        session.login(EMAIL, PASSWORD)
 
         assertEquals(SessionStatus.LOGGED_IN, viewModel().uiState.value.session)
     }
 
     @Test
     fun `elegir un modo lo guarda y lo usa`() = runTest(mainDispatcherRule.testDispatcher) {
-        session.isLoggedIn.value = true
-        profiles.user.value = user(PreferredMode.AMBOS, withVehicle = true)
+        session.login(EMAIL, PASSWORD)
+        profiles.currentUser.value = user(PreferredMode.AMBOS, withVehicle = true)
         val viewModel = viewModel()
 
         viewModel.onAction(AppAction.ChangeMode(AppMode.CONDUCTOR))
@@ -85,7 +85,7 @@ class AppViewModelTest {
 
     @Test
     fun `al abrir la app vuelve al ultimo modo elegido`() = runTest(mainDispatcherRule.testDispatcher) {
-        profiles.user.value = user(PreferredMode.AMBOS, withVehicle = true)
+        profiles.currentUser.value = user(PreferredMode.AMBOS, withVehicle = true)
         appModes.setAppMode(AppMode.CONDUCTOR)
 
         assertEquals(AppMode.CONDUCTOR, viewModel().uiState.value.appMode)
@@ -93,7 +93,7 @@ class AppViewModelTest {
 
     @Test
     fun `sin vehiculo es pasajero aunque haya elegido conductor`() = runTest(mainDispatcherRule.testDispatcher) {
-        profiles.user.value = user(PreferredMode.AMBOS, withVehicle = false)
+        profiles.currentUser.value = user(PreferredMode.AMBOS, withVehicle = false)
         appModes.setAppMode(AppMode.CONDUCTOR)
 
         val state = viewModel().uiState.value
@@ -104,14 +104,14 @@ class AppViewModelTest {
 
     @Test
     fun `un conductor con vehiculo arranca como conductor`() = runTest(mainDispatcherRule.testDispatcher) {
-        profiles.user.value = user(PreferredMode.CONDUCTOR, withVehicle = true)
+        profiles.currentUser.value = user(PreferredMode.CONDUCTOR, withVehicle = true)
 
         assertEquals(AppMode.CONDUCTOR, viewModel().uiState.value.appMode)
     }
 
     @Test
     fun `cuando la sesion termina lo avisa`() = runTest(mainDispatcherRule.testDispatcher) {
-        session.isLoggedIn.value = true
+        session.login(EMAIL, PASSWORD)
         val viewModel = viewModel()
 
         viewModel.effects.test {
@@ -127,5 +127,10 @@ class AppViewModelTest {
         viewModel.effects.test {
             expectNoEvents()
         }
+    }
+
+    private companion object {
+        const val EMAIL = "user-1@uade.edu.ar"
+        const val PASSWORD = "clave1234"
     }
 }

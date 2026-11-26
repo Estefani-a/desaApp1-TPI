@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.uniride.domain.usecase.mode.ObserveAppModeUseCase
 import com.example.uniride.domain.usecase.mode.SetAppModeUseCase
-import com.example.uniride.domain.usecase.profile.ObserveCurrentProfileUseCase
-import com.example.uniride.domain.usecase.session.ObserveIsLoggedInUseCase
+import com.example.uniride.domain.usecase.auth.ObserveIsLoggedInUseCase
+import com.example.uniride.domain.usecase.profile.ObserveCurrentUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -25,7 +25,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AppViewModel @Inject constructor(
     private val observeIsLoggedIn: ObserveIsLoggedInUseCase,
-    observeCurrentProfile: ObserveCurrentProfileUseCase,
+    observeCurrentUser: ObserveCurrentUserUseCase,
     observeAppMode: ObserveAppModeUseCase,
     private val setAppMode: SetAppModeUseCase,
 ) : ViewModel() {
@@ -35,10 +35,10 @@ class AppViewModel @Inject constructor(
 
     val uiState: StateFlow<AppUiState> = combine(
         observeIsLoggedIn(),
-        observeCurrentProfile(),
+        observeCurrentUser(),
         observeAppMode(),
-    ) { isLoggedIn, profile, chosenMode ->
-        val modes = availableModes(profile)
+    ) { isLoggedIn, user, chosenMode ->
+        val modes = availableModes(user?.profile)
         AppUiState(
             session = if (isLoggedIn) SessionStatus.LOGGED_IN else SessionStatus.LOGGED_OUT,
             appMode = effectiveMode(chosenMode, modes),
