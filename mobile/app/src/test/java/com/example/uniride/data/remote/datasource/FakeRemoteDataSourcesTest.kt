@@ -207,10 +207,11 @@ class FakeRemoteDataSourcesTest {
 
         try {
             reservations.acceptReservation(tripId = tripId, reservationId = "res-finished-1")
-            fail("Se esperaba TRIP_NOT_OPEN")
+            fail("Se esperaba INVALID_STATUS_TRANSITION")
         } catch (ex: ApiException) {
             assertEquals(409, ex.httpCode)
-            assertEquals(ApiErrorCode.TRIP_NOT_OPEN, ex.apiError.errorCode)
+            // docs/API.md §6.3: en un viaje finalizado o cancelado la reserva no cambia
+            assertEquals(ApiErrorCode.INVALID_STATUS_TRANSITION, ex.apiError.errorCode)
         }
     }
 

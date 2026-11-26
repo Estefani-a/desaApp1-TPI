@@ -1,6 +1,5 @@
 package com.example.uniride.presentation.profile
 
-import app.cash.turbine.test
 import com.example.uniride.R
 import com.example.uniride.core.result.AppResult
 import com.example.uniride.core.result.DataError
@@ -81,7 +80,7 @@ class ProfileViewModelTest {
     }
 
     @Test
-    fun `confirmar logout cierra sesion y emite NavigateToAuth`() = runTest {
+    fun `confirmar logout llama a logoutUseCase y cierra el dialogo`() = runTest {
         val profileRepo = FakeProfileRepository(initialUser = sampleUser())
         val sessionRepo = FakeSessionRepository(initialLoggedIn = true)
         val vm = ProfileViewModel(
@@ -96,12 +95,10 @@ class ProfileViewModelTest {
         vm.onAction(ProfileAction.RequestLogout)
         assertTrue(vm.uiState.first().showLogoutDialog)
 
-        vm.effects.test {
-            vm.onAction(ProfileAction.ConfirmLogout)
-            assertEquals(ProfileEffect.NavigateToAuth, awaitItem())
-            assertEquals(1, sessionRepo.logoutCalls)
-            assertFalse(vm.uiState.first().showLogoutDialog)
-        }
+        vm.onAction(ProfileAction.ConfirmLogout)
+        assertEquals(1, sessionRepo.logoutCalls)
+        assertFalse(vm.uiState.first().showLogoutDialog)
+        assertFalse(vm.uiState.first().isLoggingOut)
         collector.cancel()
     }
 

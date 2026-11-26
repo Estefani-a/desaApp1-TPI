@@ -1,24 +1,28 @@
 package com.example.uniride.presentation.profile
 
-import androidx.navigation.NavController
+import androidx.compose.runtime.Composable
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
-import com.example.uniride.presentation.auth.AuthGraphRoute
-import com.example.uniride.presentation.navigation.MainGraphRoute
 import kotlinx.serialization.Serializable
 
 /** Perfil y cierre de sesión (RF01). */
 @Serializable
 data object ProfileRoute
 
-fun NavGraphBuilder.profileGraph(navController: NavController) {
+/**
+ * Profile screen slot (RF01). Exists so instrumented tests, which have no Hilt, can replace
+ * [ProfileScreenRoute] with a plain composable; the app always uses [DefaultProfileContent].
+ */
+typealias ProfileContent = @Composable () -> Unit
+
+val DefaultProfileContent: ProfileContent = {
+    ProfileScreenRoute()
+}
+
+fun NavGraphBuilder.profileGraph(
+    profileContent: ProfileContent = DefaultProfileContent,
+) {
     composable<ProfileRoute> {
-        ProfileScreenRoute(
-            onLoggedOut = {
-                navController.navigate(AuthGraphRoute) {
-                    popUpTo<MainGraphRoute> { inclusive = true }
-                }
-            },
-        )
+        profileContent()
     }
 }

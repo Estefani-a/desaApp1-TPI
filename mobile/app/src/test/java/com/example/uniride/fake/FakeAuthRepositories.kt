@@ -88,7 +88,7 @@ class FakePasswordRecoveryRepository : PasswordRecoveryRepository {
 class FakeProfileRepository(
     initialUser: User? = null,
 ) : ProfileRepository {
-    private val currentUser = MutableStateFlow(initialUser)
+    val currentUser = MutableStateFlow(initialUser)
     var refreshCalls: Int = 0
     var lastUpdatedProfile: Profile? = null
     var refreshResult: AppResult<Unit> = AppResult.Success(Unit)

@@ -7,16 +7,12 @@ import com.example.uniride.core.result.AppResult
 import com.example.uniride.core.result.DataError
 import com.example.uniride.domain.usecase.auth.ActivateAccountUseCase
 import com.example.uniride.domain.usecase.auth.ConfirmPasswordResetUseCase
-import com.example.uniride.domain.usecase.auth.ObserveIsLoggedInUseCase
 import com.example.uniride.domain.usecase.auth.RequestPasswordResetUseCase
 import com.example.uniride.domain.usecase.auth.ResendActivationUseCase
 import com.example.uniride.domain.usecase.connectivity.ObserveConnectivityUseCase
-import com.example.uniride.domain.usecase.profile.ObserveCurrentUserUseCase
 import com.example.uniride.fake.FakeAccountRepository
 import com.example.uniride.fake.FakeNetworkMonitor
 import com.example.uniride.fake.FakePasswordRecoveryRepository
-import com.example.uniride.fake.FakeProfileRepository
-import com.example.uniride.fake.FakeSessionRepository
 import com.example.uniride.fake.MainDispatcherRule
 import com.example.uniride.fake.sampleUser
 import com.example.uniride.presentation.auth.activate.ActivateAccountAction
@@ -28,8 +24,6 @@ import com.example.uniride.presentation.auth.resetpassword.ForgotPasswordAction
 import com.example.uniride.presentation.auth.resetpassword.ForgotPasswordViewModel
 import com.example.uniride.presentation.auth.resetpassword.ResetPasswordAction
 import com.example.uniride.presentation.auth.resetpassword.ResetPasswordViewModel
-import com.example.uniride.presentation.navigation.AppSessionUiState
-import com.example.uniride.presentation.navigation.AppSessionViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
@@ -150,21 +144,5 @@ class AuthFlowsViewModelTest {
         assertEquals("reset-code-123", recoveryRepo.lastConfirmCode)
         assertEquals("NuevaClave123", recoveryRepo.lastNewPassword)
         collector.cancel()
-    }
-
-    @Test
-    fun `AppSessionViewModel emite Ready con sesion activa y perfil`() = runTest {
-        val user = sampleUser()
-        val vm = AppSessionViewModel(
-            observeIsLoggedIn = ObserveIsLoggedInUseCase(FakeSessionRepository(initialLoggedIn = true)),
-            observeCurrentUser = ObserveCurrentUserUseCase(FakeProfileRepository(initialUser = user)),
-        )
-
-        vm.uiState.test {
-            val state = awaitItem()
-            val ready = if (state is AppSessionUiState.Loading) awaitItem() else state
-            assertEquals(AppSessionUiState.Ready(isLoggedIn = true, profile = user.profile), ready)
-            cancelAndIgnoreRemainingEvents()
-        }
     }
 }

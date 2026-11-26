@@ -2,7 +2,14 @@ package com.example.uniride.presentation.navigation
 
 import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -11,6 +18,7 @@ import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.testing.TestNavHostController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.uniride.R
+import com.example.uniride.domain.model.AppMode
 import com.example.uniride.domain.model.PreferredMode
 import com.example.uniride.domain.model.Profile
 import com.example.uniride.presentation.auth.AuthGraphRoute
@@ -34,15 +42,33 @@ class NavigationTest {
 
     private fun start(profile: Profile? = null) {
         rule.setContent {
-            navController = TestNavHostController(LocalContext.current).apply {
-                navigatorProvider.addNavigator(ComposeNavigator())
+            val context = LocalContext.current
+            // remember: changing the mode recomposes this block and must keep the same controller
+            navController = remember {
+                TestNavHostController(context).apply { navigatorProvider.addNavigator(ComposeNavigator()) }
             }
+            // The mode lives here instead of in AppViewModel, which needs Hilt
+            var chosenMode by remember { mutableStateOf(AppMode.PASAJERO) }
+            val modes = availableModes(profile)
             UniRideTheme {
                 UniRideApp(
-                    profile = profile,
+                    appMode = effectiveMode(chosenMode, modes),
+                    availableModes = modes,
+                    onModeChange = { chosenMode = it },
                     navController = navController,
-                    // C1 has a Hilt ViewModel and this test has no Hilt
+                    // Screens with Hilt ViewModels are swapped because this test has no Hilt
+                    passengerHome = { _, _ -> },
                     driverHome = { _, _ -> },
+                    loginContent = { _, _, _, onLoginSuccess ->
+                        Button(onClick = onLoginSuccess) {
+                            Text(stringResource(R.string.placeholder_action_enter))
+                        }
+                    },
+                    profileContent = {
+                        Button(onClick = { navController.navigateToAuth() }) {
+                            Text(stringResource(R.string.profile_logout_action))
+                        }
+                    },
                 )
             }
         }
@@ -59,7 +85,7 @@ class NavigationTest {
         navController.currentBackStack.value.any { it.destination.hasRoute(route) }
 
     private fun login() {
-        click(R.string.placeholder_action_login)
+        click(R.string.auth_welcome_login_action)
         click(R.string.placeholder_action_enter)
     }
 
@@ -94,7 +120,7 @@ class NavigationTest {
         login()
         click(R.string.nav_profile)
 
-        click(R.string.placeholder_action_logout)
+        click(R.string.profile_logout_action)
 
         assertTrue(isAt(WelcomeRoute::class))
         assertFalse(inBackStack(MainGraphRoute::class))

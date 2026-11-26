@@ -51,7 +51,3 @@ sealed interface ProfileAction {
     data object DismissLogoutDialog : ProfileAction
     data object ConfirmLogout : ProfileAction
 }
-
-sealed interface ProfileEffect {
-    data object NavigateToAuth : ProfileEffect
-}

@@ -3,13 +3,22 @@ package com.example.uniride.presentation.home
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.uniride.R
 import com.example.uniride.domain.model.AppMode
 import com.example.uniride.presentation.driver.DriverHomeRoute
-import com.example.uniride.presentation.navigation.PlaceholderAction
-import com.example.uniride.presentation.navigation.PlaceholderScreen
-import com.example.uniride.presentation.theme.UniRideTheme
+import com.example.uniride.presentation.passenger.PassengerHomeRoute
+
+/**
+ * What the dynamic start shows in passenger mode: the next trip or an invitation to explore
+ * (RF04), with the callbacks to open the trip (B6) and the feed.
+ *
+ * Like [DriverHome], it exists so instrumented tests, which have no Hilt, can swap the screen
+ * (its ViewModel comes from Hilt) for a plain composable; the app always uses [DefaultPassengerHome].
+ */
+typealias PassengerHome = @Composable (onOpenMyTrip: (tripId: String) -> Unit, onExplore: () -> Unit) -> Unit
+
+val DefaultPassengerHome: PassengerHome = { onOpenMyTrip, onExplore ->
+    PassengerHomeRoute(onOpenMyTrip = onOpenMyTrip, onExplore = onExplore)
+}
 
 /**
  * What the dynamic start shows in driver mode: C1 (RF02) with the callbacks to publish a trip
@@ -22,39 +31,26 @@ val DefaultDriverHome: DriverHome = { onPublishTrip, onOpenTrip ->
     DriverHomeRoute(onPublishTrip = onPublishTrip, onOpenTrip = onOpenTrip)
 }
 
-/**
- * Dynamic start. Passenger: B6 card of the active trip or an invitation to explore (placeholder
- * until RF04). Driver: C1 Inicio del conductor (RF02).
- */
+/** Dynamic start: the passenger start (RF04) or C1 Inicio del conductor (RF02), by mode. */
 @Composable
 fun HomeScreen(
     state: HomeUiState,
     onAction: (HomeAction) -> Unit,
     modifier: Modifier = Modifier,
+    passengerHome: PassengerHome = DefaultPassengerHome,
     driverHome: DriverHome = DefaultDriverHome,
 ) {
-    when (state.appMode) {
-        AppMode.PASAJERO -> PlaceholderScreen(
-            titleRes = R.string.home_passenger_title,
-            modifier = modifier,
-            actions = listOf(
-                PlaceholderAction(R.string.placeholder_action_my_trip) { onAction(HomeAction.OpenMyTrip) },
-            ),
-        )
+    Box(modifier) {
+        when (state.appMode) {
+            AppMode.PASAJERO -> passengerHome(
+                { tripId -> onAction(HomeAction.OpenMyTrip(tripId)) },
+                { onAction(HomeAction.ExploreTrips) },
+            )
 
-        AppMode.CONDUCTOR -> Box(modifier) {
-            driverHome(
+            AppMode.CONDUCTOR -> driverHome(
                 { onAction(HomeAction.PublishTrip) },
                 { tripId -> onAction(HomeAction.OpenDriverPanel(tripId)) },
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun HomeScreenPassengerPreview() {
-    UniRideTheme {
-        HomeScreen(state = HomeUiState(AppMode.PASAJERO), onAction = {})
     }
 }

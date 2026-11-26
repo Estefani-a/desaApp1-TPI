@@ -1,5 +1,6 @@
 package com.example.uniride.presentation.auth
 
+import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
@@ -46,7 +47,30 @@ data class ResetPasswordRoute(val resetCode: String)
 @Serializable
 data class ActivateAccountRoute(val activationCode: String)
 
-fun NavGraphBuilder.authGraph(navController: NavController) {
+/**
+ * Login screen slot (A2, RF01). Exists so instrumented tests, which have no Hilt, can replace
+ * [LoginScreenRoute] with a plain composable; the app always uses [DefaultLoginContent].
+ */
+typealias LoginContent = @Composable (
+    onBack: () -> Unit,
+    onForgotPasswordClick: () -> Unit,
+    onRegisterClick: () -> Unit,
+    onLoginSuccess: () -> Unit,
+) -> Unit
+
+val DefaultLoginContent: LoginContent = { onBack, onForgotPasswordClick, onRegisterClick, onLoginSuccess ->
+    LoginScreenRoute(
+        onBack = onBack,
+        onForgotPasswordClick = onForgotPasswordClick,
+        onRegisterClick = onRegisterClick,
+        onLoginSuccess = onLoginSuccess,
+    )
+}
+
+fun NavGraphBuilder.authGraph(
+    navController: NavController,
+    loginContent: LoginContent = DefaultLoginContent,
+) {
     navigation<AuthGraphRoute>(startDestination = WelcomeRoute) {
         composable<WelcomeRoute> {
             WelcomeScreen(
@@ -55,11 +79,11 @@ fun NavGraphBuilder.authGraph(navController: NavController) {
             )
         }
         composable<LoginRoute> {
-            LoginScreenRoute(
-                onBack = { navController.popBackStack() },
-                onForgotPasswordClick = { navController.navigate(ForgotPasswordRoute) },
-                onRegisterClick = { navController.navigate(RegisterRoute) },
-                onLoginSuccess = { navController.navigateToMain() },
+            loginContent(
+                { navController.popBackStack() },
+                { navController.navigate(ForgotPasswordRoute) },
+                { navController.navigate(RegisterRoute) },
+                { navController.navigateToMain() },
             )
         }
         composable<RegisterRoute> {
