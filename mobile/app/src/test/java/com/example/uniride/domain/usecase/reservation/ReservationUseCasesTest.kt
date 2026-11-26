@@ -219,7 +219,7 @@ class ReservationUseCasesTest {
 
     @Test
     fun `sin sesion el detalle muestra el viaje igual`() = runTest {
-        profiles.user.value = null
+        profiles.currentUser.value = null
 
         val result = detail(TRIP_ID).first()!!
 
