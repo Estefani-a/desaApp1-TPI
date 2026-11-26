@@ -3,13 +3,14 @@ package com.example.uniride.domain.repository
 import com.example.uniride.core.result.AppResult
 import com.example.uniride.domain.model.Reservation
 import com.example.uniride.domain.model.ReservationId
+import com.example.uniride.domain.model.ReservationRejection
 import com.example.uniride.domain.model.TripId
 import kotlinx.coroutines.flow.Flow
 
 /**
  * Seat requests (RF04). Every change works offline: it is visible right away, appears in
  * [observePendingReservationIds] and is sent when there is connection. If the server rejects
- * it, the reservation shows the real status.
+ * it, the reservation shows the real status and [observeRejections] says why.
  */
 interface ReservationRepository {
 
@@ -27,6 +28,11 @@ interface ReservationRepository {
      * screens combine it with the reservations to show "Pendiente de sincronizar".
      */
     fun observePendingReservationIds(): Flow<Set<ReservationId>>
+
+    /** Changes the server did not accept, with the reason, until the user dismisses them. */
+    fun observeRejections(): Flow<Map<ReservationId, ReservationRejection>>
+
+    suspend fun dismissRejection(reservationId: ReservationId)
 
     suspend fun refreshTripReservations(tripId: TripId): AppResult<Unit>
 
