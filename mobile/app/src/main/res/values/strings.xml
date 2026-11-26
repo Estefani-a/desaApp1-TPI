@@ -75,9 +75,6 @@
     <string name="placeholder_action_forgot_password">Olvidé mi contraseña</string>
     <string name="placeholder_action_create_account">Registrarme</string>
     <string name="placeholder_action_trip_detail">Ver detalle de un viaje</string>
-    <string name="placeholder_action_request_seat">Solicitar asiento</string>
-    <string name="placeholder_action_back">Volver</string>
-    <string name="placeholder_action_my_trip">Ver mi viaje</string>
     <string name="placeholder_action_logout">Cerrar sesión</string>
 
     <!-- Auth (RF01) -->
@@ -90,7 +87,6 @@
     <string name="auth_activate_title">Activar cuenta</string>
 
     <!-- Inicio -->
-    <string name="home_passenger_title">Inicio del pasajero</string>
 
     <!-- Feed (RF03) -->
     <string name="feed_title">Explorar viajes</string>
@@ -161,6 +157,70 @@
     <string name="driver_home_rejected_title">No pudimos publicar tu viaje</string>
     <string name="driver_home_rejected_trip">%1$s a las %2$s, hacia %3$s</string>
     <string name="driver_home_rejected_dismiss">Entendido</string>
+
+    <!-- Reservas (RF04): detalle B3, solicitud enviada B5 y mi viaje B6 -->
+    <string name="detail_request_seat">Solicitar asiento</string>
+    <string name="detail_cancel_reservation">Cancelar reserva</string>
+    <string name="detail_open_driver_panel">Ver solicitudes</string>
+    <string name="detail_seats_free">%1$d de %2$d lugares libres</string>
+    <string name="detail_departure">Salida</string>
+    <string name="detail_departure_value">%1$s a las %2$s</string>
+    <string name="detail_meeting_point">Punto de encuentro</string>
+    <string name="detail_destination">Destino</string>
+    <string name="detail_contribution">Aporte por asiento</string>
+    <string name="detail_driver">Conductor</string>
+    <string name="detail_vehicle">Vehículo</string>
+    <string name="detail_vehicle_value">%1$s %2$s</string>
+    <string name="detail_plate">Patente</string>
+    <string name="detail_phone">Teléfono</string>
+    <string name="detail_contact_hidden">La patente y el teléfono del conductor se muestran cuando acepta tu solicitud.</string>
+    <string name="detail_my_reservation">Tu solicitud</string>
+    <string name="detail_not_found">No encontramos este viaje. Puede que ya no esté publicado.</string>
+    <string name="detail_cancel_confirm_title">¿Cancelar la reserva?</string>
+    <string name="detail_cancel_confirm_message">Le vamos a avisar al conductor y tu lugar queda libre para otra persona.</string>
+    <string name="detail_cancel_confirm">Sí, cancelar</string>
+    <string name="detail_cancel_keep">No</string>
+    <string name="detail_cancel_done">Cancelaste tu reserva</string>
+    <string name="seat_decision_own_trip">Es tu viaje: no podés pedir asiento.</string>
+    <string name="seat_decision_already_reserved">Ya tenés una solicitud en este viaje.</string>
+    <string name="seat_decision_trip_not_open">El viaje ya no recibe solicitudes.</string>
+    <string name="seat_decision_no_seats">No quedan plazas en este viaje.</string>
+    <string name="seat_decision_departed">El viaje ya salió.</string>
+    <string name="change_block_cancel_departed">No se puede cancelar un viaje que ya empezó.</string>
+    <string name="change_block_respond_departed">El viaje ya empezó: no se pueden responder solicitudes.</string>
+    <string name="change_block_no_seats">No quedan plazas para aceptar otra solicitud.</string>
+    <string name="change_block_not_pending">Esta solicitud ya fue respondida.</string>
+    <string name="change_block_not_active">Esta reserva ya no está activa.</string>
+    <string name="rejection_no_seats">No había plazas cuando se envió tu solicitud: el viaje ya estaba completo.</string>
+    <string name="rejection_trip_not_open">El viaje ya no estaba disponible cuando se envió el cambio.</string>
+    <string name="rejection_already_reserved">Ya tenías otra solicitud en este viaje.</string>
+    <string name="rejection_cancel_departed">No se puede cancelar un viaje que ya empezó. Conservás tu lugar.</string>
+    <string name="rejection_respond_departed">El viaje ya había empezado: tu respuesta no se envió.</string>
+    <string name="rejection_respond_no_seats">No quedaban plazas: la solicitud sigue pendiente.</string>
+    <string name="rejection_other">No se pudo enviar el cambio. Te mostramos el estado actual.</string>
+    <string name="rejection_dismiss">Entendido</string>
+    <string name="seat_requested_message">Le avisamos al conductor. Te vamos a mostrar su respuesta en Mi viaje.</string>
+    <string name="seat_requested_offline">Estás sin conexión: la solicitud se envía apenas vuelva.</string>
+    <string name="seat_requested_my_trip">Ver mi viaje</string>
+    <string name="seat_requested_home">Volver al inicio</string>
+
+    <!-- Inicio del pasajero (RF04) -->
+    <string name="passenger_home_next_trip">Tu próximo viaje</string>
+    <string name="passenger_home_empty_title">No tenés viajes próximos</string>
+    <string name="passenger_home_empty_message">Buscá un viaje a tu sede y pedí un asiento.</string>
+    <string name="passenger_home_explore">Explorar viajes</string>
+
+    <!-- Panel del conductor C4 (RF04) -->
+    <string name="driver_panel_requests_title">Solicitudes</string>
+    <string name="driver_panel_empty_title">Todavía no hay solicitudes</string>
+    <string name="driver_panel_empty_message">Cuando alguien pida un asiento, va a aparecer acá.</string>
+    <string name="driver_panel_accept">Aceptar</string>
+    <string name="driver_panel_reject">Rechazar</string>
+    <string name="driver_panel_accept_description">Aceptar la solicitud de %1$s</string>
+    <string name="driver_panel_reject_description">Rechazar la solicitud de %1$s</string>
+    <string name="driver_panel_rating">%1$s ★</string>
+    <string name="driver_panel_accepted">Solicitud aceptada</string>
+    <string name="driver_panel_rejected">Solicitud rechazada</string>
 
     <!-- Perfil (RF01) -->
     <string name="profile_title">Perfil</string>
