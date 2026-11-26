@@ -55,7 +55,7 @@ class ReservationUseCasesTest {
     }
 
     private fun loginAsDriver() {
-        profiles.user.value = user(DRIVER_ID)
+        profiles.currentUser.value = user(DRIVER_ID)
         reservations.currentUserId = DRIVER_ID.value
     }
 
@@ -98,7 +98,7 @@ class ReservationUseCasesTest {
 
     @Test
     fun `sin sesion pedir asiento falla con UNAUTHORIZED`() = runTest {
-        profiles.user.value = null
+        profiles.currentUser.value = null
 
         assertEquals(RequestSeatResult.Failed(DataError.UNAUTHORIZED), requestSeat(TRIP_ID))
     }
@@ -219,7 +219,7 @@ class ReservationUseCasesTest {
 
     @Test
     fun `sin sesion el detalle muestra el viaje igual`() = runTest {
-        profiles.user.value = null
+        profiles.currentUser.value = null
 
         val result = detail(TRIP_ID).first()!!
 
