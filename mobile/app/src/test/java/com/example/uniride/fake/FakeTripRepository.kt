@@ -62,7 +62,10 @@ class FakeTripRepository(
         return refreshResult
     }
 
-    override suspend fun refreshTrip(tripId: TripId): AppResult<Unit> = AppResult.Success(Unit)
+    /** What [refreshTrip] answers. */
+    var refreshTripResult: AppResult<Unit> = AppResult.Success(Unit)
+
+    override suspend fun refreshTrip(tripId: TripId): AppResult<Unit> = refreshTripResult
 
     var refreshMyTripsResult: AppResult<Unit> = AppResult.Success(Unit)
     var refreshMyTripsCalls = 0

@@ -20,12 +20,6 @@ import androidx.compose.ui.unit.dp
 import com.example.uniride.R
 import com.example.uniride.presentation.theme.UniRideTheme
 
-/**
- * Id of the trip the placeholders navigate to. It disappears together with them when each
- * RF reads the real trips from Room.
- */
-const val PLACEHOLDER_TRIP_ID = "placeholder-trip"
-
 /** Button of a placeholder that goes to another screen. */
 data class PlaceholderAction(@StringRes val labelRes: Int, val onClick: () -> Unit)
 

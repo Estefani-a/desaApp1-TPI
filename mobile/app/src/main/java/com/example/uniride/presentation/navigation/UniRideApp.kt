@@ -27,6 +27,8 @@ import com.example.uniride.presentation.common.LocalAppSnackbar
 import com.example.uniride.presentation.home.DefaultDriverHome
 import com.example.uniride.presentation.home.DriverHome
 import com.example.uniride.presentation.home.HomeRoute
+import com.example.uniride.presentation.home.DefaultPassengerHome
+import com.example.uniride.presentation.home.PassengerHome
 
 /**
  * Shell of the app: the bottom bar with the mode selector around [UniRideNavHost].
@@ -35,14 +37,16 @@ import com.example.uniride.presentation.home.HomeRoute
  * and [profile] is `null`. Then an `AppViewModel` gives both, from `AppModeRepository` and
  * `ProfileRepository`, and this function stays the same.
  *
- * @param driverHome C1 of the driver mode. It only exists so instrumented tests, which have no
- * Hilt, can replace it with a plain composable; the app uses the default.
+ * @param passengerHome start of the passenger mode and [driverHome] C1 of the driver mode. They
+ * only exist so instrumented tests, which have no Hilt, can replace them with plain composables;
+ * the app uses the defaults.
  */
 @Composable
 fun UniRideApp(
     modifier: Modifier = Modifier,
     profile: Profile? = null,
     navController: NavHostController = rememberNavController(),
+    passengerHome: PassengerHome = DefaultPassengerHome,
     driverHome: DriverHome = DefaultDriverHome,
 ) {
     var selectedMode by rememberSaveable { mutableStateOf(AppMode.PASAJERO) }
@@ -81,6 +85,7 @@ fun UniRideApp(
                 navController = navController,
                 appMode = appMode,
                 modifier = Modifier.padding(innerPadding),
+                passengerHome = passengerHome,
                 driverHome = driverHome,
             )
         }
@@ -94,7 +99,7 @@ private fun NavDestination.topLevelDestination(mode: AppMode): TopLevelDestinati
     }
 
 /** Standard tab navigation: one copy of each tab, keeping the state of the others. */
-private fun NavController.navigateToTab(tab: TopLevelDestination) {
+internal fun NavController.navigateToTab(tab: TopLevelDestination) {
     navigate(tab.route) {
         popUpTo<HomeRoute> { saveState = true }
         launchSingleTop = true

@@ -1,14 +1,18 @@
 package com.example.uniride.fake
 
 import com.example.uniride.core.result.AppResult
+import com.example.uniride.domain.model.Participant
 import com.example.uniride.domain.model.Reservation
 import com.example.uniride.domain.model.ReservationId
 import com.example.uniride.domain.model.ReservationRejection
+import com.example.uniride.domain.model.ReservationStatus
 import com.example.uniride.domain.model.TripId
+import com.example.uniride.domain.model.UserId
 import com.example.uniride.domain.repository.ReservationRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import java.time.Instant
 
 /**
  * [ReservationRepository] in memory for the use case tests. [reservations] holds every
@@ -49,9 +53,21 @@ class FakeReservationRepository(
         return refreshResult
     }
 
+    /** Like the real one: it saves a pending reservation of [currentUserId] on the phone. */
     override suspend fun requestSeat(tripId: TripId): AppResult<ReservationId> {
         calls += "requestSeat:${tripId.value}"
-        return AppResult.Success(ReservationId("nueva"))
+        val id = ReservationId("nueva")
+        val now = Instant.parse("2026-11-20T21:00:00Z")
+        reservations.value = reservations.value + Reservation(
+            id = id,
+            tripId = tripId,
+            passenger = Participant(UserId(currentUserId.orEmpty()), "Martín G.", null, phone = null),
+            status = ReservationStatus.PENDIENTE,
+            reservedAt = now,
+            updatedAt = now,
+        )
+        pendingIds.value = pendingIds.value + id
+        return AppResult.Success(id)
     }
 
     override suspend fun accept(tripId: TripId, reservationId: ReservationId): AppResult<Unit> = record("accept", reservationId)

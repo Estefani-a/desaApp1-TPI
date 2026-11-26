@@ -41,7 +41,8 @@ class NavigationTest {
                 UniRideApp(
                     profile = profile,
                     navController = navController,
-                    // C1 has a Hilt ViewModel and this test has no Hilt
+                    // Both starts have Hilt ViewModels and this test has no Hilt
+                    passengerHome = { _, _ -> },
                     driverHome = { _, _ -> },
                 )
             }

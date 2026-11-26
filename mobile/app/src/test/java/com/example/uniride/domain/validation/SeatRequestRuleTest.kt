@@ -28,6 +28,11 @@ class SeatRequestRuleTest {
     }
 
     @Test
+    fun `sin sesion se evalua solo el viaje`() {
+        assertEquals(SeatRequestDecision.ALLOWED, SeatRequestRule.evaluate(trip(), userId = null, myReservation = null, now = NOW))
+    }
+
+    @Test
     fun `despues de una reserva rechazada o cancelada se puede volver a pedir`() {
         assertEquals(SeatRequestDecision.ALLOWED, decide(myReservation = reservation(ReservationStatus.RECHAZADA)))
         assertEquals(SeatRequestDecision.ALLOWED, decide(myReservation = reservation(ReservationStatus.CANCELADA)))
