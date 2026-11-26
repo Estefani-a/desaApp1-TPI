@@ -43,6 +43,9 @@ public class User {
     @Column(name = "rating_count", nullable = false)
     private int ratingCount;
 
+    @Column(name = "fcm_token", length = 255)
+    private String fcmToken;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -79,6 +82,33 @@ public class User {
     public void changePassword(String newPasswordHash, Instant now) {
         passwordHash = Objects.requireNonNull(newPasswordHash);
         updatedAt = now;
+    }
+
+    /**
+     * Replaces credentials and profile of an account that is still {@code PENDIENTE}, preventing
+     * pre-registration hijacking of an institutional email before the real student activates it.
+     */
+    public void reregisterPending(String newPasswordHash, UserProfile newProfile, Instant now) {
+        if (isActive()) {
+            throw new IllegalStateException("No se puede re-registrar una cuenta activa.");
+        }
+        passwordHash = Objects.requireNonNull(newPasswordHash);
+        profile = Objects.requireNonNull(newProfile);
+        updatedAt = now;
+    }
+
+    public void updateFcmToken(String newFcmToken, Instant now) {
+        fcmToken = Objects.requireNonNull(newFcmToken);
+        updatedAt = now;
+    }
+
+    public void clearFcmToken(Instant now) {
+        fcmToken = null;
+        updatedAt = now;
+    }
+
+    public String getFcmToken() {
+        return fcmToken;
     }
 
     public boolean isActive() {
