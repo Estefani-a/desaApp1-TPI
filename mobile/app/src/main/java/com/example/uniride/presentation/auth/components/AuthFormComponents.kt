@@ -51,6 +51,7 @@ fun EmailValidationError.messageRes(): Int = when (this) {
 fun PasswordValidationError.messageRes(): Int = when (this) {
     PasswordValidationError.BLANK -> R.string.auth_error_password_blank
     PasswordValidationError.TOO_SHORT -> R.string.auth_error_password_short
+    PasswordValidationError.TOO_LONG -> R.string.auth_error_password_long
     PasswordValidationError.MISSING_LETTER -> R.string.auth_error_password_letter
     PasswordValidationError.MISSING_DIGIT -> R.string.auth_error_password_digit
 }

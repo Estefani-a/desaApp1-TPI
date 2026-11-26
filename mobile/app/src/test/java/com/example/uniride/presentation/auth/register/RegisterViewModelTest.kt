@@ -140,7 +140,7 @@ class RegisterViewModelTest {
         vm.onAction(RegisterAction.VehicleBrandChanged("Ford"))
         vm.onAction(RegisterAction.VehicleModelChanged("Ka"))
         vm.onAction(RegisterAction.VehicleColorChanged("Rojo"))
-        vm.onAction(RegisterAction.VehiclePlateChanged("AB 123-CD"))
+        vm.onAction(RegisterAction.VehiclePlateChanged("AB123!"))
         vm.onAction(RegisterAction.Submit)
 
         val state = vm.uiState.first()

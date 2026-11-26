@@ -31,6 +31,7 @@ sealed interface ProfileValidationResult {
 object ProfileValidator {
 
     private val PHONE_ALLOWED_REGEX = Regex("^\\+?[0-9\\s\\-()]{6,20}$")
+    private val PLATE_SEPARATOR_REGEX = Regex("[\\s-]+")
     private val PLATE_REGEX = Regex("^[A-Z0-9]{6,8}$")
     private const val MIN_PHONE_DIGITS = 6
 
@@ -54,7 +55,7 @@ object ProfileValidator {
                 if (vehicle.brand.isBlank()) add(ProfileValidationError.VEHICLE_BRAND_BLANK)
                 if (vehicle.model.isBlank()) add(ProfileValidationError.VEHICLE_MODEL_BLANK)
                 if (vehicle.color.isBlank()) add(ProfileValidationError.VEHICLE_COLOR_BLANK)
-                val plate = vehicle.plate.trim().uppercase()
+                val plate = normalizePlate(vehicle.plate)
                 if (plate.isEmpty()) {
                     add(ProfileValidationError.VEHICLE_PLATE_BLANK)
                 } else if (!PLATE_REGEX.matches(plate)) {
@@ -80,8 +81,11 @@ object ProfileValidator {
         brand = vehicle.brand.trim(),
         model = vehicle.model.trim(),
         color = vehicle.color.trim(),
-        plate = vehicle.plate.trim().uppercase(),
+        plate = normalizePlate(vehicle.plate),
     )
+
+    private fun normalizePlate(plate: String): String =
+        plate.trim().replace(PLATE_SEPARATOR_REGEX, "").uppercase()
 
     private fun isValidPhone(phone: String): Boolean =
         PHONE_ALLOWED_REGEX.matches(phone) && phone.count { it in '0'..'9' } >= MIN_PHONE_DIGITS

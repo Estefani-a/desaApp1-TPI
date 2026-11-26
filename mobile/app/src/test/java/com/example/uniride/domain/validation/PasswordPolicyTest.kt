@@ -51,6 +51,26 @@ class PasswordPolicyTest {
     }
 
     @Test
+    fun `contrasena de mas de 72 bytes ASCII devuelve error TOO_LONG`() {
+        val result = PasswordPolicy.validate("a".repeat(72) + "1")
+
+        assertEquals(
+            PasswordValidationResult.Invalid(setOf(PasswordValidationError.TOO_LONG)),
+            result,
+        )
+    }
+
+    @Test
+    fun `contrasena multibyte que supera 72 bytes UTF-8 devuelve error TOO_LONG`() {
+        val result = PasswordPolicy.validate("ñ".repeat(36) + "1")
+
+        assertEquals(
+            PasswordValidationResult.Invalid(setOf(PasswordValidationError.TOO_LONG)),
+            result,
+        )
+    }
+
+    @Test
     fun `contrasena sin letras devuelve error MISSING_LETTER`() {
         val result = PasswordPolicy.validate("12345678")
 

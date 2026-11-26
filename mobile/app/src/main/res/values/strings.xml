@@ -126,6 +126,7 @@
     <string name="auth_error_email_domain">Usá tu correo institucional @uade.edu.ar.</string>
     <string name="auth_error_password_blank">Ingresá una contraseña.</string>
     <string name="auth_error_password_short">La contraseña debe tener al menos 8 caracteres.</string>
+    <string name="auth_error_password_long">La contraseña es demasiado larga (máximo 72 bytes).</string>
     <string name="auth_error_password_letter">La contraseña debe incluir al menos una letra.</string>
     <string name="auth_error_password_digit">La contraseña debe incluir al menos un número.</string>
     <string name="auth_error_password_mismatch">Las contraseñas no coinciden.</string>
@@ -138,7 +139,7 @@
     <string name="auth_error_vehicle_model_blank">Ingresá el modelo del vehículo.</string>
     <string name="auth_error_vehicle_color_blank">Ingresá el color del vehículo.</string>
     <string name="auth_error_vehicle_plate_blank">Ingresá la patente del vehículo.</string>
-    <string name="auth_error_vehicle_plate_invalid">Ingresá una patente válida de 6 a 8 caracteres sin espacios (ej. AB123CD).</string>
+    <string name="auth_error_vehicle_plate_invalid">Ingresá una patente válida (6 a 8 letras o números, ej. AB123CD).</string>
     <string name="auth_check_email_title">Revisá tu correo</string>
     <string name="auth_check_email_message">Te enviamos un enlace a tu correo @uade.edu.ar para activar tu cuenta. Abrilo desde este teléfono para ingresar.</string>
     <string name="auth_check_email_message_with_address">Te enviamos un enlace a %1$s para activar tu cuenta. Abrilo desde este teléfono para ingresar.</string>
