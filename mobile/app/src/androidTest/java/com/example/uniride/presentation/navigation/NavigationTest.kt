@@ -2,6 +2,10 @@ package com.example.uniride.presentation.navigation
 
 import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -11,6 +15,7 @@ import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.testing.TestNavHostController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.uniride.R
+import com.example.uniride.domain.model.AppMode
 import com.example.uniride.domain.model.PreferredMode
 import com.example.uniride.domain.model.Profile
 import com.example.uniride.presentation.auth.AuthGraphRoute
@@ -34,12 +39,19 @@ class NavigationTest {
 
     private fun start(profile: Profile? = null) {
         rule.setContent {
-            navController = TestNavHostController(LocalContext.current).apply {
-                navigatorProvider.addNavigator(ComposeNavigator())
+            val context = LocalContext.current
+            // remember: changing the mode recomposes this block and must keep the same controller
+            navController = remember {
+                TestNavHostController(context).apply { navigatorProvider.addNavigator(ComposeNavigator()) }
             }
+            // The mode lives here instead of in AppViewModel, which needs Hilt
+            var chosenMode by remember { mutableStateOf(AppMode.PASAJERO) }
+            val modes = availableModes(profile)
             UniRideTheme {
                 UniRideApp(
-                    profile = profile,
+                    appMode = effectiveMode(chosenMode, modes),
+                    availableModes = modes,
+                    onModeChange = { chosenMode = it },
                     navController = navController,
                     // Both starts have Hilt ViewModels and this test has no Hilt
                     passengerHome = { _, _ -> },
