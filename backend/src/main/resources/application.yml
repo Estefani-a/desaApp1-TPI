@@ -46,8 +46,10 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     expiration: 30d
-  # APP_LINK_BASE_URL (RF01) y FIREBASE_CREDENTIALS_PATH (push) se agregan acá
-  # cuando haya código que las lea, con su @ConfigurationProperties validado.
+  links:
+    base-url: ${APP_LINK_BASE_URL:http://10.0.2.2:8080}
+    mail-from: ${MAIL_FROM:no-reply@uniride.uade.edu.ar}
+  # FIREBASE_CREDENTIALS_PATH (push) se agrega acá cuando haya código que la lea.
 
 management:
   endpoints:
