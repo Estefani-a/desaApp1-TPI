@@ -29,12 +29,7 @@ class FakeReservationRemoteDataSource(
             if (trip.driverId == passengerId) {
                 throw store.apiError(403, ApiErrorCode.CANNOT_RESERVE_OWN_TRIP, "No podés reservar en tu propio viaje.")
             }
-            if (trip.status != FakeBackendStore.STATUS_OPEN) {
-                throw store.apiError(409, ApiErrorCode.TRIP_NOT_OPEN, "El viaje ya no acepta solicitudes.")
-            }
-            if (trip.availableSeats <= 0) {
-                throw store.apiError(409, ApiErrorCode.NO_SEATS_AVAILABLE, "El viaje ya no tiene plazas disponibles.")
-            }
+            // Same order as the backend: an active reservation wins over the state of the trip
             val alreadyActive = store.reservations.values.any {
                 it.tripId == tripId &&
                     it.passengerId == passengerId &&
@@ -42,6 +37,15 @@ class FakeReservationRemoteDataSource(
             }
             if (alreadyActive) {
                 throw store.apiError(409, ApiErrorCode.ALREADY_RESERVED, "Ya tenés una reserva activa en este viaje.")
+            }
+            if (trip.status == FakeBackendStore.STATUS_FINISHED ||
+                trip.status == FakeBackendStore.STATUS_CANCELLED ||
+                !store.isUpcoming(trip.departureDate, trip.departureTime)
+            ) {
+                throw store.apiError(409, ApiErrorCode.TRIP_NOT_OPEN, "El viaje ya no está disponible.")
+            }
+            if (trip.status == FakeBackendStore.STATUS_FULL || trip.availableSeats <= 0) {
+                throw store.apiError(409, ApiErrorCode.NO_SEATS_AVAILABLE, "El viaje ya no tiene plazas disponibles.")
             }
 
             val now = store.nowIso()
@@ -89,11 +93,9 @@ class FakeReservationRemoteDataSource(
             if (reservation.status == FakeBackendStore.STATUS_ACCEPTED) {
                 return@withState store.toReservationDto(reservation, viewerId)
             }
+            store.requireReservationsChangeable(trip, "El viaje ya empezó: sus reservas no se pueden cambiar.")
             if (reservation.status != FakeBackendStore.STATUS_PENDING) {
                 throw store.apiError(409, ApiErrorCode.INVALID_STATUS_TRANSITION, "La reserva no está pendiente.")
-            }
-            if (trip.status == FakeBackendStore.STATUS_FINISHED || trip.status == FakeBackendStore.STATUS_CANCELLED) {
-                throw store.apiError(409, ApiErrorCode.TRIP_NOT_OPEN, "El viaje ya no está abierto.")
             }
             if (trip.availableSeats <= 0) {
                 throw store.apiError(409, ApiErrorCode.NO_SEATS_AVAILABLE, "El viaje ya no tiene plazas disponibles.")
@@ -127,6 +129,7 @@ class FakeReservationRemoteDataSource(
             if (reservation.status == FakeBackendStore.STATUS_REJECTED) {
                 return@withState store.toReservationDto(reservation, viewerId)
             }
+            store.requireReservationsChangeable(trip, "El viaje ya empezó: sus reservas no se pueden cambiar.")
             if (reservation.status != FakeBackendStore.STATUS_PENDING) {
                 throw store.apiError(409, ApiErrorCode.INVALID_STATUS_TRANSITION, "La reserva no está pendiente.")
             }
@@ -154,6 +157,7 @@ class FakeReservationRemoteDataSource(
             if (reservation.status == FakeBackendStore.STATUS_RESERVATION_CANCELLED) {
                 return@withState store.toReservationDto(reservation, viewerId)
             }
+            store.requireReservationsChangeable(trip, "No se puede cancelar un viaje que ya empezó.")
             if (reservation.status != FakeBackendStore.STATUS_PENDING &&
                 reservation.status != FakeBackendStore.STATUS_ACCEPTED
             ) {
@@ -180,6 +184,16 @@ class FakeReservationRemoteDataSource(
             )
             store.reservations[reservationId] = updated
             store.toReservationDto(updated, viewerId)
+        }
+    }
+
+    /** docs/API.md §6.3: a finished or cancelled trip, or one that already started, does not change. */
+    private fun FakeBackendStore.requireReservationsChangeable(trip: FakeBackendStore.StoredTrip, departedMessage: String) {
+        if (trip.status == FakeBackendStore.STATUS_FINISHED || trip.status == FakeBackendStore.STATUS_CANCELLED) {
+            throw apiError(409, ApiErrorCode.INVALID_STATUS_TRANSITION, "El viaje ya terminó o se canceló.")
+        }
+        if (!isUpcoming(trip.departureDate, trip.departureTime)) {
+            throw apiError(409, ApiErrorCode.TRIP_ALREADY_DEPARTED, departedMessage)
         }
     }
 
