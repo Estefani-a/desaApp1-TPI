@@ -151,6 +151,7 @@
     <string name="auth_activate_loading">Activando tu cuenta…</string>
     <string name="auth_activate_success">Cuenta activada. Ingresando…</string>
     <string name="auth_activate_invalid_token">El enlace de activación venció o ya fue utilizado.</string>
+    <string name="auth_activate_interrupted">No pudimos confirmar si tu cuenta se activó. Reintentá o probá iniciar sesión.</string>
     <string name="auth_activate_go_login">Ir a iniciar sesión</string>
 
     <!-- Inicio -->

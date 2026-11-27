@@ -59,6 +59,34 @@ class ActivateAccountViewModelTest {
     }
 
     @Test
+    fun `si se recrea tras un intento interrumpido muestra error reintentable sin quedar cargando`() = runTest {
+        val accountRepo = FakeAccountRepository()
+        val savedState = SavedStateHandle(
+            mapOf(
+                ActivateAccountViewModel.ACTIVATION_CODE_KEY to "token-interrumpido",
+                ActivateAccountViewModel.ATTEMPTED_KEY to true,
+            ),
+        )
+
+        val vm = ActivateAccountViewModel(
+            savedStateHandle = savedState,
+            activateAccountUseCase = ActivateAccountUseCase(accountRepo),
+        )
+
+        assertEquals(0, accountRepo.activateCalls)
+        assertEquals(
+            ContentState.Error(R.string.auth_activate_interrupted, canRetry = true),
+            vm.uiState.value.content,
+        )
+
+        vm.effects.test {
+            vm.onAction(ActivateAccountAction.Retry)
+            assertEquals(ActivateAccountEffect.NavigateToMain, awaitItem())
+            assertEquals(1, accountRepo.activateCalls)
+        }
+    }
+
+    @Test
     fun `con codigo vacio muestra error no reintentable sin llamar al repositorio`() = runTest {
         val accountRepo = FakeAccountRepository()
         val vm = ActivateAccountViewModel(

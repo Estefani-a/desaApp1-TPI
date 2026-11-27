@@ -1,5 +1,8 @@
 package com.example.uniride.presentation.navigation
 
+import android.content.Intent
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,12 +13,14 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.core.util.Consumer
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -108,6 +113,17 @@ fun UniRideApp(
 ) {
     val currentDestination = navController.currentBackStackEntryAsState().value?.destination
     val currentTab = currentDestination?.topLevelDestination(appMode)
+
+    // MainActivity is singleTop (for pushes), so deep links arriving while the app is open
+    // come through onNewIntent and need to be forwarded to NavController explicitly.
+    val activity = LocalActivity.current as? ComponentActivity
+    DisposableEffect(activity, navController) {
+        val listener = Consumer<Intent> { intent ->
+            navController.handleDeepLink(intent)
+        }
+        activity?.addOnNewIntentListener(listener)
+        onDispose { activity?.removeOnNewIntentListener(listener) }
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()

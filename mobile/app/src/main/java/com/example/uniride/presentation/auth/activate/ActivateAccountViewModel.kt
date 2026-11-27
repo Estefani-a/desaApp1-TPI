@@ -34,10 +34,13 @@ class ActivateAccountViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(
         ActivateAccountUiState(
-            content = if (savedStateHandle.get<Boolean>(ACTIVATED_KEY) == true) {
-                ContentState.Success(Unit)
-            } else {
-                ContentState.Loading
+            content = when {
+                savedStateHandle.get<Boolean>(ACTIVATED_KEY) == true -> ContentState.Success(Unit)
+                savedStateHandle.get<Boolean>(ATTEMPTED_KEY) == true -> ContentState.Error(
+                    messageRes = R.string.auth_activate_interrupted,
+                    canRetry = true,
+                )
+                else -> ContentState.Loading
             },
         ),
     )
