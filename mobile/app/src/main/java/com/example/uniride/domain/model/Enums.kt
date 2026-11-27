@@ -26,6 +26,9 @@ enum class ReservationStatus {
     val isActive: Boolean get() = this == PENDIENTE || this == ACEPTADA
 }
 
+/** Kind of push the server sends (docs/API.md §9). */
+enum class NotificationType { NUEVA_SOLICITUD, SOLICITUD_ACEPTADA, SOLICITUD_RECHAZADA }
+
 /**
  * Mode the app is showing right now. Unlike [PreferredMode] it has no `AMBOS`: a user with
  * `AMBOS` switches between the two.
