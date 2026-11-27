@@ -10,6 +10,7 @@ import com.example.uniride.backend.model.User;
 import com.example.uniride.backend.repository.ReservationRepository;
 import com.example.uniride.backend.repository.TripRepository;
 import com.example.uniride.backend.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,14 +35,17 @@ public class ReservationService {
     private final TripRepository tripRepository;
     private final UserRepository userRepository;
     private final ViewMapper viewMapper;
+    private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
     public ReservationService(ReservationRepository reservationRepository, TripRepository tripRepository,
-                              UserRepository userRepository, ViewMapper viewMapper, Clock clock) {
+                              UserRepository userRepository, ViewMapper viewMapper,
+                              ApplicationEventPublisher eventPublisher, Clock clock) {
         this.reservationRepository = reservationRepository;
         this.tripRepository = tripRepository;
         this.userRepository = userRepository;
         this.viewMapper = viewMapper;
+        this.eventPublisher = eventPublisher;
         this.clock = clock;
     }
 
@@ -75,7 +79,7 @@ public class ReservationService {
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHENTICATED));
 
         Reservation created = saveNew(new Reservation(reservationId, trip, passenger, clock.instant()));
-        // TODO(push, D5): enviar NUEVA_SOLICITUD al conductor (docs/API.md §9)
+        eventPublisher.publishEvent(PushNotificationEvent.newRequest(created));
         return new RequestSeatResult(viewMapper.reservation(created, userId), true);
     }
 
@@ -93,8 +97,11 @@ public class ReservationService {
     @Transactional
     public ReservationResponseDTO accept(UUID userId, UUID tripId, UUID reservationId) {
         Reservation reservation = findForDriver(userId, tripId, reservationId);
+        ReservationStatus previous = reservation.getStatus();
         reservation.accept(clock.instant());
-        // TODO(push, D5): enviar SOLICITUD_ACEPTADA al pasajero (docs/API.md §9)
+        if (previous != ReservationStatus.ACEPTADA) {
+            eventPublisher.publishEvent(PushNotificationEvent.requestAccepted(reservation));
+        }
         return viewMapper.reservation(reservation, userId);
     }
 
@@ -102,8 +109,11 @@ public class ReservationService {
     @Transactional
     public ReservationResponseDTO reject(UUID userId, UUID tripId, UUID reservationId) {
         Reservation reservation = findForDriver(userId, tripId, reservationId);
+        ReservationStatus previous = reservation.getStatus();
         reservation.reject(clock.instant());
-        // TODO(push, D5): enviar SOLICITUD_RECHAZADA al pasajero (docs/API.md §9)
+        if (previous != ReservationStatus.RECHAZADA) {
+            eventPublisher.publishEvent(PushNotificationEvent.requestRejected(reservation));
+        }
         return viewMapper.reservation(reservation, userId);
     }
 

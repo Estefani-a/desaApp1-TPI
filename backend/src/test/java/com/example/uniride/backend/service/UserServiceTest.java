@@ -85,6 +85,15 @@ class UserServiceTest {
     }
 
     @Test
+    void limpiarTokenFcmObsoletoLoBorraCondicionalmente() {
+        UUID userId = UUID.randomUUID();
+
+        userService.clearStaleFcmToken(userId, "token-muerto");
+
+        verify(userRepository).clearFcmTokenIfMatches(userId, "token-muerto", NOW);
+    }
+
+    @Test
     void consultarPerfilInexistenteDevuelveNotFound() {
         UUID unknownId = UUID.randomUUID();
         when(userRepository.findById(unknownId)).thenReturn(Optional.empty());

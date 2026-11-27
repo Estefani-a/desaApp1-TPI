@@ -49,7 +49,8 @@ app:
   links:
     base-url: ${APP_LINK_BASE_URL:http://10.0.2.2:8080}
     mail-from: ${MAIL_FROM:no-reply@uniride.uade.edu.ar}
-  # FIREBASE_CREDENTIALS_PATH (push) se agrega acá cuando haya código que la lea.
+  firebase:
+    credentials-path: ${FIREBASE_CREDENTIALS_PATH:}
 
 management:
   endpoints:
