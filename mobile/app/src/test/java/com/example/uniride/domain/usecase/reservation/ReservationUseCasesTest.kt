@@ -63,7 +63,7 @@ class ReservationUseCasesTest {
     private val respond get() = RespondToRequestUseCase(trips, reservations, clock)
     private val cancel get() = CancelReservationUseCase(trips, reservations, clock)
     private val detail get() = ObserveTripDetailUseCase(trips, reservations, profiles, clock)
-    private val myTrip get() = ObserveMyActiveTripUseCase(trips, reservations)
+    private val myTrip get() = ObserveMyActiveTripUseCase(trips, reservations, clock)
     private val panel get() = ObserveDriverPanelUseCase(trips, reservations, clock)
 
     // --- Solicitar ---
@@ -280,11 +280,38 @@ class ReservationUseCasesTest {
     }
 
     @Test
-    fun `un viaje cancelado por el conductor no es mi viaje`() = runTest {
+    fun `un viaje que el conductor cancelo se muestra como cancelado`() = runTest {
         givenTrip(trip(status = TripStatus.CANCELADO))
-        reservations.reservations.value = listOf(reservation(ReservationStatus.ACEPTADA))
+        reservations.reservations.value = listOf(reservation(ReservationStatus.CANCELADA))
+
+        assertEquals(true, myTrip().first()?.isCancelledByDriver)
+    }
+
+    @Test
+    fun `un viaje cancelado que ya salio no se muestra`() = runTest {
+        givenTrip(trip(status = TripStatus.CANCELADO, date = yesterday))
+        reservations.reservations.value = listOf(reservation(ReservationStatus.CANCELADA))
 
         assertNull(myTrip().first())
+    }
+
+    @Test
+    fun `si cancele yo la reserva no hay viaje`() = runTest {
+        reservations.reservations.value = listOf(reservation(ReservationStatus.CANCELADA))
+
+        assertNull(myTrip().first())
+    }
+
+    @Test
+    fun `una reserva activa le gana a un viaje cancelado que sale antes`() = runTest {
+        val tomorrow = trip(date = LocalDate.of(2026, 11, 21)).copy(id = TripId("manana"))
+        trips.trips.value = listOf(trip(status = TripStatus.CANCELADO), tomorrow)
+        reservations.reservations.value = listOf(
+            reservation(ReservationStatus.CANCELADA),
+            reservation(ReservationStatus.PENDIENTE).copy(id = ReservationId("res-manana"), tripId = TripId("manana")),
+        )
+
+        assertEquals(TripId("manana"), myTrip().first()?.trip?.id)
     }
 
     @Test

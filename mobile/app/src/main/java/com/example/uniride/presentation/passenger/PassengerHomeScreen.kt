@@ -30,6 +30,7 @@ import com.example.uniride.domain.model.Reservation
 import com.example.uniride.domain.model.ReservationId
 import com.example.uniride.domain.model.ReservationRejection
 import com.example.uniride.domain.model.ReservationStatus
+import com.example.uniride.domain.model.TripStatus
 import com.example.uniride.domain.model.UserId
 import com.example.uniride.domain.usecase.reservation.MyTrip
 import com.example.uniride.presentation.common.ContentState
@@ -38,6 +39,7 @@ import com.example.uniride.presentation.common.EmptyState
 import com.example.uniride.presentation.common.LocalAppSnackbar
 import com.example.uniride.presentation.common.OfflineBanner
 import com.example.uniride.presentation.common.PreviewData
+import com.example.uniride.presentation.common.PrimaryButton
 import com.example.uniride.presentation.common.TripCard
 import com.example.uniride.presentation.reservations.components.RejectionNotice
 import com.example.uniride.presentation.reservations.components.ReservationStatusRow
@@ -80,7 +82,8 @@ fun PassengerHomeRoute(
 }
 
 /**
- * Start of the passenger (RF04): the card of the next trip with the status of the request, or
+ * Start of the passenger (RF04): the card of the next trip with the status of the request (or
+ * the notice that the driver cancelled it, with a way to look for another one), or
  * an invitation to explore. Offline it keeps the saved trip under the banner (12.1).
  */
 @Composable
@@ -136,16 +139,32 @@ private fun NextTrip(content: PassengerHomeContent, onAction: (PassengerHomeActi
             )
         }
         Text(
-            text = stringResource(R.string.passenger_home_next_trip),
+            text = stringResource(
+                if (myTrip.isCancelledByDriver) R.string.passenger_home_cancelled_title else R.string.passenger_home_next_trip,
+            ),
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.semantics { heading() },
         )
-        ReservationStatusRow(status = myTrip.reservation.status, isPendingSync = myTrip.isPendingSync)
+        if (myTrip.isCancelledByDriver) {
+            Text(
+                text = stringResource(R.string.passenger_home_cancelled_message),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+            )
+        } else {
+            ReservationStatusRow(status = myTrip.reservation.status, isPendingSync = myTrip.isPendingSync)
+        }
         TripCard(
             trip = myTrip.trip,
             campusName = content.campusName,
             onClick = { onAction(PassengerHomeAction.OpenMyTrip) },
         )
+        if (myTrip.isCancelledByDriver) {
+            PrimaryButton(
+                text = stringResource(R.string.passenger_home_find_another),
+                onClick = { onAction(PassengerHomeAction.ExploreTrips) },
+            )
+        }
     }
 }
 
@@ -185,6 +204,23 @@ private fun PassengerHomeOfflineRejectionPreview() {
             state = PassengerHomeUiState(
                 content = ContentState.Success(PassengerHomeContent(myTrip, campusName = null)),
                 isOffline = true,
+            ),
+            onAction = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PassengerHomeCancelledByDriverPreview() {
+    val myTrip = previewMyTrip.copy(
+        trip = PreviewData.trip.copy(status = TripStatus.CANCELADO),
+        reservation = previewMyTrip.reservation.copy(status = ReservationStatus.CANCELADA),
+    )
+    UniRideTheme {
+        PassengerHomeScreen(
+            state = PassengerHomeUiState(
+                content = ContentState.Success(PassengerHomeContent(myTrip, "Sede Monserrat")),
             ),
             onAction = {},
         )

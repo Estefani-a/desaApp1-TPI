@@ -209,6 +209,9 @@
     <string name="passenger_home_empty_title">No tenés viajes próximos</string>
     <string name="passenger_home_empty_message">Buscá un viaje a tu sede y pedí un asiento.</string>
     <string name="passenger_home_explore">Explorar viajes</string>
+    <string name="passenger_home_cancelled_title">Tu viaje fue cancelado</string>
+    <string name="passenger_home_cancelled_message">El conductor canceló este viaje. Buscá otro para ir a tu sede.</string>
+    <string name="passenger_home_find_another">Buscar otro viaje</string>
 
     <!-- Panel del conductor C4 (RF04) -->
     <string name="driver_panel_requests_title">Solicitudes</string>

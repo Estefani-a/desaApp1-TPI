@@ -32,6 +32,9 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
 
 /** Start of the passenger (RF04) with the offline scenarios of 12.1. */
 class PassengerHomeViewModelTest {
@@ -45,10 +48,11 @@ class PassengerHomeViewModelTest {
         campuses.value = listOf(Campus(CampusCode("MONSERRAT"), "Sede Monserrat", emptyList()))
     }
     private val network = FakeNetworkMonitor(initialOnline = true)
+    private val clock = Clock.fixed(Instant.parse("2026-11-20T21:00:00Z"), ZoneId.of("America/Argentina/Buenos_Aires"))
 
     private fun TestScope.viewModel(): PassengerHomeViewModel {
         val viewModel = PassengerHomeViewModel(
-            observeMyActiveTrip = ObserveMyActiveTripUseCase(trips, reservations),
+            observeMyActiveTrip = ObserveMyActiveTripUseCase(trips, reservations, clock),
             observeCampuses = ObserveCampusesUseCase(campuses),
             observeConnectivity = ObserveConnectivityUseCase(network),
             refreshMyTrips = RefreshMyTripsUseCase(trips),
