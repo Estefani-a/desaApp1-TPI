@@ -9,6 +9,12 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+// Apply google-services only when google-services.json is present locally so CI and builds
+// without Firebase credentials keep compiling (FCM gracefully disables itself at runtime).
+if (file("google-services.json").isFile) {
+    apply(plugin = libs.plugins.google.services.get().pluginId)
+}
+
 val localProperties = Properties().apply {
     val file = rootProject.file("local.properties")
     if (file.isFile) {
@@ -99,6 +105,9 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.tink.android)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 
     implementation(libs.androidx.navigation.compose)
     testImplementation(libs.junit)
