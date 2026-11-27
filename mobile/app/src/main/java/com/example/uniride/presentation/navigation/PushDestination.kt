@@ -36,12 +36,13 @@ sealed interface PushDestination {
          */
         fun fromExtras(type: String?, tripId: String?): PushDestination? {
             val notificationType = NotificationType.entries.firstOrNull { it.name == type } ?: return null
-            if (tripId == null || !isUuid(tripId)) return null
-            return of(notificationType, TripId(tripId))
+            val uuid = tripId?.let(::canonicalUuid) ?: return null
+            return of(notificationType, TripId(uuid))
         }
 
-        private fun isUuid(value: String): Boolean =
-            runCatching { UUID.fromString(value) }.map { it.toString() == value.lowercase() }.getOrDefault(false)
+        /** The id as the server and Room store it (lowercase), or `null` if it is not a UUID. */
+        private fun canonicalUuid(value: String): String? =
+            runCatching { UUID.fromString(value).toString() }.getOrNull()?.takeIf { it == value.lowercase() }
     }
 }
 

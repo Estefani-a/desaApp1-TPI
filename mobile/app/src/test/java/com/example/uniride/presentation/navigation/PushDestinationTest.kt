@@ -42,6 +42,14 @@ class PushDestinationTest {
     }
 
     @Test
+    fun `un id de viaje en mayusculas se guarda en minusculas`() {
+        assertEquals(
+            PushDestination.DriverPanel(TripId(tripId)),
+            PushDestination.fromExtras(type = "NUEVA_SOLICITUD", tripId = tripId.uppercase()),
+        )
+    }
+
+    @Test
     fun `un intent sin datos de push no abre nada`() {
         assertNull(PushDestination.fromExtras(type = null, tripId = null))
     }
