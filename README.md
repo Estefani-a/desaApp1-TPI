@@ -156,7 +156,7 @@ Las reglas completas de las dos partes están en [`docs/CONVENCIONES.md`](docs/C
 
 <!-- Cada dueño completa o corrige la sección de su RF: qué se puede hacer, en qué pantallas y qué escenarios sin conexión cubre. -->
 
-### RF01 · Autenticación institucional y perfil (Alvaro)
+### RF01 · Autenticación institucional y perfil (Manu)
 
 - **Registro y validaciones.** Pantallas **A1 Bienvenida** y **A3 Registro**: solo acepta correos `@uade.edu.ar`, exige contraseña de al menos 8 caracteres con letra y número (hasta 72 bytes UTF-8, tope de BCrypt), teléfono válido y, si el modo elegido es Conductor, datos completos del vehículo con patente normalizada. Las mismas reglas se validan en la app y en el servidor.
 - **Activación por correo y deep link.** Al registrarse la cuenta queda `PENDIENTE` y pasa a **A4 Revisá tu correo** (con opción de reenviar el enlace). El backend envía el correo post-commit (`AFTER_COMMIT`) con un enlace de un solo uso válido por 24 horas (`/api/v1/links/activate?token=...`) que redirige a `uniride://activate?token=...` (**A5 Activar cuenta**), activa la cuenta e inicia sesión automáticamente.
@@ -204,7 +204,7 @@ Feed de viajes filtrable por sede, sentido, fecha y turno. Recuerda los últimos
 <!-- Completar al cerrar D6 con lo que efectivamente quedó afuera. -->
 
 - **Calificación mutua y bandeja de notificaciones** (alcances 7 y 8): no se implementan. La calificación que se muestra viene de los datos de prueba.
-- **Notificaciones push con FCM:** <!-- Alvaro y Gustavo: actualizar cuando se sepa si llegan. --> sin ellas, el pasajero ve el estado de su solicitud cuando abre la app o actualiza la pantalla.
+- **Notificaciones push con FCM:** <!-- Manu y Gustavo: actualizar cuando se sepa si llegan. --> sin ellas, el pasajero ve el estado de su solicitud cuando abre la app o actualiza la pantalla.
 - **Ubicación** para sugerir el punto de partida: no se implementa; el punto se elige a mano.
 - **Paquete `com.example.uniride`:** alcanza para el TP, pero Google Play no lo acepta.
 
