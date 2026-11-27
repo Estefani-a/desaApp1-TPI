@@ -24,7 +24,6 @@ import org.junit.Test
 import java.io.IOException
 import java.time.Clock
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneId
 
 class ReservationSyncHandlerTest {
@@ -67,9 +66,13 @@ class ReservationSyncHandlerTest {
         store.currentUserId = driverId
     }
 
+    /**
+     * The fake server compares against the real clock in Buenos Aires. A date well in the past
+     * keeps the test from depending on the time and zone of the machine (CI runs in UTC).
+     */
     private fun departTrip() {
         val trip = store.trips.getValue(tripId)
-        store.trips[tripId] = trip.copy(departureDate = LocalDate.now().minusDays(1).toString())
+        store.trips[tripId] = trip.copy(departureDate = "2026-01-01")
     }
 
     private suspend fun rejectionOf(id: String) = rejections.observe().first()[ReservationId(id)]

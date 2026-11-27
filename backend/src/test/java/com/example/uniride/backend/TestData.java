@@ -1,5 +1,6 @@
 package com.example.uniride.backend;
 
+import com.example.uniride.backend.dto.TripFiltersRequestDTO;
 import com.example.uniride.backend.model.Campus;
 import com.example.uniride.backend.model.Direction;
 import com.example.uniride.backend.model.PreferredMode;
@@ -57,6 +58,11 @@ public final class TestData {
     /** Trip of [driver] today at 22:15 (after "now") with [seats] seats. */
     public static Trip trip(User driver, int seats) {
         return trip(driver, seats, LocalDate.of(2026, 11, 20));
+    }
+
+    /** {@code GET /trips} without parameters. */
+    public static TripFiltersRequestDTO noFilters() {
+        return new TripFiltersRequestDTO(null, null, null, null, null);
     }
 
     /** Leaves [trip] without seats, accepting one request per seat. */
