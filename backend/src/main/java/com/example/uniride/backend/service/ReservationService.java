@@ -97,9 +97,7 @@ public class ReservationService {
     @Transactional
     public ReservationResponseDTO accept(UUID userId, UUID tripId, UUID reservationId) {
         Reservation reservation = findForDriver(userId, tripId, reservationId);
-        ReservationStatus previous = reservation.getStatus();
-        reservation.accept(clock.instant());
-        if (previous != ReservationStatus.ACEPTADA) {
+        if (reservation.accept(clock.instant())) {
             eventPublisher.publishEvent(PushNotificationEvent.requestAccepted(reservation));
         }
         return viewMapper.reservation(reservation, userId);
@@ -109,9 +107,7 @@ public class ReservationService {
     @Transactional
     public ReservationResponseDTO reject(UUID userId, UUID tripId, UUID reservationId) {
         Reservation reservation = findForDriver(userId, tripId, reservationId);
-        ReservationStatus previous = reservation.getStatus();
-        reservation.reject(clock.instant());
-        if (previous != ReservationStatus.RECHAZADA) {
+        if (reservation.reject(clock.instant())) {
             eventPublisher.publishEvent(PushNotificationEvent.requestRejected(reservation));
         }
         return viewMapper.reservation(reservation, userId);

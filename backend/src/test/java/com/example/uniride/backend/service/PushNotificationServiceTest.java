@@ -151,6 +151,52 @@ class PushNotificationServiceTest {
     }
 
     @Test
+    void fcmGatewayDevuelveUnregisteredCuandoInvalidArgumentRefiereAlToken() throws Exception {
+        FirebaseMessaging messaging = mock(FirebaseMessaging.class);
+        FirebaseMessagingException ex = mock(FirebaseMessagingException.class);
+        when(ex.getMessagingErrorCode()).thenReturn(MessagingErrorCode.INVALID_ARGUMENT);
+        when(ex.getMessage()).thenReturn("The registration token is not a valid FCM registration token");
+        when(messaging.send(any(Message.class))).thenThrow(ex);
+
+        FcmPushGateway gateway = new FcmPushGateway(messaging);
+        PushMessage message = new PushMessage(
+                UUID.randomUUID(),
+                NotificationType.NUEVA_SOLICITUD,
+                recipient.getId(),
+                "token-malformado",
+                sampleEvent.tripId(),
+                sampleEvent.reservationId(),
+                sampleEvent.title(),
+                sampleEvent.body()
+        );
+
+        assertThat(gateway.send(message)).isEqualTo(PushGateway.SendResult.UNREGISTERED_TOKEN);
+    }
+
+    @Test
+    void fcmGatewayConservaTokenCuandoInvalidArgumentEsPorPayloadYNoPorToken() throws Exception {
+        FirebaseMessaging messaging = mock(FirebaseMessaging.class);
+        FirebaseMessagingException ex = mock(FirebaseMessagingException.class);
+        when(ex.getMessagingErrorCode()).thenReturn(MessagingErrorCode.INVALID_ARGUMENT);
+        when(ex.getMessage()).thenReturn("Invalid data payload size");
+        when(messaging.send(any(Message.class))).thenThrow(ex);
+
+        FcmPushGateway gateway = new FcmPushGateway(messaging);
+        PushMessage message = new PushMessage(
+                UUID.randomUUID(),
+                NotificationType.NUEVA_SOLICITUD,
+                recipient.getId(),
+                "token-sano",
+                sampleEvent.tripId(),
+                sampleEvent.reservationId(),
+                sampleEvent.title(),
+                sampleEvent.body()
+        );
+
+        assertThat(gateway.send(message)).isEqualTo(PushGateway.SendResult.FAILED);
+    }
+
+    @Test
     void fcmGatewayDevuelveFailedAnteErrorTransitorioSinLanzarExcepcion() throws Exception {
         FirebaseMessaging messaging = mock(FirebaseMessaging.class);
         FirebaseMessagingException ex = mock(FirebaseMessagingException.class);

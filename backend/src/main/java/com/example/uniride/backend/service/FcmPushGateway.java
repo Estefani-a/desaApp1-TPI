@@ -8,6 +8,8 @@ import com.google.firebase.messaging.MessagingErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Locale;
+
 /**
  * Sends data-only FCM messages via Firebase Admin SDK (docs/API.md §9).
  * Never sets a notification block so the Android client handles display and navigation in
@@ -44,7 +46,7 @@ public class FcmPushGateway implements PushGateway {
             return SendResult.SENT;
         } catch (FirebaseMessagingException ex) {
             MessagingErrorCode errorCode = ex.getMessagingErrorCode();
-            if (errorCode == MessagingErrorCode.UNREGISTERED || errorCode == MessagingErrorCode.INVALID_ARGUMENT) {
+            if (isUnregisteredToken(errorCode, ex.getMessage())) {
                 log.warn(
                         "Token FCM inválido o desregistrado ({}) para recipientUserId={} type={}",
                         errorCode,
@@ -62,5 +64,14 @@ public class FcmPushGateway implements PushGateway {
             );
             return SendResult.FAILED;
         }
+    }
+
+    private static boolean isUnregisteredToken(MessagingErrorCode errorCode, String errorMessage) {
+        if (errorCode == MessagingErrorCode.UNREGISTERED) {
+            return true;
+        }
+        return errorCode == MessagingErrorCode.INVALID_ARGUMENT
+                && errorMessage != null
+                && errorMessage.toLowerCase(Locale.ROOT).contains("token");
     }
 }

@@ -81,26 +81,36 @@ public class Reservation {
         trip.touch(now);
     }
 
-    /** {@code PENDIENTE} → {@code ACEPTADA}, taking a seat of the trip. */
-    public void accept(Instant now) {
+    /**
+     * {@code PENDIENTE} → {@code ACEPTADA}, taking a seat of the trip.
+     *
+     * @return {@code true} if the status changed, {@code false} if it was already {@code ACEPTADA}.
+     */
+    public boolean accept(Instant now) {
         if (status == ReservationStatus.ACEPTADA) {
-            return;
+            return false;
         }
         trip.requireReservationsChangeable(now);
         requireStatus(ReservationStatus.PENDIENTE);
         trip.takeSeat(now);
         changeTo(ReservationStatus.ACEPTADA, now);
+        return true;
     }
 
-    /** {@code PENDIENTE} → {@code RECHAZADA}. */
-    public void reject(Instant now) {
+    /**
+     * {@code PENDIENTE} → {@code RECHAZADA}.
+     *
+     * @return {@code true} if the status changed, {@code false} if it was already {@code RECHAZADA}.
+     */
+    public boolean reject(Instant now) {
         if (status == ReservationStatus.RECHAZADA) {
-            return;
+            return false;
         }
         trip.requireReservationsChangeable(now);
         requireStatus(ReservationStatus.PENDIENTE);
         trip.touch(now);
         changeTo(ReservationStatus.RECHAZADA, now);
+        return true;
     }
 
     /** {@code PENDIENTE} or {@code ACEPTADA} → {@code CANCELADA}. An accepted one gives the seat back. */
