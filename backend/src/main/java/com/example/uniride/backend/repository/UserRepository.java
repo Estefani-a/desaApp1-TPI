@@ -23,4 +23,12 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             @Param("userId") UUID userId,
             @Param("now") Instant now
     );
+
+    @Modifying
+    @Query("update User u set u.fcmToken = null, u.updatedAt = :now where u.id = :userId and u.fcmToken = :fcmToken")
+    void clearFcmTokenIfMatches(
+            @Param("userId") UUID userId,
+            @Param("fcmToken") String fcmToken,
+            @Param("now") Instant now
+    );
 }

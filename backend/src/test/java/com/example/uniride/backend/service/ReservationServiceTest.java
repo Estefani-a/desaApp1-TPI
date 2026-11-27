@@ -3,6 +3,7 @@ package com.example.uniride.backend.service;
 import com.example.uniride.backend.dto.ReservationResponseDTO;
 import com.example.uniride.backend.exception.ApiException;
 import com.example.uniride.backend.exception.ErrorCode;
+import com.example.uniride.backend.model.NotificationType;
 import com.example.uniride.backend.model.Reservation;
 import com.example.uniride.backend.model.ReservationStatus;
 import com.example.uniride.backend.model.Trip;
@@ -15,8 +16,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.sql.SQLException;
@@ -54,6 +57,8 @@ class ReservationServiceTest {
     private TripRepository tripRepository;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     private ReservationService service;
     private User driver;
@@ -62,7 +67,7 @@ class ReservationServiceTest {
     @BeforeEach
     void setUp() {
         service = new ReservationService(reservationRepository, tripRepository, userRepository,
-                new ViewMapper(new ContactVisibilityPolicy()), CLOCK);
+                new ViewMapper(new ContactVisibilityPolicy()), eventPublisher, CLOCK);
         driver = driver();
         passenger = passenger();
         lenient().when(reservationRepository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -334,5 +339,110 @@ class ReservationServiceTest {
 
         assertThat(errorOf(() -> service.listForTrip(passenger.getId(), trip.getId())))
                 .isEqualTo(ErrorCode.FORBIDDEN);
+    }
+
+    // --- Notificaciones push (docs/API.md §9) ---
+
+    @Test
+    void solicitarAsientoPublicaEventoNuevaSolicitudParaElConductor() {
+        Trip trip = trip(driver, 3);
+        givenTrip(trip);
+        UUID reservationId = UUID.randomUUID();
+
+        service.requestSeat(passenger.getId(), trip.getId(), reservationId);
+
+        ArgumentCaptor<PushNotificationEvent> captor = ArgumentCaptor.forClass(PushNotificationEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        PushNotificationEvent event = captor.getValue();
+        assertThat(event.type()).isEqualTo(NotificationType.NUEVA_SOLICITUD);
+        assertThat(event.recipientUserId()).isEqualTo(driver.getId());
+        assertThat(event.tripId()).isEqualTo(trip.getId());
+        assertThat(event.reservationId()).isEqualTo(reservationId);
+        assertThat(event.body()).contains("Martín G.").doesNotContain("Gómez");
+    }
+
+    @Test
+    void reintentarSolicitudIdempotenteNoVuelveAPublicarPush() {
+        Trip trip = trip(driver, 3);
+        givenTrip(trip);
+        Reservation existing = reservation(trip, passenger, ReservationStatus.PENDIENTE);
+        givenReservation(existing);
+
+        service.requestSeat(passenger.getId(), trip.getId(), existing.getId());
+
+        verify(eventPublisher, never()).publishEvent(any(PushNotificationEvent.class));
+    }
+
+    @Test
+    void aceptarReservaPublicaEventoSolicitudAceptadaParaElPasajero() {
+        Trip trip = trip(driver, 3);
+        givenTrip(trip);
+        Reservation pending = reservation(trip, passenger, ReservationStatus.PENDIENTE);
+        givenReservation(pending);
+
+        service.accept(driver.getId(), trip.getId(), pending.getId());
+
+        ArgumentCaptor<PushNotificationEvent> captor = ArgumentCaptor.forClass(PushNotificationEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        PushNotificationEvent event = captor.getValue();
+        assertThat(event.type()).isEqualTo(NotificationType.SOLICITUD_ACEPTADA);
+        assertThat(event.recipientUserId()).isEqualTo(passenger.getId());
+        assertThat(event.tripId()).isEqualTo(trip.getId());
+        assertThat(event.reservationId()).isEqualTo(pending.getId());
+        assertThat(event.body()).contains("Lucía F.").doesNotContain("Fernández");
+    }
+
+    @Test
+    void reintentarAceptarReservaYaAceptadaNoVuelveAPublicarPush() {
+        Trip trip = trip(driver, 3);
+        givenTrip(trip);
+        Reservation accepted = reservation(trip, passenger, ReservationStatus.ACEPTADA);
+        givenReservation(accepted);
+
+        service.accept(driver.getId(), trip.getId(), accepted.getId());
+
+        verify(eventPublisher, never()).publishEvent(any(PushNotificationEvent.class));
+    }
+
+    @Test
+    void rechazarReservaPublicaEventoSolicitudRechazadaParaElPasajero() {
+        Trip trip = trip(driver, 3);
+        givenTrip(trip);
+        Reservation pending = reservation(trip, passenger, ReservationStatus.PENDIENTE);
+        givenReservation(pending);
+
+        service.reject(driver.getId(), trip.getId(), pending.getId());
+
+        ArgumentCaptor<PushNotificationEvent> captor = ArgumentCaptor.forClass(PushNotificationEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        PushNotificationEvent event = captor.getValue();
+        assertThat(event.type()).isEqualTo(NotificationType.SOLICITUD_RECHAZADA);
+        assertThat(event.recipientUserId()).isEqualTo(passenger.getId());
+        assertThat(event.tripId()).isEqualTo(trip.getId());
+        assertThat(event.reservationId()).isEqualTo(pending.getId());
+    }
+
+    @Test
+    void reintentarRechazarReservaYaRechazadaNoVuelveAPublicarPush() {
+        Trip trip = trip(driver, 3);
+        givenTrip(trip);
+        Reservation rejected = reservation(trip, passenger, ReservationStatus.RECHAZADA);
+        givenReservation(rejected);
+
+        service.reject(driver.getId(), trip.getId(), rejected.getId());
+
+        verify(eventPublisher, never()).publishEvent(any(PushNotificationEvent.class));
+    }
+
+    @Test
+    void cancelarReservaNoPublicaEventoPush() {
+        Trip trip = trip(driver, 3);
+        givenTrip(trip);
+        Reservation accepted = reservation(trip, passenger, ReservationStatus.ACEPTADA);
+        givenReservation(accepted);
+
+        service.cancel(passenger.getId(), trip.getId(), accepted.getId());
+
+        verify(eventPublisher, never()).publishEvent(any(PushNotificationEvent.class));
     }
 }

@@ -7,6 +7,7 @@ import com.example.uniride.backend.exception.ErrorCode;
 import com.example.uniride.backend.model.User;
 import com.example.uniride.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
@@ -56,6 +57,15 @@ public class UserService {
         User user = requireUser(userId);
         user.clearFcmToken(clock.instant());
         userRepository.save(user);
+    }
+
+    /**
+     * Clears a rejected/unregistered FCM token after a push attempt only if the user still holds
+     * that exact token, running in a fresh transaction so post-commit listeners can persist it.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void clearStaleFcmToken(UUID userId, String staleFcmToken) {
+        userRepository.clearFcmTokenIfMatches(userId, staleFcmToken, clock.instant());
     }
 
     private User requireUser(UUID userId) {
