@@ -23,7 +23,7 @@ import java.util.UUID;
  * {@code PUT /trips/{tripId}} is idempotent.
  *
  * <p>The seats and the status only change through the methods of this class
- * ({@link #takeSeat}, {@link #releaseSeat}), which keep the invariants: {@code 0 <= availableSeats
+ * ({@link #takeSeat}, {@link #releaseSeat}, {@link #finish}, {@link #cancel}), which keep the invariants: {@code 0 <= availableSeats
  * <= totalSeats} and {@code COMPLETO} exactly when an open trip has no seats left.
  */
 @Entity
@@ -131,6 +131,39 @@ public class Trip {
             status = TripStatus.ABIERTO;
         }
         updatedAt = now;
+    }
+
+    /**
+     * The driver marks the trip as done (docs/API.md §5.6), whether or not it already left.
+     *
+     * @return {@code true} if the status changed, {@code false} if it was already {@code FINALIZADO}
+     * @throws ApiException {@code INVALID_STATUS_TRANSITION} if the trip is cancelled
+     */
+    public boolean finish(Instant now) {
+        return close(TripStatus.FINALIZADO, now);
+    }
+
+    /**
+     * The driver cancels the trip (docs/API.md §5.6), whether or not it already left. Its active
+     * reservations are cancelled apart, with {@link Reservation#cancelWithTrip}.
+     *
+     * @return {@code true} if the status changed, {@code false} if it was already {@code CANCELADO}
+     * @throws ApiException {@code INVALID_STATUS_TRANSITION} if the trip is finished
+     */
+    public boolean cancel(Instant now) {
+        return close(TripStatus.CANCELADO, now);
+    }
+
+    private boolean close(TripStatus target, Instant now) {
+        if (status == target) {
+            return false;
+        }
+        if (isClosed()) {
+            throw new ApiException(ErrorCode.INVALID_STATUS_TRANSITION);
+        }
+        status = target;
+        updatedAt = now;
+        return true;
     }
 
     /**
