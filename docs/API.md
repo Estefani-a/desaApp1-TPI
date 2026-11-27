@@ -278,10 +278,11 @@ El JWT se firma con HS256, lleva el id del usuario en `sub` y dura 30 días sin 
 
 Todos los parámetros son opcionales y se combinan con Y.
 
-- **200** `TripDto[]` ordenado por `departureDate` y `departureTime`.
-- Devuelve los viajes `ABIERTO` y `COMPLETO` que todavía no salieron. Con `updatedSince`, solo los que cambiaron desde ese momento, **incluidos** los que pasaron a `FINALIZADO` o `CANCELADO`, para que la app los saque de Room.
+- **200** `TripDto[]`.
+- **Sin `updatedSince`** (refresco completo): los viajes `ABIERTO` y `COMPLETO` que todavía no salieron, ordenados por `departureDate`, `departureTime` y `tripId`. Sin paginación: como máximo 100 viajes.
+- **Con `updatedSince`** (refresco parcial): todos los viajes que cambiaron desde ese momento, **incluidos** los que pasaron a `FINALIZADO` o `CANCELADO`, para que la app los saque de Room. Ordenados por `updatedAt` y `tripId`, y **sin tope**: la app avanza su cursor después de cada respuesta, así que un viaje que quedara afuera no se volvería a pedir. Un viaje también cambia cuando cambia una de sus reservas (§6), porque `myReservation` es parte del `TripDto`.
 - El parámetro `shift` se evalúa sobre `departureTime` con los intervalos semiabiertos de §3.1 (`shift` no forma parte de `TripDto`; la app aplica la misma regla al filtrar en Room sin conexión).
-- Sin paginación: se devuelven como máximo 100 viajes.
+- Con `date` y `shift` juntos, `shift` es la franja que **empieza** ese día: `date=2026-11-20&shift=NOCHE` trae el 20 desde las 18:00 y el 21 antes de las 06:00. La madrugada del 20 es la noche del 19. Con `shift` sin `date`, la franja en cualquier día.
 
 ### 5.2 Sedes y puntos de encuentro
 
@@ -465,6 +466,8 @@ El backend envía mensajes **de datos** (no de notificación), así la app decid
 | `NUEVA_SOLICITUD` | Conductor | C4 Panel del conductor | Refresca las solicitudes del viaje |
 | `SOLICITUD_ACEPTADA` | Pasajero | B6 Mi viaje | Refresca el viaje (ahora con patente y teléfono) |
 | `SOLICITUD_RECHAZADA` | Pasajero | B6 Mi viaje | Refresca el viaje |
+En la app, la notificación abre `MainActivity` con los extras `type` y `tripId` (`openFromPushIntent`). Si hay sesión, la app pasa al modo de la pantalla (conductor o pasajero) cuando el perfil lo permite y la abre arriba del inicio. Sin sesión, la push se ignora.
+
 Si el usuario no dio permiso de notificaciones (RNF08), no recibe la push, pero ve el estado actualizado al abrir la app (tarjeta del inicio y panel del conductor). La bandeja (§7.2) y el tipo `CALIFICAR_VIAJE` quedan fuera de esta entrega.
 
 ---
@@ -482,6 +485,6 @@ Si el usuario no dio permiso de notificaciones (RNF08), no recibe la push, pero 
 2. **Sedes y salidas (`GET /campuses`):** `MONSERRAT`, `BELGRANO` y `RECOLETA` con sus puntos de encuentro unificados en formato `"Salida …"` (§5.2).
 3. **Política de contraseña y JWT:** mínimo 8 caracteres con al menos 1 letra y 1 número; JWT HS256 de 30 días sin refresh token como simplificación del TP (en producción lo óptimo es access token corto de 15–30 min + refresh token rotativo y revocable en base de datos, ver §4.4).
 4. **Activación de cuenta:** `POST /auth/activate` devuelve `AuthResponse` y deja la sesión iniciada automáticamente.
-5. **Listado de viajes (`GET /trips`):** sin paginación, tope de 100 resultados.
+5. **Listado de viajes (`GET /trips`):** sin paginación; tope de 100 resultados en el refresco completo y sin tope con `updatedSince` (§5.1).
 6. **Push al cancelar un viaje:** fuera de alcance en esta entrega (se mantienen los 3 tipos de RF04; documentado en "Limitaciones conocidas" del README).
 7. **Enlaces de los correos:** página HTML intermedia del backend en `/api/v1/links/activate` y `/api/v1/links/reset-password` redirigiendo a `uniride://…`.

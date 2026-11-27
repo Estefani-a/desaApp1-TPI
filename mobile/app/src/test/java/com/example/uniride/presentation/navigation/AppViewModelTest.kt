@@ -5,6 +5,7 @@ import com.example.uniride.data.datastore.AppModeDataStore
 import com.example.uniride.domain.model.AppMode
 import com.example.uniride.domain.model.PreferredMode
 import com.example.uniride.domain.model.Profile
+import com.example.uniride.domain.model.TripId
 import com.example.uniride.domain.model.User
 import com.example.uniride.domain.model.UserId
 import com.example.uniride.domain.model.Vehicle
@@ -129,8 +130,67 @@ class AppViewModelTest {
         }
     }
 
+    @Test
+    fun `tocar una push de solicitud nueva pasa a conductor y deja el panel para abrir`() = runTest(mainDispatcherRule.testDispatcher) {
+        session.login(EMAIL, PASSWORD)
+        profiles.currentUser.value = user(PreferredMode.AMBOS, withVehicle = true)
+        val viewModel = viewModel()
+
+        viewModel.onAction(AppAction.OpenFromPush(DRIVER_PANEL))
+
+        assertEquals(DRIVER_PANEL, viewModel.uiState.value.pendingPush)
+        assertEquals(AppMode.CONDUCTOR, viewModel.uiState.value.appMode)
+    }
+
+    @Test
+    fun `tocar una push de respuesta en modo conductor pasa a pasajero`() = runTest(mainDispatcherRule.testDispatcher) {
+        session.login(EMAIL, PASSWORD)
+        profiles.currentUser.value = user(PreferredMode.AMBOS, withVehicle = true)
+        appModes.setAppMode(AppMode.CONDUCTOR)
+        val viewModel = viewModel()
+
+        viewModel.onAction(AppAction.OpenFromPush(MY_TRIP))
+
+        assertEquals(MY_TRIP, viewModel.uiState.value.pendingPush)
+        assertEquals(AppMode.PASAJERO, viewModel.uiState.value.appMode)
+    }
+
+    @Test
+    fun `sin vehiculo la push del panel se abre sin cambiar de modo`() = runTest(mainDispatcherRule.testDispatcher) {
+        session.login(EMAIL, PASSWORD)
+        profiles.currentUser.value = user(PreferredMode.AMBOS, withVehicle = false)
+        val viewModel = viewModel()
+
+        viewModel.onAction(AppAction.OpenFromPush(DRIVER_PANEL))
+
+        assertEquals(DRIVER_PANEL, viewModel.uiState.value.pendingPush)
+        assertEquals(AppMode.PASAJERO, appModes.observeAppMode().first())
+    }
+
+    @Test
+    fun `una push sin sesion no abre nada`() = runTest(mainDispatcherRule.testDispatcher) {
+        val viewModel = viewModel()
+
+        viewModel.onAction(AppAction.OpenFromPush(DRIVER_PANEL))
+
+        assertEquals(null, viewModel.uiState.value.pendingPush)
+    }
+
+    @Test
+    fun `cuando el shell abre la push deja de estar pendiente`() = runTest(mainDispatcherRule.testDispatcher) {
+        session.login(EMAIL, PASSWORD)
+        val viewModel = viewModel()
+        viewModel.onAction(AppAction.OpenFromPush(MY_TRIP))
+
+        viewModel.onAction(AppAction.PushOpened)
+
+        assertEquals(null, viewModel.uiState.value.pendingPush)
+    }
+
     private companion object {
         const val EMAIL = "user-1@uade.edu.ar"
         const val PASSWORD = "clave1234"
+        val DRIVER_PANEL = PushDestination.DriverPanel(TripId("0b7c4f0e-5d1a-4f5a-8a52-7c9e5e0d2b31"))
+        val MY_TRIP = PushDestination.MyTrip(TripId("0b7c4f0e-5d1a-4f5a-8a52-7c9e5e0d2b31"))
     }
 }

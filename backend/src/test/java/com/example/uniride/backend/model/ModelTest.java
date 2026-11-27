@@ -268,4 +268,22 @@ class ModelTest {
         assertThat(Shift.of(LocalTime.MIDNIGHT)).isEqualTo(Shift.NOCHE);
         assertThat(Shift.of(LocalTime.of(5, 59, 59))).isEqualTo(Shift.NOCHE);
     }
+
+    @Test
+    void cadaTurnoTerminaDondeEmpiezaElSiguiente() {
+        assertThat(Shift.MANANA.end()).isEqualTo(Shift.TARDE.start());
+        assertThat(Shift.TARDE.end()).isEqualTo(Shift.NOCHE.start());
+        assertThat(Shift.NOCHE.end()).isEqualTo(Shift.MANANA.start());
+        assertThat(Shift.NOCHE.wrapsMidnight()).isTrue();
+        assertThat(Shift.MANANA.wrapsMidnight()).isFalse();
+        assertThat(Shift.TARDE.wrapsMidnight()).isFalse();
+    }
+
+    @Test
+    void losEstadosListadosSonElComplementoDeLosCerrados() {
+        assertThat(TripStatus.LISTED).containsExactlyInAnyOrder(TripStatus.ABIERTO, TripStatus.COMPLETO);
+        assertThat(TripStatus.LISTED).doesNotContainAnyElementsOf(TripStatus.CLOSED);
+        assertThat(TripStatus.CANCELADO.isClosed()).isTrue();
+        assertThat(TripStatus.COMPLETO.isClosed()).isFalse();
+    }
 }

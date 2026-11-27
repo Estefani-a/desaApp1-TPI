@@ -75,6 +75,14 @@ fun UniRideAppRoute(
         startDestination = if (startsLoggedIn) MainGraphRoute else AuthGraphRoute,
         navController = navController,
     )
+
+    // Here, after the NavHost: a push read while the session loaded waits until the graph exists
+    LaunchedEffect(state.pendingPush) {
+        state.pendingPush?.let { destination ->
+            navController.openFromPush(destination)
+            viewModel.onAction(AppAction.PushOpened)
+        }
+    }
 }
 
 /**
@@ -152,6 +160,18 @@ internal fun NavController.navigateToTab(tab: TopLevelDestination) {
         popUpTo<HomeRoute> { saveState = true }
         launchSingleTop = true
         restoreState = true
+    }
+}
+
+/**
+ * Opens the screen of a push on top of the Home tab, so going back leaves the user on the start
+ * of the mode instead of wherever they were before the push. What was above Home is saved, like
+ * when changing tabs: a half-filled form comes back when the user returns to its tab.
+ */
+internal fun NavController.openFromPush(destination: PushDestination) {
+    navigate(destination.route) {
+        popUpTo<HomeRoute> { saveState = true }
+        launchSingleTop = true
     }
 }
 
