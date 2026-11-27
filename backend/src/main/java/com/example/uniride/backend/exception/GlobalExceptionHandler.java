@@ -35,6 +35,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ApiErrorResponseDTO> handleApi(ApiException ex) {
+        if (ex.getFields() != null) {
+            return validation(ex.getFields());
+        }
         return ResponseEntity.status(ex.getCode().status()).body(ApiErrorResponseDTO.of(ex.getCode(), ex.getMessage()));
     }
 
