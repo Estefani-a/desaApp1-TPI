@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         // Only on the first creation: after a rotation the intent is the same and was already handled
-        if (savedInstanceState == null) openPush(intent)
+        if (savedInstanceState == null && !intent.isFromRecents()) openPush(intent)
         setContent {
             UniRideTheme {
                 UniRideAppRoute()
@@ -41,4 +41,7 @@ class MainActivity : ComponentActivity() {
     private fun openPush(intent: Intent) {
         intent.pushDestination()?.let { appViewModel.onAction(AppAction.OpenFromPush(it)) }
     }
+
+    /** Reopened from Recents: Android hands back the intent that started the task, push included. */
+    private fun Intent.isFromRecents(): Boolean = flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
 }
