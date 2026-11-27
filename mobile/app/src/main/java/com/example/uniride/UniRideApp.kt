@@ -3,6 +3,8 @@ package com.example.uniride
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import com.example.uniride.data.push.PushNotifier
+import com.example.uniride.data.push.PushTokenSyncManager
 import com.example.uniride.data.sync.SyncScheduler
 import com.example.uniride.domain.repository.SessionRepository
 import dagger.hilt.android.HiltAndroidApp
@@ -22,6 +24,12 @@ class UniRideApp : Application(), Configuration.Provider {
     @Inject
     lateinit var sessionRepository: SessionRepository
 
+    @Inject
+    lateinit var pushNotifier: PushNotifier
+
+    @Inject
+    lateinit var pushTokenSyncManager: PushTokenSyncManager
+
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
@@ -31,5 +39,7 @@ class UniRideApp : Application(), Configuration.Provider {
         super.onCreate()
         // Sends what a previous session left pending
         syncScheduler.schedule()
+        pushNotifier.ensureChannel()
+        pushTokenSyncManager.start()
     }
 }

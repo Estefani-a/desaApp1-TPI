@@ -62,10 +62,14 @@ class FakeTripRepository(
         return refreshResult
     }
 
-    /** What [refreshTrip] answers. */
+    /** What [refreshTrip] answers, and the ids it was asked to refresh. */
     var refreshTripResult: AppResult<Unit> = AppResult.Success(Unit)
+    val refreshedTripIds = mutableListOf<TripId>()
 
-    override suspend fun refreshTrip(tripId: TripId): AppResult<Unit> = refreshTripResult
+    override suspend fun refreshTrip(tripId: TripId): AppResult<Unit> {
+        refreshedTripIds += tripId
+        return refreshTripResult
+    }
 
     var refreshMyTripsResult: AppResult<Unit> = AppResult.Success(Unit)
     var refreshMyTripsCalls = 0
