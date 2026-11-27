@@ -158,9 +158,11 @@ Las reglas completas de las dos partes están en [`docs/CONVENCIONES.md`](docs/C
 
 ### RF01 · Autenticación institucional y perfil (Alvaro)
 
-Registro solo con correo `@uade.edu.ar`, activación por correo, login, recuperación de contraseña y perfil con el modo preferido y el vehículo. El inicio es automático si hay sesión y la sesión se cierra ante un 401.
-
-<!-- Alvaro: pantallas, deep links de activación y de restablecer contraseña, estado. -->
+- **Registro y validaciones.** Pantallas **A1 Bienvenida** y **A3 Registro**: solo acepta correos `@uade.edu.ar`, exige contraseña de al menos 8 caracteres con letra y número (hasta 72 bytes UTF-8, tope de BCrypt), teléfono válido y, si el modo elegido es Conductor, datos completos del vehículo con patente normalizada. Las mismas reglas se validan en la app y en el servidor.
+- **Activación por correo y deep link.** Al registrarse la cuenta queda `PENDIENTE` y pasa a **A4 Revisá tu correo** (con opción de reenviar el enlace). El backend envía el correo post-commit (`AFTER_COMMIT`) con un enlace de un solo uso válido por 24 horas (`/api/v1/links/activate?token=...`) que redirige a `uniride://activate?token=...` (**A5 Activar cuenta**), activa la cuenta e inicia sesión automáticamente.
+- **Login y recuperación de contraseña.** **A2 Login** valida dominio y distingue credenciales incorrectas de cuenta todavía sin activar (ofreciendo ir directo a reenviar la activación). **A6 Recuperar contraseña** responde de forma idéntica exista o no el correo y envía un enlace de un solo uso válido por 1 hora (`/api/v1/links/reset-password?token=...` → `uniride://reset-password?token=...`, **A7 Nueva contraseña**).
+- **Sesión segura.** El JWT (HS256) se guarda solo en `SessionTokenStore` (Keystore + Tink) y el arranque es automático si hay sesión. Ante un `401` en cualquier pedido o al cerrar sesión, se limpia el token, Room (`clearAllTables`) y las preferencias, y el shell vuelve a Bienvenida. Al iniciar sesión o activar otra cuenta también se limpia cualquier estado local previo.
+- **Perfil y modo sin conexión.** **D1 Perfil** lee el usuario guardado en Room (funciona offline con banner de sin conexión), refresca en segundo plano conservando ediciones sin guardar, permite editar datos personales, modo habitual y vehículo, y cerrar sesión previa confirmación (incluyendo baja best-effort del token FCM en `DELETE /users/me/device-token`).
 
 ### RF02 · Publicación de viaje y sincronización (Estefanía)
 
