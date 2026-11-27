@@ -23,6 +23,17 @@ public enum Shift {
         return start;
     }
 
+    /** First minute after the slot: the start of the next one, derived so slots never overlap. */
+    public LocalTime end() {
+        Shift[] shifts = values();
+        return shifts[(ordinal() + 1) % shifts.length].start;
+    }
+
+    /** {@code true} for NOCHE: it starts one day and ends the next one. */
+    public boolean wrapsMidnight() {
+        return !end().isAfter(start);
+    }
+
     public static Shift of(LocalTime time) {
         // Before the first start (00:00 to 05:59) it is still the night of the previous evening.
         Shift result = NOCHE;

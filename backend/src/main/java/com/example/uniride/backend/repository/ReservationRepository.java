@@ -15,6 +15,13 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
     @EntityGraph(attributePaths = "passenger")
     List<Reservation> findByTripIdOrderByReservedAtAsc(UUID tripId);
 
+    /**
+     * Reservations of a passenger on several trips at once, for the {@code myReservation} of
+     * each trip of the list (RF03) without one query per trip.
+     */
+    @EntityGraph(attributePaths = "passenger")
+    List<Reservation> findByPassengerIdAndTripIdIn(UUID passengerId, Collection<UUID> tripIds);
+
     /** Reservations of a passenger on a trip, newest first. */
     List<Reservation> findByTripIdAndPassengerIdOrderByReservedAtDesc(UUID tripId, UUID passengerId);
 

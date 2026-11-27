@@ -182,7 +182,7 @@ public class Trip {
 
     /** {@code FINALIZADO} or {@code CANCELADO}: no more changes of reservations. */
     public boolean isClosed() {
-        return status == TripStatus.FINALIZADO || status == TripStatus.CANCELADO;
+        return status.isClosed();
     }
 
     public boolean isDrivenBy(UUID userId) {
