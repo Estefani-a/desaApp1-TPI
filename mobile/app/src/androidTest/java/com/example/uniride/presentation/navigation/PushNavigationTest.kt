@@ -65,11 +65,23 @@ class PushNavigationTest {
     @Test
     fun unaSolicitudNuevaAbreElPanelArribaDelInicio() {
         start()
-        rule.runOnIdle { navController.navigate(FeedRoute) }
+        rule.runOnIdle { navController.navigateToTab(TopLevelDestination.FEED) }
 
         openFromPush(PushDestination.DriverPanel(TRIP_ID))
 
         assertEquals(listOf(HomeRoute::class, DriverPanelRoute::class), backStack())
+    }
+
+    @Test
+    fun laPestanaQueEstabaAbiertaVuelveAlTocarla() {
+        start()
+        rule.runOnIdle { navController.navigateToTab(TopLevelDestination.FEED) }
+        openFromPush(PushDestination.MyTrip(TRIP_ID))
+
+        rule.runOnIdle { navController.navigateToTab(TopLevelDestination.FEED) }
+        rule.waitForIdle()
+
+        assertEquals(listOf(HomeRoute::class, FeedRoute::class), backStack())
     }
 
     @Test

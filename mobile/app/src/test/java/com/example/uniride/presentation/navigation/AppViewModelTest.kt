@@ -131,16 +131,14 @@ class AppViewModelTest {
     }
 
     @Test
-    fun `tocar una push de solicitud nueva pasa a conductor y abre el panel`() = runTest(mainDispatcherRule.testDispatcher) {
+    fun `tocar una push de solicitud nueva pasa a conductor y deja el panel para abrir`() = runTest(mainDispatcherRule.testDispatcher) {
         session.login(EMAIL, PASSWORD)
         profiles.currentUser.value = user(PreferredMode.AMBOS, withVehicle = true)
         val viewModel = viewModel()
 
-        viewModel.effects.test {
-            viewModel.onAction(AppAction.OpenFromPush(DRIVER_PANEL))
+        viewModel.onAction(AppAction.OpenFromPush(DRIVER_PANEL))
 
-            assertEquals(AppEffect.OpenPush(DRIVER_PANEL), awaitItem())
-        }
+        assertEquals(DRIVER_PANEL, viewModel.uiState.value.pendingPush)
         assertEquals(AppMode.CONDUCTOR, viewModel.uiState.value.appMode)
     }
 
@@ -151,23 +149,42 @@ class AppViewModelTest {
         appModes.setAppMode(AppMode.CONDUCTOR)
         val viewModel = viewModel()
 
-        viewModel.effects.test {
-            viewModel.onAction(AppAction.OpenFromPush(MY_TRIP))
+        viewModel.onAction(AppAction.OpenFromPush(MY_TRIP))
 
-            assertEquals(AppEffect.OpenPush(MY_TRIP), awaitItem())
-        }
+        assertEquals(MY_TRIP, viewModel.uiState.value.pendingPush)
         assertEquals(AppMode.PASAJERO, viewModel.uiState.value.appMode)
+    }
+
+    @Test
+    fun `sin vehiculo la push del panel se abre sin cambiar de modo`() = runTest(mainDispatcherRule.testDispatcher) {
+        session.login(EMAIL, PASSWORD)
+        profiles.currentUser.value = user(PreferredMode.AMBOS, withVehicle = false)
+        val viewModel = viewModel()
+
+        viewModel.onAction(AppAction.OpenFromPush(DRIVER_PANEL))
+
+        assertEquals(DRIVER_PANEL, viewModel.uiState.value.pendingPush)
+        assertEquals(AppMode.PASAJERO, appModes.observeAppMode().first())
     }
 
     @Test
     fun `una push sin sesion no abre nada`() = runTest(mainDispatcherRule.testDispatcher) {
         val viewModel = viewModel()
 
-        viewModel.effects.test {
-            viewModel.onAction(AppAction.OpenFromPush(DRIVER_PANEL))
+        viewModel.onAction(AppAction.OpenFromPush(DRIVER_PANEL))
 
-            expectNoEvents()
-        }
+        assertEquals(null, viewModel.uiState.value.pendingPush)
+    }
+
+    @Test
+    fun `cuando el shell abre la push deja de estar pendiente`() = runTest(mainDispatcherRule.testDispatcher) {
+        session.login(EMAIL, PASSWORD)
+        val viewModel = viewModel()
+        viewModel.onAction(AppAction.OpenFromPush(MY_TRIP))
+
+        viewModel.onAction(AppAction.PushOpened)
+
+        assertEquals(null, viewModel.uiState.value.pendingPush)
     }
 
     private companion object {

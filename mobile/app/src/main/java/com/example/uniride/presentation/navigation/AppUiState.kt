@@ -11,11 +11,14 @@ enum class SessionStatus { LOADING, LOGGED_IN, LOGGED_OUT }
  *
  * @param appMode mode in use: the one chosen last if the profile allows it
  * @param availableModes modes the selector offers; with one, the selector is hidden
+ * @param pendingPush screen of a tapped push that the shell still has to open. It is state and
+ * not an effect so it survives a rotation while the session loads.
  */
 data class AppUiState(
     val session: SessionStatus = SessionStatus.LOADING,
     val appMode: AppMode = AppMode.PASAJERO,
     val availableModes: Set<AppMode> = AppMode.entries.toSet(),
+    val pendingPush: PushDestination? = null,
 )
 
 sealed interface AppAction {
@@ -23,12 +26,12 @@ sealed interface AppAction {
 
     /** A push was tapped: the activity got its intent. */
     data class OpenFromPush(val destination: PushDestination) : AppAction
+
+    /** The shell opened [AppUiState.pendingPush]. */
+    data object PushOpened : AppAction
 }
 
 sealed interface AppEffect {
     /** The session ended (logout, or a 401 anywhere): back to the start of the auth graph. */
     data object SessionEnded : AppEffect
-
-    /** Open the screen of a tapped push, already in its mode. */
-    data class OpenPush(val destination: PushDestination) : AppEffect
 }

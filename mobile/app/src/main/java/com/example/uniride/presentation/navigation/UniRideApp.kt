@@ -12,11 +12,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,14 +47,11 @@ fun UniRideAppRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val navController = rememberNavController()
-    // Held until the NavHost exists: the effect can arrive while the session is still loading
-    var pendingPush by remember { mutableStateOf<PushDestination?>(null) }
 
     LaunchedEffect(viewModel, navController) {
         viewModel.effects.collect { effect ->
             when (effect) {
                 AppEffect.SessionEnded -> navController.navigateToAuth()
-                is AppEffect.OpenPush -> pendingPush = effect.destination
             }
         }
     }
@@ -77,10 +72,11 @@ fun UniRideAppRoute(
         navController = navController,
     )
 
-    LaunchedEffect(pendingPush) {
-        pendingPush?.let { destination ->
+    // Here, after the NavHost: a push read while the session loaded waits until the graph exists
+    LaunchedEffect(state.pendingPush) {
+        state.pendingPush?.let { destination ->
             navController.openFromPush(destination)
-            pendingPush = null
+            viewModel.onAction(AppAction.PushOpened)
         }
     }
 }
@@ -161,11 +157,12 @@ internal fun NavController.navigateToTab(tab: TopLevelDestination) {
 
 /**
  * Opens the screen of a push on top of the Home tab, so going back leaves the user on the start
- * of the mode instead of wherever they were before the push.
+ * of the mode instead of wherever they were before the push. What was above Home is saved, like
+ * when changing tabs: a half-filled form comes back when the user returns to its tab.
  */
 internal fun NavController.openFromPush(destination: PushDestination) {
     navigate(destination.route) {
-        popUpTo<HomeRoute>()
+        popUpTo<HomeRoute> { saveState = true }
         launchSingleTop = true
     }
 }
