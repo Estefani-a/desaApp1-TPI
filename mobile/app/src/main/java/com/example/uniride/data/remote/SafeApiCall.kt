@@ -2,10 +2,33 @@ package com.example.uniride.data.remote
 
 import com.example.uniride.core.result.AppResult
 import com.example.uniride.core.result.DataError
+import com.example.uniride.data.remote.dto.ApiErrorCode
 import kotlinx.coroutines.CancellationException
 import retrofit2.HttpException
 import java.io.IOException
 import java.net.SocketTimeoutException
+
+internal data class ApiCallResult<out T>(
+    val result: AppResult<T>,
+    val errorCode: ApiErrorCode? = null,
+)
+
+/**
+ * Runs [safeApiCall] while preserving the backend [ApiErrorCode] when an [ApiException] is thrown,
+ * so repositories can map domain-specific error codes without duplicating exception handling.
+ */
+internal suspend fun <T> safeApiCallWithCode(block: suspend () -> T): ApiCallResult<T> {
+    var code: ApiErrorCode? = null
+    val result = safeApiCall {
+        try {
+            block()
+        } catch (e: ApiException) {
+            code = e.apiError.errorCode
+            throw e
+        }
+    }
+    return ApiCallResult(result = result, errorCode = code)
+}
 
 /**
  * The only place where a failed call becomes a [DataError] (CONVENCIONES §6.3). It works the

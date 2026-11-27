@@ -2,31 +2,16 @@ package com.example.uniride.presentation.auth.register
 
 import androidx.annotation.StringRes
 import com.example.uniride.domain.model.PreferredMode
+import com.example.uniride.presentation.common.ProfileForm
 
 data class RegisterUiState(
     val email: String = "",
     val password: String = "",
     val confirmPassword: String = "",
-    val fullName: String = "",
-    val career: String = "",
-    val phone: String = "",
-    val preferredMode: PreferredMode = PreferredMode.PASAJERO,
-    val hasVehicle: Boolean = false,
-    val vehicleBrand: String = "",
-    val vehicleModel: String = "",
-    val vehicleColor: String = "",
-    val vehiclePlate: String = "",
+    val profile: ProfileForm = ProfileForm(),
     @param:StringRes val emailErrorRes: Int? = null,
     @param:StringRes val passwordErrorRes: Int? = null,
     @param:StringRes val confirmPasswordErrorRes: Int? = null,
-    @param:StringRes val fullNameErrorRes: Int? = null,
-    @param:StringRes val careerErrorRes: Int? = null,
-    @param:StringRes val phoneErrorRes: Int? = null,
-    @param:StringRes val vehicleRequiredErrorRes: Int? = null,
-    @param:StringRes val vehicleBrandErrorRes: Int? = null,
-    @param:StringRes val vehicleModelErrorRes: Int? = null,
-    @param:StringRes val vehicleColorErrorRes: Int? = null,
-    @param:StringRes val vehiclePlateErrorRes: Int? = null,
     @param:StringRes val generalErrorRes: Int? = null,
     val isSubmitting: Boolean = false,
     val isOffline: Boolean = false,

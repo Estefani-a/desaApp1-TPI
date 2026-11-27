@@ -3,30 +3,18 @@ package com.example.uniride.presentation.profile
 import androidx.annotation.StringRes
 import com.example.uniride.domain.model.PreferredMode
 import com.example.uniride.domain.model.Rating
+import com.example.uniride.presentation.common.ContentState
+import com.example.uniride.presentation.common.ProfileForm
+
+/** Loaded profile content shown inside [ProfileUiState.content] (RF01). */
+data class ProfileData(
+    val email: String = "",
+    val rating: Rating? = null,
+    val form: ProfileForm = ProfileForm(),
+)
 
 data class ProfileUiState(
-    val hasLoadedUser: Boolean = false,
-    val isLoading: Boolean = true,
-    val email: String = "",
-    val fullName: String = "",
-    val career: String = "",
-    val phone: String = "",
-    val preferredMode: PreferredMode = PreferredMode.PASAJERO,
-    val hasVehicle: Boolean = false,
-    val vehicleBrand: String = "",
-    val vehicleModel: String = "",
-    val vehicleColor: String = "",
-    val vehiclePlate: String = "",
-    val rating: Rating? = null,
-    @param:StringRes val fullNameErrorRes: Int? = null,
-    @param:StringRes val careerErrorRes: Int? = null,
-    @param:StringRes val phoneErrorRes: Int? = null,
-    @param:StringRes val vehicleRequiredErrorRes: Int? = null,
-    @param:StringRes val vehicleBrandErrorRes: Int? = null,
-    @param:StringRes val vehicleModelErrorRes: Int? = null,
-    @param:StringRes val vehicleColorErrorRes: Int? = null,
-    @param:StringRes val vehiclePlateErrorRes: Int? = null,
-    @param:StringRes val loadErrorRes: Int? = null,
+    val content: ContentState<ProfileData> = ContentState.Loading,
     @param:StringRes val feedbackMessageRes: Int? = null,
     val isFeedbackError: Boolean = false,
     val isSaving: Boolean = false,

@@ -3,12 +3,10 @@ package com.example.uniride.presentation.auth.activate
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.example.uniride.R
-import com.example.uniride.core.result.DataError
 import com.example.uniride.domain.usecase.auth.ActivateAccountResult
 import com.example.uniride.domain.usecase.auth.ActivateAccountUseCase
-import com.example.uniride.presentation.auth.ActivateAccountRoute
+import com.example.uniride.presentation.common.ContentState
 import com.example.uniride.presentation.common.messageRes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -22,29 +20,39 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Handles the `uniride://activate?token=...` deep link (RF01).
- * Automatically activates the account and signs the student in upon arrival.
+ * A5 Activar cuenta ViewModel (RF01).
+ * Handles the `uniride://activate?token=...` deep link and guards the single-use token
+ * via [SavedStateHandle] so process recreation does not re-submit an already consumed code.
  */
 @HiltViewModel
 class ActivateAccountViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     private val activateAccountUseCase: ActivateAccountUseCase,
 ) : ViewModel() {
 
-    private val activationCode: String = runCatching {
-        savedStateHandle.toRoute<ActivateAccountRoute>().activationCode
-    }.getOrElse {
-        savedStateHandle.get<String>("activationCode").orEmpty()
-    }
+    private val activationCode: String = savedStateHandle.get<String>(ACTIVATION_CODE_KEY).orEmpty()
 
-    private val _uiState = MutableStateFlow(ActivateAccountUiState())
+    private val _uiState = MutableStateFlow(
+        ActivateAccountUiState(
+            content = if (savedStateHandle.get<Boolean>(ACTIVATED_KEY) == true) {
+                ContentState.Success(Unit)
+            } else {
+                ContentState.Loading
+            },
+        ),
+    )
     val uiState: StateFlow<ActivateAccountUiState> = _uiState.asStateFlow()
 
     private val _effects = Channel<ActivateAccountEffect>(Channel.BUFFERED)
     val effects: Flow<ActivateAccountEffect> = _effects.receiveAsFlow()
 
     init {
-        activate()
+        if (savedStateHandle.get<Boolean>(ACTIVATED_KEY) != true &&
+            savedStateHandle.get<Boolean>(ATTEMPTED_KEY) != true
+        ) {
+            savedStateHandle[ATTEMPTED_KEY] = true
+            activate()
+        }
     }
 
     fun onAction(action: ActivateAccountAction) {
@@ -54,37 +62,41 @@ class ActivateAccountViewModel @Inject constructor(
     }
 
     private fun activate() {
-        _uiState.update { it.copy(isLoading = true, errorMessageRes = null) }
+        _uiState.update { it.copy(content = ContentState.Loading) }
         viewModelScope.launch {
             when (val result = activateAccountUseCase(activationCode)) {
                 is ActivateAccountResult.Activated -> {
-                    _uiState.update { it.copy(isLoading = false) }
+                    savedStateHandle[ACTIVATED_KEY] = true
+                    _uiState.update { it.copy(content = ContentState.Success(Unit)) }
                     _effects.send(ActivateAccountEffect.NavigateToMain)
                 }
                 ActivateAccountResult.InvalidCode -> {
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
-                            errorMessageRes = R.string.auth_activate_invalid_token,
-                            canRetry = false,
+                            content = ContentState.Error(
+                                messageRes = R.string.auth_activate_invalid_token,
+                                canRetry = false,
+                            ),
                         )
                     }
                 }
                 is ActivateAccountResult.Failed -> {
-                    val isInvalidToken = result.error == DataError.VALIDATION || result.error == DataError.NOT_FOUND
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
-                            errorMessageRes = if (isInvalidToken) {
-                                R.string.auth_activate_invalid_token
-                            } else {
-                                result.error.messageRes()
-                            },
-                            canRetry = !isInvalidToken,
+                            content = ContentState.Error(
+                                messageRes = result.error.messageRes(),
+                                canRetry = true,
+                            ),
                         )
                     }
                 }
             }
         }
+    }
+
+    companion object {
+        const val ACTIVATION_CODE_KEY = "activationCode"
+        internal const val ATTEMPTED_KEY = "activationAttempted"
+        internal const val ACTIVATED_KEY = "activationSucceeded"
     }
 }

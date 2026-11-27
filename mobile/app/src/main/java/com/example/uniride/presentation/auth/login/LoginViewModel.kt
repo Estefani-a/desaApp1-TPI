@@ -3,7 +3,6 @@ package com.example.uniride.presentation.auth.login
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.uniride.R
-import com.example.uniride.core.result.DataError
 import com.example.uniride.domain.usecase.auth.LoginResult
 import com.example.uniride.domain.usecase.auth.LoginUseCase
 import com.example.uniride.domain.usecase.connectivity.ObserveConnectivityUseCase
@@ -48,10 +47,20 @@ class LoginViewModel @Inject constructor(
     fun onAction(action: LoginAction) {
         when (action) {
             is LoginAction.EmailChanged -> formState.update {
-                it.copy(email = action.value, emailErrorRes = null, generalErrorRes = null)
+                it.copy(
+                    email = action.value,
+                    emailErrorRes = null,
+                    generalErrorRes = null,
+                    showResendActivation = false,
+                )
             }
             is LoginAction.PasswordChanged -> formState.update {
-                it.copy(password = action.value, passwordErrorRes = null, generalErrorRes = null)
+                it.copy(
+                    password = action.value,
+                    passwordErrorRes = null,
+                    generalErrorRes = null,
+                    showResendActivation = false,
+                )
             }
             LoginAction.Submit -> submit()
         }
@@ -67,6 +76,7 @@ class LoginViewModel @Inject constructor(
                 emailErrorRes = null,
                 passwordErrorRes = null,
                 generalErrorRes = null,
+                showResendActivation = false,
             )
         }
         viewModelScope.launch {
@@ -75,22 +85,31 @@ class LoginViewModel @Inject constructor(
                     formState.update { it.copy(isSubmitting = false) }
                     _effects.send(LoginEffect.NavigateToMain)
                 }
-                is LoginResult.Invalid -> {
-                    formState.update {
-                        it.copy(
-                            isSubmitting = false,
-                            emailErrorRes = result.emailError?.messageRes(),
-                            passwordErrorRes = if (result.passwordBlank) R.string.auth_error_password_blank else null,
-                        )
-                    }
+                is LoginResult.Invalid -> formState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        emailErrorRes = result.emailError?.messageRes(),
+                        passwordErrorRes = if (result.passwordBlank) R.string.auth_error_password_blank else null,
+                    )
                 }
-                is LoginResult.Failed -> {
-                    val errorRes = if (result.error == DataError.UNAUTHORIZED) {
-                        R.string.auth_login_invalid_credentials
-                    } else {
-                        result.error.messageRes()
-                    }
-                    formState.update { it.copy(isSubmitting = false, generalErrorRes = errorRes) }
+                LoginResult.InvalidCredentials -> formState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        generalErrorRes = R.string.auth_login_invalid_credentials,
+                    )
+                }
+                LoginResult.NotActivated -> formState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        generalErrorRes = R.string.auth_login_account_not_activated,
+                        showResendActivation = true,
+                    )
+                }
+                is LoginResult.Failed -> formState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        generalErrorRes = result.error.messageRes(),
+                    )
                 }
             }
         }

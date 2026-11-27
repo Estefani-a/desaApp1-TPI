@@ -33,22 +33,24 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.uniride.R
 import com.example.uniride.domain.model.PreferredMode
 import com.example.uniride.domain.model.Rating
-import com.example.uniride.presentation.auth.components.InlineFeedbackBanner
-import com.example.uniride.presentation.auth.components.VehicleFieldsSection
-import com.example.uniride.presentation.auth.components.labelRes
-import com.example.uniride.presentation.common.ErrorState
+import com.example.uniride.presentation.common.ContentState
+import com.example.uniride.presentation.common.ContentStateHost
+import com.example.uniride.presentation.common.EmptyState
+import com.example.uniride.presentation.common.InlineFeedbackBanner
 import com.example.uniride.presentation.common.LabeledTextField
-import com.example.uniride.presentation.common.LoadingState
 import com.example.uniride.presentation.common.OfflineBanner
 import com.example.uniride.presentation.common.PrimaryButton
+import com.example.uniride.presentation.common.ProfileForm
 import com.example.uniride.presentation.common.SelectorField
 import com.example.uniride.presentation.common.UniRideTopBar
+import com.example.uniride.presentation.common.VehicleFieldsSection
 import com.example.uniride.presentation.common.formatRating
+import com.example.uniride.presentation.common.labelRes
 import com.example.uniride.presentation.theme.Dimens
 import com.example.uniride.presentation.theme.UniRideTheme
 
 @Composable
-fun ProfileScreenRoute(
+fun ProfileRoute(
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -59,6 +61,7 @@ fun ProfileScreenRoute(
     )
 }
 
+/** D1 Perfil (RF01). Displays verified email, rating, editable profile/vehicle fields and logout. */
 @Composable
 fun ProfileScreen(
     state: ProfileUiState,
@@ -104,35 +107,38 @@ fun ProfileScreen(
                 OfflineBanner(lastUpdatedAt = null)
             }
 
-            when {
-                state.isLoading && !state.hasLoadedUser -> LoadingState()
-                !state.hasLoadedUser && state.loadErrorRes != null -> {
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        ErrorState(
-                            title = stringResource(R.string.profile_empty_title),
-                            message = stringResource(state.loadErrorRes),
-                            onRetry = { onAction(ProfileAction.RetryLoad) },
-                            modifier = Modifier.weight(1f),
-                        )
-                        OutlinedButton(
-                            onClick = { onAction(ProfileAction.RequestLogout) },
-                            enabled = !state.isLoggingOut,
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error,
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(Dimens.ScreenPadding)
-                                .heightIn(min = Dimens.MinTouchTarget),
-                        ) {
-                            Text(stringResource(R.string.profile_logout_action))
-                        }
-                    }
-                }
-                else -> ProfileFormContent(
+            ContentStateHost(
+                state = state.content,
+                onRetry = { onAction(ProfileAction.RetryLoad) },
+                modifier = Modifier.weight(1f),
+                empty = {
+                    EmptyState(
+                        title = stringResource(R.string.profile_empty_title),
+                        message = stringResource(R.string.profile_empty_message),
+                    )
+                },
+            ) { data ->
+                ProfileFormContent(
+                    data = data,
                     state = state,
                     onAction = onAction,
                 )
+            }
+
+            if (state.content is ContentState.Error || state.content is ContentState.Empty) {
+                OutlinedButton(
+                    onClick = { onAction(ProfileAction.RequestLogout) },
+                    enabled = !state.isLoggingOut,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(Dimens.ScreenPadding)
+                        .heightIn(min = Dimens.MinTouchTarget),
+                ) {
+                    Text(stringResource(R.string.profile_logout_action))
+                }
             }
         }
     }
@@ -140,10 +146,12 @@ fun ProfileScreen(
 
 @Composable
 private fun ProfileFormContent(
+    data: ProfileData,
     state: ProfileUiState,
     onAction: (ProfileAction) -> Unit,
 ) {
     val enabled = !state.isSaving && !state.isLoggingOut
+    val form = data.form
 
     Column(
         modifier = Modifier
@@ -168,11 +176,11 @@ private fun ProfileFormContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = state.email,
+                    text = data.email,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                val ratingText = state.rating?.let { rating ->
+                val ratingText = data.rating?.let { rating ->
                     stringResource(
                         R.string.profile_rating_label,
                         formatRating(rating.average),
@@ -195,10 +203,10 @@ private fun ProfileFormContent(
         }
 
         LabeledTextField(
-            value = state.fullName,
+            value = form.fullName,
             onValueChange = { onAction(ProfileAction.FullNameChanged(it)) },
             label = stringResource(R.string.auth_field_full_name_label),
-            error = state.fullNameErrorRes?.let { stringResource(it) },
+            error = form.fullNameErrorRes?.let { stringResource(it) },
             enabled = enabled,
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Words,
@@ -207,10 +215,10 @@ private fun ProfileFormContent(
         )
 
         LabeledTextField(
-            value = state.career,
+            value = form.career,
             onValueChange = { onAction(ProfileAction.CareerChanged(it)) },
             label = stringResource(R.string.auth_field_career_label),
-            error = state.careerErrorRes?.let { stringResource(it) },
+            error = form.careerErrorRes?.let { stringResource(it) },
             enabled = enabled,
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Sentences,
@@ -219,11 +227,11 @@ private fun ProfileFormContent(
         )
 
         LabeledTextField(
-            value = state.phone,
+            value = form.phone,
             onValueChange = { onAction(ProfileAction.PhoneChanged(it)) },
             label = stringResource(R.string.auth_field_phone_label),
             supportingText = stringResource(R.string.auth_field_phone_supporting),
-            error = state.phoneErrorRes?.let { stringResource(it) },
+            error = form.phoneErrorRes?.let { stringResource(it) },
             enabled = enabled,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Phone,
@@ -234,27 +242,18 @@ private fun ProfileFormContent(
         SelectorField(
             label = stringResource(R.string.auth_field_preferred_mode_label),
             options = PreferredMode.entries,
-            selected = state.preferredMode,
+            selected = form.preferredMode,
             onSelected = { mode ->
                 if (mode != null) onAction(ProfileAction.PreferredModeChanged(mode))
             },
-            optionLabel = { stringResource(it.labelRes()) },
+            optionLabel = { stringResource(it.labelRes) },
             enabled = enabled,
         )
 
         HorizontalDivider(modifier = Modifier.padding(vertical = Dimens.SpaceS))
 
         VehicleFieldsSection(
-            hasVehicle = state.hasVehicle,
-            brand = state.vehicleBrand,
-            model = state.vehicleModel,
-            color = state.vehicleColor,
-            plate = state.vehiclePlate,
-            vehicleErrorRes = state.vehicleRequiredErrorRes,
-            brandErrorRes = state.vehicleBrandErrorRes,
-            modelErrorRes = state.vehicleModelErrorRes,
-            colorErrorRes = state.vehicleColorErrorRes,
-            plateErrorRes = state.vehiclePlateErrorRes,
+            form = form,
             enabled = enabled,
             onToggleHasVehicle = { onAction(ProfileAction.HasVehicleChanged(it)) },
             onBrandChange = { onAction(ProfileAction.VehicleBrandChanged(it)) },
@@ -292,19 +291,59 @@ private fun ProfileScreenPreview() {
     UniRideTheme {
         ProfileScreen(
             state = ProfileUiState(
-                hasLoadedUser = true,
-                isLoading = false,
-                email = "lfernandez@uade.edu.ar",
-                fullName = "Lucía Fernández",
-                career = "Ingeniería en Informática",
-                phone = "+5491155550001",
-                preferredMode = PreferredMode.AMBOS,
-                hasVehicle = true,
-                vehicleBrand = "Volkswagen",
-                vehicleModel = "Gol Trend",
-                vehicleColor = "Gris",
-                vehiclePlate = "AB123CD",
-                rating = Rating(4.8, 12),
+                content = ContentState.Success(
+                    ProfileData(
+                        email = "lfernandez@uade.edu.ar",
+                        rating = Rating(4.8, 12),
+                        form = ProfileForm(
+                            fullName = "Lucía Fernández",
+                            career = "Ingeniería en Informática",
+                            phone = "+5491155550001",
+                            preferredMode = PreferredMode.AMBOS,
+                            hasVehicle = true,
+                            vehicleBrand = "Volkswagen",
+                            vehicleModel = "Gol Trend",
+                            vehicleColor = "Gris",
+                            vehiclePlate = "AB123CD",
+                        ),
+                    ),
+                ),
+            ),
+            onAction = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProfileScreenLoadingPreview() {
+    UniRideTheme {
+        ProfileScreen(
+            state = ProfileUiState(content = ContentState.Loading),
+            onAction = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProfileScreenEmptyPreview() {
+    UniRideTheme {
+        ProfileScreen(
+            state = ProfileUiState(content = ContentState.Empty),
+            onAction = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProfileScreenErrorOfflinePreview() {
+    UniRideTheme {
+        ProfileScreen(
+            state = ProfileUiState(
+                content = ContentState.Error(R.string.common_error_no_connection),
+                isOffline = true,
             ),
             onAction = {},
         )

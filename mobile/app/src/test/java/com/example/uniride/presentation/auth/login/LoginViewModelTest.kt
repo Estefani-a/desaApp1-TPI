@@ -2,8 +2,8 @@ package com.example.uniride.presentation.auth.login
 
 import app.cash.turbine.test
 import com.example.uniride.R
-import com.example.uniride.core.result.AppResult
 import com.example.uniride.core.result.DataError
+import com.example.uniride.domain.repository.LoginOutcome
 import com.example.uniride.domain.usecase.auth.LoginUseCase
 import com.example.uniride.domain.usecase.connectivity.ObserveConnectivityUseCase
 import com.example.uniride.fake.FakeNetworkMonitor
@@ -62,14 +62,13 @@ class LoginViewModelTest {
     }
 
     @Test
-    fun `login con error UNAUTHORIZED muestra mensaje de credenciales invalidas`() = runTest {
+    fun `login con credenciales invalidas muestra error sin boton de reenvio`() = runTest {
         val sessionRepo = FakeSessionRepository().apply {
-            loginResult = AppResult.Failure(DataError.UNAUTHORIZED)
+            loginOutcome = LoginOutcome.InvalidCredentials
         }
-        val network = FakeNetworkMonitor(initialOnline = false)
         val vm = LoginViewModel(
             loginUseCase = LoginUseCase(sessionRepo),
-            observeConnectivity = ObserveConnectivityUseCase(network),
+            observeConnectivity = ObserveConnectivityUseCase(FakeNetworkMonitor(false)),
         )
 
         val collector = backgroundScope.launch { vm.uiState.collect {} }
@@ -79,8 +78,49 @@ class LoginViewModelTest {
 
         val state = vm.uiState.first()
         assertEquals(R.string.auth_login_invalid_credentials, state.generalErrorRes)
+        assertFalse(state.showResendActivation)
         assertFalse(state.isSubmitting)
         assertTrue(state.isOffline)
+        collector.cancel()
+    }
+
+    @Test
+    fun `login con cuenta pendiente muestra aviso y habilita reenvio de activacion`() = runTest {
+        val sessionRepo = FakeSessionRepository().apply {
+            loginOutcome = LoginOutcome.AccountNotActivated
+        }
+        val vm = LoginViewModel(
+            loginUseCase = LoginUseCase(sessionRepo),
+            observeConnectivity = ObserveConnectivityUseCase(FakeNetworkMonitor(true)),
+        )
+
+        val collector = backgroundScope.launch { vm.uiState.collect {} }
+        vm.onAction(LoginAction.EmailChanged("pendiente@uade.edu.ar"))
+        vm.onAction(LoginAction.PasswordChanged("Secreta123"))
+        vm.onAction(LoginAction.Submit)
+
+        val state = vm.uiState.first()
+        assertEquals(R.string.auth_login_account_not_activated, state.generalErrorRes)
+        assertTrue(state.showResendActivation)
+        collector.cancel()
+    }
+
+    @Test
+    fun `login propaga error de red en generalErrorRes`() = runTest {
+        val sessionRepo = FakeSessionRepository().apply {
+            loginOutcome = LoginOutcome.Failed(DataError.NO_CONNECTION)
+        }
+        val vm = LoginViewModel(
+            loginUseCase = LoginUseCase(sessionRepo),
+            observeConnectivity = ObserveConnectivityUseCase(FakeNetworkMonitor(false)),
+        )
+
+        val collector = backgroundScope.launch { vm.uiState.collect {} }
+        vm.onAction(LoginAction.EmailChanged("lfernandez@uade.edu.ar"))
+        vm.onAction(LoginAction.PasswordChanged("Secreta123"))
+        vm.onAction(LoginAction.Submit)
+
+        assertEquals(R.string.common_error_no_connection, vm.uiState.first().generalErrorRes)
         collector.cancel()
     }
 }

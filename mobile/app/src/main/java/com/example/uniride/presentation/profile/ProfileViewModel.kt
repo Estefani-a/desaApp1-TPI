@@ -4,18 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.uniride.R
 import com.example.uniride.core.result.AppResult
-import com.example.uniride.domain.model.PreferredMode
-import com.example.uniride.domain.model.Profile
 import com.example.uniride.domain.model.User
-import com.example.uniride.domain.model.Vehicle
 import com.example.uniride.domain.usecase.auth.LogoutUseCase
 import com.example.uniride.domain.usecase.connectivity.ObserveConnectivityUseCase
 import com.example.uniride.domain.usecase.profile.ObserveCurrentUserUseCase
 import com.example.uniride.domain.usecase.profile.RefreshProfileUseCase
 import com.example.uniride.domain.usecase.profile.UpdateProfileResult
 import com.example.uniride.domain.usecase.profile.UpdateProfileUseCase
-import com.example.uniride.domain.validation.ProfileValidationError
-import com.example.uniride.presentation.auth.components.firstMessageRes
+import com.example.uniride.presentation.common.ContentState
+import com.example.uniride.presentation.common.ProfileForm
 import com.example.uniride.presentation.common.messageRes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +24,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** Profile and logout ViewModel (RF01). Reads cached user from Room and refreshes in background. */
+/** D1 Perfil ViewModel (RF01). Reads cached user from Room and refreshes in background. */
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val observeCurrentUserUseCase: ObserveCurrentUserUseCase,
@@ -58,46 +55,32 @@ class ProfileViewModel @Inject constructor(
 
     fun onAction(action: ProfileAction) {
         when (action) {
-            is ProfileAction.FullNameChanged -> edit {
-                it.copy(fullName = action.value, fullNameErrorRes = null, feedbackMessageRes = null)
+            is ProfileAction.FullNameChanged -> editForm {
+                it.copy(fullName = action.value, fullNameErrorRes = null)
             }
-            is ProfileAction.CareerChanged -> edit {
-                it.copy(career = action.value, careerErrorRes = null, feedbackMessageRes = null)
+            is ProfileAction.CareerChanged -> editForm {
+                it.copy(career = action.value, careerErrorRes = null)
             }
-            is ProfileAction.PhoneChanged -> edit {
-                it.copy(phone = action.value, phoneErrorRes = null, feedbackMessageRes = null)
+            is ProfileAction.PhoneChanged -> editForm {
+                it.copy(phone = action.value, phoneErrorRes = null)
             }
-            is ProfileAction.PreferredModeChanged -> edit {
-                val shouldSuggestVehicle = action.mode != PreferredMode.PASAJERO
-                it.copy(
-                    preferredMode = action.mode,
-                    hasVehicle = if (shouldSuggestVehicle) true else it.hasVehicle,
-                    vehicleRequiredErrorRes = null,
-                    feedbackMessageRes = null,
-                )
+            is ProfileAction.PreferredModeChanged -> editForm {
+                it.withPreferredMode(action.mode)
             }
-            is ProfileAction.HasVehicleChanged -> edit {
-                it.copy(
-                    hasVehicle = action.enabled,
-                    vehicleRequiredErrorRes = null,
-                    vehicleBrandErrorRes = null,
-                    vehicleModelErrorRes = null,
-                    vehicleColorErrorRes = null,
-                    vehiclePlateErrorRes = null,
-                    feedbackMessageRes = null,
-                )
+            is ProfileAction.HasVehicleChanged -> editForm {
+                it.withHasVehicle(action.enabled)
             }
-            is ProfileAction.VehicleBrandChanged -> edit {
-                it.copy(vehicleBrand = action.value, vehicleBrandErrorRes = null, feedbackMessageRes = null)
+            is ProfileAction.VehicleBrandChanged -> editForm {
+                it.copy(vehicleBrand = action.value, vehicleBrandErrorRes = null)
             }
-            is ProfileAction.VehicleModelChanged -> edit {
-                it.copy(vehicleModel = action.value, vehicleModelErrorRes = null, feedbackMessageRes = null)
+            is ProfileAction.VehicleModelChanged -> editForm {
+                it.copy(vehicleModel = action.value, vehicleModelErrorRes = null)
             }
-            is ProfileAction.VehicleColorChanged -> edit {
-                it.copy(vehicleColor = action.value, vehicleColorErrorRes = null, feedbackMessageRes = null)
+            is ProfileAction.VehicleColorChanged -> editForm {
+                it.copy(vehicleColor = action.value, vehicleColorErrorRes = null)
             }
-            is ProfileAction.VehiclePlateChanged -> edit {
-                it.copy(vehiclePlate = action.value, vehiclePlateErrorRes = null, feedbackMessageRes = null)
+            is ProfileAction.VehiclePlateChanged -> editForm {
+                it.copy(vehiclePlate = action.value, vehiclePlateErrorRes = null)
             }
             ProfileAction.Save -> save()
             ProfileAction.RetryLoad -> refresh()
@@ -107,9 +90,15 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    private fun edit(transform: (ProfileUiState) -> ProfileUiState) {
+    private fun editForm(transform: (ProfileForm) -> ProfileForm) {
         hasUnsavedEdits = true
-        formState.update(transform)
+        formState.update { state ->
+            val current = state.content as? ContentState.Success ?: return@update state
+            state.copy(
+                content = ContentState.Success(current.data.copy(form = transform(current.data.form))),
+                feedbackMessageRes = null,
+            )
+        }
     }
 
     private fun observeUser() {
@@ -123,84 +112,61 @@ class ProfileViewModel @Inject constructor(
     }
 
     private fun applyUser(user: User) {
-        formState.update { current ->
-            if (hasUnsavedEdits && current.hasLoadedUser) {
+        formState.update { state ->
+            val existing = state.content as? ContentState.Success
+            val nextData = if (hasUnsavedEdits && existing != null) {
                 // Keep user's in-progress edits while refreshing read-only fields.
-                current.copy(
-                    hasLoadedUser = true,
-                    isLoading = false,
-                    loadErrorRes = null,
+                existing.data.copy(
                     email = user.email,
                     rating = user.rating,
                 )
             } else {
-                current.copy(
-                    hasLoadedUser = true,
-                    isLoading = false,
-                    loadErrorRes = null,
+                ProfileData(
                     email = user.email,
-                    fullName = user.profile.fullName,
-                    career = user.profile.career,
-                    phone = user.profile.phone,
-                    preferredMode = user.profile.preferredMode,
-                    hasVehicle = user.profile.vehicle != null,
-                    vehicleBrand = user.profile.vehicle?.brand.orEmpty(),
-                    vehicleModel = user.profile.vehicle?.model.orEmpty(),
-                    vehicleColor = user.profile.vehicle?.color.orEmpty(),
-                    vehiclePlate = user.profile.vehicle?.plate.orEmpty(),
                     rating = user.rating,
+                    form = ProfileForm.fromProfile(user.profile),
                 )
             }
+            state.copy(content = ContentState.Success(nextData))
         }
     }
 
     private fun refresh() {
-        formState.update { it.copy(isLoading = !it.hasLoadedUser, loadErrorRes = null) }
+        formState.update { state ->
+            if (state.content is ContentState.Success) state else state.copy(content = ContentState.Loading)
+        }
         viewModelScope.launch {
             when (val result = refreshProfileUseCase()) {
-                is AppResult.Success -> formState.update { it.copy(isLoading = false, loadErrorRes = null) }
-                is AppResult.Failure -> formState.update { current ->
-                    current.copy(
-                        isLoading = false,
-                        loadErrorRes = if (!current.hasLoadedUser) result.error.messageRes() else null,
-                    )
+                is AppResult.Success -> formState.update { state ->
+                    if (state.content is ContentState.Success) state else state.copy(content = ContentState.Empty)
+                }
+                is AppResult.Failure -> formState.update { state ->
+                    if (state.content is ContentState.Success) {
+                        state
+                    } else {
+                        state.copy(
+                            content = ContentState.Error(
+                                messageRes = result.error.messageRes(),
+                                canRetry = true,
+                            ),
+                        )
+                    }
                 }
             }
         }
     }
 
     private fun save() {
-        val current = formState.value
-        if (current.isSaving || current.isLoggingOut) return
+        val currentState = formState.value
+        if (currentState.isSaving || currentState.isLoggingOut) return
+        val currentData = (currentState.content as? ContentState.Success)?.data ?: return
 
-        val profile = Profile(
-            fullName = current.fullName,
-            career = current.career,
-            phone = current.phone,
-            preferredMode = current.preferredMode,
-            vehicle = if (current.hasVehicle) {
-                Vehicle(
-                    brand = current.vehicleBrand,
-                    model = current.vehicleModel,
-                    color = current.vehicleColor,
-                    plate = current.vehiclePlate,
-                )
-            } else {
-                null
-            },
-        )
-
-        formState.update {
-            it.copy(
+        val profile = currentData.form.toProfile()
+        formState.update { state ->
+            val data = (state.content as? ContentState.Success)?.data ?: return@update state
+            state.copy(
+                content = ContentState.Success(data.copy(form = data.form.clearErrors())),
                 isSaving = true,
-                fullNameErrorRes = null,
-                careerErrorRes = null,
-                phoneErrorRes = null,
-                vehicleRequiredErrorRes = null,
-                vehicleBrandErrorRes = null,
-                vehicleModelErrorRes = null,
-                vehicleColorErrorRes = null,
-                vehiclePlateErrorRes = null,
                 feedbackMessageRes = null,
             )
         }
@@ -217,27 +183,14 @@ class ProfileViewModel @Inject constructor(
                         )
                     }
                 }
-                is UpdateProfileResult.Invalid -> {
-                    val errors = result.errors
-                    formState.update {
-                        it.copy(
-                            isSaving = false,
-                            fullNameErrorRes = errors.firstMessageRes(ProfileValidationError.FULL_NAME_BLANK),
-                            careerErrorRes = errors.firstMessageRes(ProfileValidationError.CAREER_BLANK),
-                            phoneErrorRes = errors.firstMessageRes(
-                                ProfileValidationError.PHONE_BLANK,
-                                ProfileValidationError.PHONE_INVALID,
-                            ),
-                            vehicleRequiredErrorRes = errors.firstMessageRes(ProfileValidationError.VEHICLE_REQUIRED),
-                            vehicleBrandErrorRes = errors.firstMessageRes(ProfileValidationError.VEHICLE_BRAND_BLANK),
-                            vehicleModelErrorRes = errors.firstMessageRes(ProfileValidationError.VEHICLE_MODEL_BLANK),
-                            vehicleColorErrorRes = errors.firstMessageRes(ProfileValidationError.VEHICLE_COLOR_BLANK),
-                            vehiclePlateErrorRes = errors.firstMessageRes(
-                                ProfileValidationError.VEHICLE_PLATE_BLANK,
-                                ProfileValidationError.VEHICLE_PLATE_INVALID,
-                            ),
-                        )
-                    }
+                is UpdateProfileResult.Invalid -> formState.update { state ->
+                    val data = (state.content as? ContentState.Success)?.data
+                    state.copy(
+                        content = data?.let {
+                            ContentState.Success(it.copy(form = it.form.withErrors(result.errors)))
+                        } ?: state.content,
+                        isSaving = false,
+                    )
                 }
                 is UpdateProfileResult.Failed -> formState.update {
                     it.copy(

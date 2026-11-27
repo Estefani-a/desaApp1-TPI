@@ -67,18 +67,7 @@
     <string name="nav_mode_driver">Conductor</string>
     <string name="nav_mode_selector_description">Modo de uso</string>
 
-    <!-- Placeholders de G3: cada RF los reemplaza por su pantalla -->
-    <string name="placeholder_message">Pantalla en construcción</string>
-    <string name="placeholder_action_login">Iniciar sesión</string>
-    <string name="placeholder_action_register">Crear cuenta</string>
-    <string name="placeholder_action_enter">Entrar</string>
-    <string name="placeholder_action_forgot_password">Olvidé mi contraseña</string>
-    <string name="placeholder_action_create_account">Registrarme</string>
-    <string name="placeholder_action_trip_detail">Ver detalle de un viaje</string>
-    <string name="placeholder_action_logout">Cerrar sesión</string>
-
     <!-- Auth (RF01) -->
-    <string name="auth_welcome_title">Bienvenida</string>
     <string name="auth_welcome_headline">Compartí tu viaje a UADE</string>
     <string name="auth_welcome_subtitle">Conectá con estudiantes verificados de tu misma sede para ir y volver de cursar gastando menos.</string>
     <string name="auth_welcome_badge">Comunidad exclusiva @uade.edu.ar</string>
@@ -89,7 +78,9 @@
     <string name="auth_login_submit">Iniciar sesión</string>
     <string name="auth_login_forgot_password">¿Olvidaste tu contraseña?</string>
     <string name="auth_login_no_account">¿Todavía no tenés cuenta? Registrate</string>
-    <string name="auth_login_invalid_credentials">Correo o contraseña incorrectos, o la cuenta todavía no fue activada.</string>
+    <string name="auth_login_invalid_credentials">Correo o contraseña incorrectos.</string>
+    <string name="auth_login_account_not_activated">Tu cuenta todavía no fue activada. Revisá tu correo @uade.edu.ar para activarla.</string>
+    <string name="auth_login_resend_activation">Reenviar correo de activación</string>
     <string name="auth_register_title">Crear cuenta</string>
     <string name="auth_register_subtitle">Solo necesitás tu correo @uade.edu.ar para sumarte.</string>
     <string name="auth_register_submit">Crear cuenta</string>
@@ -153,10 +144,12 @@
     <string name="auth_reset_password_subtitle">Elegí una nueva contraseña para tu cuenta UADE.</string>
     <string name="auth_reset_password_submit">Guardar nueva contraseña</string>
     <string name="auth_reset_password_invalid_token">El enlace venció o ya fue usado. Pedí uno nuevo desde Recuperar contraseña.</string>
+    <string name="auth_reset_password_weak_server">La contraseña no cumple con los requisitos de seguridad.</string>
     <string name="auth_reset_password_success_title">Contraseña actualizada</string>
     <string name="auth_reset_password_success_message">Ya podés iniciar sesión con tu nueva contraseña.</string>
     <string name="auth_activate_title">Activar cuenta</string>
     <string name="auth_activate_loading">Activando tu cuenta…</string>
+    <string name="auth_activate_success">Cuenta activada. Ingresando…</string>
     <string name="auth_activate_invalid_token">El enlace de activación venció o ya fue utilizado.</string>
     <string name="auth_activate_go_login">Ir a iniciar sesión</string>
 

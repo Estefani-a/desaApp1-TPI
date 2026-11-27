@@ -2,6 +2,7 @@ package com.example.uniride.presentation.auth.register
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -28,15 +29,16 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.uniride.R
 import com.example.uniride.domain.model.PreferredMode
-import com.example.uniride.presentation.auth.components.InlineFeedbackBanner
 import com.example.uniride.presentation.auth.components.PasswordTextField
-import com.example.uniride.presentation.auth.components.VehicleFieldsSection
-import com.example.uniride.presentation.auth.components.labelRes
+import com.example.uniride.presentation.common.InlineFeedbackBanner
 import com.example.uniride.presentation.common.LabeledTextField
 import com.example.uniride.presentation.common.OfflineBanner
 import com.example.uniride.presentation.common.PrimaryButton
+import com.example.uniride.presentation.common.ProfileForm
 import com.example.uniride.presentation.common.SelectorField
 import com.example.uniride.presentation.common.UniRideTopBar
+import com.example.uniride.presentation.common.VehicleFieldsSection
+import com.example.uniride.presentation.common.labelRes
 import com.example.uniride.presentation.theme.Dimens
 import com.example.uniride.presentation.theme.UniRideTheme
 
@@ -65,6 +67,7 @@ fun RegisterRoute(
     )
 }
 
+/** A3 Registro (RF01). Institutional UADE sign-up form with optional vehicle details. */
 @Composable
 fun RegisterScreen(
     state: RegisterUiState,
@@ -74,6 +77,7 @@ fun RegisterScreen(
     modifier: Modifier = Modifier,
 ) {
     val enabled = !state.isSubmitting
+    val profile = state.profile
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -81,6 +85,7 @@ fun RegisterScreen(
             UniRideTopBar(
                 title = stringResource(R.string.auth_register_title),
                 onBack = onBack,
+                windowInsets = WindowInsets(0),
             )
         },
     ) { innerPadding ->
@@ -150,10 +155,10 @@ fun RegisterScreen(
                 HorizontalDivider(modifier = Modifier.padding(vertical = Dimens.SpaceS))
 
                 LabeledTextField(
-                    value = state.fullName,
+                    value = profile.fullName,
                     onValueChange = { onAction(RegisterAction.FullNameChanged(it)) },
                     label = stringResource(R.string.auth_field_full_name_label),
-                    error = state.fullNameErrorRes?.let { stringResource(it) },
+                    error = profile.fullNameErrorRes?.let { stringResource(it) },
                     enabled = enabled,
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Words,
@@ -162,10 +167,10 @@ fun RegisterScreen(
                 )
 
                 LabeledTextField(
-                    value = state.career,
+                    value = profile.career,
                     onValueChange = { onAction(RegisterAction.CareerChanged(it)) },
                     label = stringResource(R.string.auth_field_career_label),
-                    error = state.careerErrorRes?.let { stringResource(it) },
+                    error = profile.careerErrorRes?.let { stringResource(it) },
                     enabled = enabled,
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences,
@@ -174,11 +179,11 @@ fun RegisterScreen(
                 )
 
                 LabeledTextField(
-                    value = state.phone,
+                    value = profile.phone,
                     onValueChange = { onAction(RegisterAction.PhoneChanged(it)) },
                     label = stringResource(R.string.auth_field_phone_label),
                     supportingText = stringResource(R.string.auth_field_phone_supporting),
-                    error = state.phoneErrorRes?.let { stringResource(it) },
+                    error = profile.phoneErrorRes?.let { stringResource(it) },
                     enabled = enabled,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Phone,
@@ -189,27 +194,18 @@ fun RegisterScreen(
                 SelectorField(
                     label = stringResource(R.string.auth_field_preferred_mode_label),
                     options = PreferredMode.entries,
-                    selected = state.preferredMode,
+                    selected = profile.preferredMode,
                     onSelected = { mode ->
                         if (mode != null) onAction(RegisterAction.PreferredModeChanged(mode))
                     },
-                    optionLabel = { stringResource(it.labelRes()) },
+                    optionLabel = { stringResource(it.labelRes) },
                     enabled = enabled,
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = Dimens.SpaceS))
 
                 VehicleFieldsSection(
-                    hasVehicle = state.hasVehicle,
-                    brand = state.vehicleBrand,
-                    model = state.vehicleModel,
-                    color = state.vehicleColor,
-                    plate = state.vehiclePlate,
-                    vehicleErrorRes = state.vehicleRequiredErrorRes,
-                    brandErrorRes = state.vehicleBrandErrorRes,
-                    modelErrorRes = state.vehicleModelErrorRes,
-                    colorErrorRes = state.vehicleColorErrorRes,
-                    plateErrorRes = state.vehiclePlateErrorRes,
+                    form = profile,
                     enabled = enabled,
                     onToggleHasVehicle = { onAction(RegisterAction.HasVehicleChanged(it)) },
                     onBrandChange = { onAction(RegisterAction.VehicleBrandChanged(it)) },
@@ -246,10 +242,34 @@ private fun RegisterScreenPreview() {
         RegisterScreen(
             state = RegisterUiState(
                 email = "jperez@uade.edu.ar",
-                fullName = "Juan Pérez",
-                career = "Ingeniería en Informática",
-                preferredMode = PreferredMode.AMBOS,
-                hasVehicle = true,
+                profile = ProfileForm(
+                    fullName = "Juan Pérez",
+                    career = "Ingeniería en Informática",
+                    preferredMode = PreferredMode.AMBOS,
+                    hasVehicle = true,
+                ),
+            ),
+            onAction = {},
+            onBack = {},
+            onLoginClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RegisterScreenErrorOfflinePreview() {
+    UniRideTheme {
+        RegisterScreen(
+            state = RegisterUiState(
+                email = "jperez@gmail.com",
+                emailErrorRes = R.string.auth_error_email_domain,
+                generalErrorRes = R.string.auth_register_email_exists,
+                profile = ProfileForm(
+                    preferredMode = PreferredMode.CONDUCTOR,
+                    vehicleRequiredErrorRes = R.string.auth_error_vehicle_required,
+                ),
+                isOffline = true,
             ),
             onAction = {},
             onBack = {},

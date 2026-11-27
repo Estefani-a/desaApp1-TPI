@@ -1,11 +1,9 @@
 package com.example.uniride.presentation.auth.activate
 
-import androidx.annotation.StringRes
+import com.example.uniride.presentation.common.ContentState
 
 data class ActivateAccountUiState(
-    val isLoading: Boolean = true,
-    @param:StringRes val errorMessageRes: Int? = null,
-    val canRetry: Boolean = false,
+    val content: ContentState<Unit> = ContentState.Loading,
 )
 
 sealed interface ActivateAccountAction {

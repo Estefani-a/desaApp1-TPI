@@ -3,12 +3,10 @@ package com.example.uniride.presentation.auth.checkemail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.example.uniride.R
 import com.example.uniride.domain.usecase.auth.ResendActivationResult
 import com.example.uniride.domain.usecase.auth.ResendActivationUseCase
 import com.example.uniride.domain.usecase.connectivity.ObserveConnectivityUseCase
-import com.example.uniride.presentation.auth.CheckEmailRoute
 import com.example.uniride.presentation.auth.components.messageRes
 import com.example.uniride.presentation.common.messageRes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,7 +19,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** "Revisá tu correo" screen ViewModel (RF01). */
+/** A4 "Revisá tu correo" screen ViewModel (RF01). */
 @HiltViewModel
 class CheckEmailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
@@ -29,11 +27,7 @@ class CheckEmailViewModel @Inject constructor(
     observeConnectivity: ObserveConnectivityUseCase,
 ) : ViewModel() {
 
-    private val initialEmail: String = runCatching {
-        savedStateHandle.toRoute<CheckEmailRoute>().email
-    }.getOrElse {
-        savedStateHandle.get<String>("email").orEmpty()
-    }
+    private val initialEmail: String = savedStateHandle.get<String>(EMAIL_KEY).orEmpty()
 
     private val formState = MutableStateFlow(CheckEmailUiState(email = initialEmail))
 
@@ -86,5 +80,9 @@ class CheckEmailViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    companion object {
+        const val EMAIL_KEY = "email"
     }
 }

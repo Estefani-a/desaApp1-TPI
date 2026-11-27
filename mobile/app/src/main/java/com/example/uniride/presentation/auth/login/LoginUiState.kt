@@ -8,6 +8,7 @@ data class LoginUiState(
     @param:StringRes val emailErrorRes: Int? = null,
     @param:StringRes val passwordErrorRes: Int? = null,
     @param:StringRes val generalErrorRes: Int? = null,
+    val showResendActivation: Boolean = false,
     val isSubmitting: Boolean = false,
     val isOffline: Boolean = false,
 )

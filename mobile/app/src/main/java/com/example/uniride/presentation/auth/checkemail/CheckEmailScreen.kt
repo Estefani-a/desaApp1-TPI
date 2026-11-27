@@ -2,6 +2,7 @@ package com.example.uniride.presentation.auth.checkemail
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -28,7 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.uniride.R
-import com.example.uniride.presentation.auth.components.InlineFeedbackBanner
+import com.example.uniride.presentation.common.InlineFeedbackBanner
 import com.example.uniride.presentation.common.LabeledTextField
 import com.example.uniride.presentation.common.OfflineBanner
 import com.example.uniride.presentation.common.PrimaryButton
@@ -52,6 +53,7 @@ fun CheckEmailRoute(
     )
 }
 
+/** A4 Revisá tu correo (RF01). Instructs the student to open the activation link and allows resending it. */
 @Composable
 fun CheckEmailScreen(
     state: CheckEmailUiState,
@@ -66,6 +68,7 @@ fun CheckEmailScreen(
             UniRideTopBar(
                 title = stringResource(R.string.auth_check_email_title),
                 onBack = onBack,
+                windowInsets = WindowInsets(0),
             )
         },
     ) { innerPadding ->
@@ -157,6 +160,24 @@ private fun CheckEmailScreenPreview() {
     UniRideTheme {
         CheckEmailScreen(
             state = CheckEmailUiState(email = "jperez@uade.edu.ar"),
+            onAction = {},
+            onBack = {},
+            onGoToLogin = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun CheckEmailScreenResentOfflinePreview() {
+    UniRideTheme {
+        CheckEmailScreen(
+            state = CheckEmailUiState(
+                email = "jperez@uade.edu.ar",
+                feedbackMessageRes = R.string.auth_check_email_resent,
+                isFeedbackError = false,
+                isOffline = true,
+            ),
             onAction = {},
             onBack = {},
             onGoToLogin = {},

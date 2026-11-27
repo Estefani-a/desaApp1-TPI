@@ -59,9 +59,9 @@ class NavigationTest {
                     // Screens with Hilt ViewModels are swapped because this test has no Hilt
                     passengerHome = { _, _ -> },
                     driverHome = { _, _ -> },
-                    loginContent = { _, _, _, onLoginSuccess ->
+                    loginContent = { _, _, _, _, onLoginSuccess ->
                         Button(onClick = onLoginSuccess) {
-                            Text(stringResource(R.string.placeholder_action_enter))
+                            Text(stringResource(R.string.auth_login_submit))
                         }
                     },
                     profileContent = {
@@ -86,7 +86,7 @@ class NavigationTest {
 
     private fun login() {
         click(R.string.auth_welcome_login_action)
-        click(R.string.placeholder_action_enter)
+        click(R.string.auth_login_submit)
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.example.uniride.presentation.auth.login
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -11,6 +12,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -26,8 +28,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.uniride.R
-import com.example.uniride.presentation.auth.components.InlineFeedbackBanner
 import com.example.uniride.presentation.auth.components.PasswordTextField
+import com.example.uniride.presentation.common.InlineFeedbackBanner
 import com.example.uniride.presentation.common.LabeledTextField
 import com.example.uniride.presentation.common.OfflineBanner
 import com.example.uniride.presentation.common.PrimaryButton
@@ -40,6 +42,7 @@ fun LoginRoute(
     onBack: () -> Unit,
     onForgotPasswordClick: () -> Unit,
     onRegisterClick: () -> Unit,
+    onResendActivationClick: (email: String) -> Unit,
     onLoginSuccess: () -> Unit,
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
@@ -59,9 +62,11 @@ fun LoginRoute(
         onBack = onBack,
         onForgotPasswordClick = onForgotPasswordClick,
         onRegisterClick = onRegisterClick,
+        onResendActivationClick = { onResendActivationClick(state.email.trim()) },
     )
 }
 
+/** A2 Login (RF01). Institutional email and password sign-in with activation resend shortcut. */
 @Composable
 fun LoginScreen(
     state: LoginUiState,
@@ -69,6 +74,7 @@ fun LoginScreen(
     onBack: () -> Unit,
     onForgotPasswordClick: () -> Unit,
     onRegisterClick: () -> Unit,
+    onResendActivationClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -77,6 +83,7 @@ fun LoginScreen(
             UniRideTopBar(
                 title = stringResource(R.string.auth_login_title),
                 onBack = onBack,
+                windowInsets = WindowInsets(0),
             )
         },
     ) { innerPadding ->
@@ -107,6 +114,18 @@ fun LoginScreen(
                         message = stringResource(errorRes),
                         isError = true,
                     )
+                }
+
+                if (state.showResendActivation) {
+                    OutlinedButton(
+                        onClick = onResendActivationClick,
+                        enabled = !state.isSubmitting,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = Dimens.MinTouchTarget),
+                    ) {
+                        Text(stringResource(R.string.auth_login_resend_activation))
+                    }
                 }
 
                 LabeledTextField(
@@ -173,13 +192,14 @@ private fun LoginScreenPreview() {
             onBack = {},
             onForgotPasswordClick = {},
             onRegisterClick = {},
+            onResendActivationClick = {},
         )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun LoginScreenErrorPreview() {
+private fun LoginScreenErrorOfflinePreview() {
     UniRideTheme {
         LoginScreen(
             state = LoginUiState(
@@ -191,6 +211,26 @@ private fun LoginScreenErrorPreview() {
             onBack = {},
             onForgotPasswordClick = {},
             onRegisterClick = {},
+            onResendActivationClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LoginScreenNotActivatedPreview() {
+    UniRideTheme {
+        LoginScreen(
+            state = LoginUiState(
+                email = "jperez@uade.edu.ar",
+                generalErrorRes = R.string.auth_login_account_not_activated,
+                showResendActivation = true,
+            ),
+            onAction = {},
+            onBack = {},
+            onForgotPasswordClick = {},
+            onRegisterClick = {},
+            onResendActivationClick = {},
         )
     }
 }

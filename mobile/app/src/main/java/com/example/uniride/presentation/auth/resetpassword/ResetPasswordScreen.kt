@@ -2,6 +2,7 @@ package com.example.uniride.presentation.auth.resetpassword
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -25,8 +26,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.uniride.R
-import com.example.uniride.presentation.auth.components.InlineFeedbackBanner
 import com.example.uniride.presentation.auth.components.PasswordTextField
+import com.example.uniride.presentation.common.InlineFeedbackBanner
 import com.example.uniride.presentation.common.OfflineBanner
 import com.example.uniride.presentation.common.PrimaryButton
 import com.example.uniride.presentation.common.UniRideTopBar
@@ -47,6 +48,7 @@ fun ResetPasswordRoute(
     )
 }
 
+/** A7 Nueva contraseña (RF01). Sets a new password using the deep link reset token. */
 @Composable
 fun ResetPasswordScreen(
     state: ResetPasswordUiState,
@@ -57,7 +59,10 @@ fun ResetPasswordScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            UniRideTopBar(title = stringResource(R.string.auth_reset_password_title))
+            UniRideTopBar(
+                title = stringResource(R.string.auth_reset_password_title),
+                windowInsets = WindowInsets(0),
+            )
         },
     ) { innerPadding ->
         Column(
@@ -159,6 +164,22 @@ private fun ResetPasswordScreenPreview() {
     UniRideTheme {
         ResetPasswordScreen(
             state = ResetPasswordUiState(),
+            onAction = {},
+            onGoToLogin = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ResetPasswordErrorOfflinePreview() {
+    UniRideTheme {
+        ResetPasswordScreen(
+            state = ResetPasswordUiState(
+                generalErrorRes = R.string.auth_reset_password_invalid_token,
+                passwordErrorRes = R.string.auth_error_password_short,
+                isOffline = true,
+            ),
             onAction = {},
             onGoToLogin = {},
         )

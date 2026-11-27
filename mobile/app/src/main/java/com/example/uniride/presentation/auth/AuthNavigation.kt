@@ -28,22 +28,23 @@ data object WelcomeRoute
 @Serializable
 data object LoginRoute
 
+/** A3 Registro. */
 @Serializable
 data object RegisterRoute
 
-/** "Revisá tu correo" after registering. */
+/** A4 Revisá tu correo after registering or when resending activation (CONVENCIONES §7.6). */
 @Serializable
 data class CheckEmailRoute(val email: String = "")
 
-/** Asks for the email to send the reset link. */
+/** A6 Recuperar contraseña: asks for the email to send the reset link. */
 @Serializable
 data object ForgotPasswordRoute
 
-/** New password. Opened from the reset link of the email, which brings [resetCode] (docs/API.md §8). */
+/** A7 Nueva contraseña. Opened from the reset link of the email, which brings [resetCode] (docs/API.md §8). */
 @Serializable
 data class ResetPasswordRoute(val resetCode: String)
 
-/** Opened from the activation link of the email, which brings [activationCode] (docs/API.md §8). */
+/** A5 Activar cuenta. Opened from the activation link of the email, which brings [activationCode] (docs/API.md §8). */
 @Serializable
 data class ActivateAccountRoute(val activationCode: String)
 
@@ -55,17 +56,20 @@ typealias LoginContent = @Composable (
     onBack: () -> Unit,
     onForgotPasswordClick: () -> Unit,
     onRegisterClick: () -> Unit,
+    onResendActivationClick: (email: String) -> Unit,
     onLoginSuccess: () -> Unit,
 ) -> Unit
 
-val DefaultLoginContent: LoginContent = { onBack, onForgotPasswordClick, onRegisterClick, onLoginSuccess ->
-    LoginScreenRoute(
-        onBack = onBack,
-        onForgotPasswordClick = onForgotPasswordClick,
-        onRegisterClick = onRegisterClick,
-        onLoginSuccess = onLoginSuccess,
-    )
-}
+val DefaultLoginContent: LoginContent =
+    { onBack, onForgotPasswordClick, onRegisterClick, onResendActivationClick, onLoginSuccess ->
+        LoginScreenRoute(
+            onBack = onBack,
+            onForgotPasswordClick = onForgotPasswordClick,
+            onRegisterClick = onRegisterClick,
+            onResendActivationClick = onResendActivationClick,
+            onLoginSuccess = onLoginSuccess,
+        )
+    }
 
 fun NavGraphBuilder.authGraph(
     navController: NavController,
@@ -83,6 +87,7 @@ fun NavGraphBuilder.authGraph(
                 { navController.popBackStack() },
                 { navController.navigate(ForgotPasswordRoute) },
                 { navController.navigate(RegisterRoute) },
+                { email -> navController.navigate(CheckEmailRoute(email = email)) },
                 { navController.navigateToMain() },
             )
         }
@@ -90,8 +95,11 @@ fun NavGraphBuilder.authGraph(
             RegisterScreenRoute(
                 onBack = { navController.popBackStack() },
                 onLoginClick = {
-                    navController.navigate(LoginRoute) {
-                        popUpTo<RegisterRoute> { inclusive = true }
+                    if (!navController.popBackStack<LoginRoute>(inclusive = false)) {
+                        navController.navigate(LoginRoute) {
+                            popUpTo<RegisterRoute> { inclusive = true }
+                            launchSingleTop = true
+                        }
                     }
                 },
                 onRegistered = { email ->
@@ -107,6 +115,7 @@ fun NavGraphBuilder.authGraph(
                 onGoToLogin = {
                     navController.navigate(LoginRoute) {
                         popUpTo<WelcomeRoute>()
+                        launchSingleTop = true
                     }
                 },
             )
@@ -125,7 +134,8 @@ fun NavGraphBuilder.authGraph(
             ResetPasswordScreenRoute(
                 onGoToLogin = {
                     navController.navigate(LoginRoute) {
-                        popUpTo<AuthGraphRoute> { inclusive = false }
+                        popUpTo<WelcomeRoute>()
+                        launchSingleTop = true
                     }
                 },
             )
@@ -139,7 +149,8 @@ fun NavGraphBuilder.authGraph(
                 onActivated = { navController.navigateToMain() },
                 onGoToLogin = {
                     navController.navigate(LoginRoute) {
-                        popUpTo<AuthGraphRoute> { inclusive = false }
+                        popUpTo<WelcomeRoute>()
+                        launchSingleTop = true
                     }
                 },
             )

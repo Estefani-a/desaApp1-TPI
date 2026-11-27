@@ -2,6 +2,7 @@ package com.example.uniride.presentation.auth.resetpassword
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -27,7 +28,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.uniride.R
-import com.example.uniride.presentation.auth.components.InlineFeedbackBanner
+import com.example.uniride.presentation.common.InlineFeedbackBanner
 import com.example.uniride.presentation.common.LabeledTextField
 import com.example.uniride.presentation.common.OfflineBanner
 import com.example.uniride.presentation.common.PrimaryButton
@@ -51,6 +52,7 @@ fun ForgotPasswordRoute(
     )
 }
 
+/** A6 Recuperar contraseña (RF01). Requests a password reset email without disclosing account existence. */
 @Composable
 fun ForgotPasswordScreen(
     state: ForgotPasswordUiState,
@@ -65,6 +67,7 @@ fun ForgotPasswordScreen(
             UniRideTopBar(
                 title = stringResource(R.string.auth_forgot_password_title),
                 onBack = onBack,
+                windowInsets = WindowInsets(0),
             )
         },
     ) { innerPadding ->
@@ -162,6 +165,23 @@ private fun ForgotPasswordScreenPreview() {
     UniRideTheme {
         ForgotPasswordScreen(
             state = ForgotPasswordUiState(email = "lfernandez@uade.edu.ar"),
+            onAction = {},
+            onBack = {},
+            onBackToLogin = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ForgotPasswordErrorOfflinePreview() {
+    UniRideTheme {
+        ForgotPasswordScreen(
+            state = ForgotPasswordUiState(
+                email = "lfernandez@gmail.com",
+                emailErrorRes = R.string.auth_error_email_domain,
+                isOffline = true,
+            ),
             onAction = {},
             onBack = {},
             onBackToLogin = {},
