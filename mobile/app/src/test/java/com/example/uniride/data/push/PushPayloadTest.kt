@@ -4,6 +4,7 @@ import com.example.uniride.domain.model.NotificationType
 import com.example.uniride.domain.model.TripId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -16,7 +17,6 @@ class PushPayloadTest {
                 PushPayload.KEY_TYPE to "SOLICITUD_ACEPTADA",
                 PushPayload.KEY_NOTIFICATION_ID to "e1f4b7a0-2c5d-4e8f-9b3a-6d0c1e4f7a29",
                 PushPayload.KEY_TRIP_ID to "0b7c4f0e-5d1a-4f5a-8a52-7c9e5e0d2b31",
-                PushPayload.KEY_RESERVATION_ID to "c3d9a8e2-7f41-4e0b-b1a6-5f2e9c4d8a17",
                 PushPayload.KEY_TITLE to "¡Tenés lugar!",
                 PushPayload.KEY_BODY to "Lucía F. aceptó tu solicitud para el viaje de las 22:15.",
             ),
@@ -25,7 +25,6 @@ class PushPayloadTest {
         assertEquals(NotificationType.SOLICITUD_ACEPTADA, payload?.type)
         assertEquals(TripId("0b7c4f0e-5d1a-4f5a-8a52-7c9e5e0d2b31"), payload?.tripId)
         assertEquals("e1f4b7a0-2c5d-4e8f-9b3a-6d0c1e4f7a29", payload?.notificationId)
-        assertEquals("c3d9a8e2-7f41-4e0b-b1a6-5f2e9c4d8a17", payload?.reservationId)
         assertEquals("¡Tenés lugar!", payload?.title)
         assertEquals("Lucía F. aceptó tu solicitud para el viaje de las 22:15.", payload?.body)
     }
@@ -43,19 +42,24 @@ class PushPayloadTest {
     }
 
     @Test
-    fun `ignora tipo desconocido o ausente`() {
-        val unknown = PushPayload.fromData(
+    fun `ignora tipo desconocido`() {
+        val payload = PushPayload.fromData(
             mapOf(
                 PushPayload.KEY_TYPE to "CALIFICAR_VIAJE",
                 PushPayload.KEY_TRIP_ID to "0b7c4f0e-5d1a-4f5a-8a52-7c9e5e0d2b31",
             ),
         )
-        val missing = PushPayload.fromData(
+
+        assertNull(payload)
+    }
+
+    @Test
+    fun `ignora payload sin tipo`() {
+        val payload = PushPayload.fromData(
             mapOf(PushPayload.KEY_TRIP_ID to "0b7c4f0e-5d1a-4f5a-8a52-7c9e5e0d2b31"),
         )
 
-        assertNull(unknown)
-        assertNull(missing)
+        assertNull(payload)
     }
 
     @Test
@@ -81,19 +85,22 @@ class PushPayloadTest {
             ),
         )
 
+        assertNotNull(payload)
         assertNull(payload?.title)
         assertNull(payload?.body)
     }
 
     @Test
     fun `notificationIntId distingue notificaciones diferentes y es estable para la misma`() {
-        val first = PushPayload.fromData(
-            mapOf(
-                PushPayload.KEY_TYPE to "NUEVA_SOLICITUD",
-                PushPayload.KEY_NOTIFICATION_ID to "notif-1",
-                PushPayload.KEY_TRIP_ID to "0b7c4f0e-5d1a-4f5a-8a52-7c9e5e0d2b31",
+        val first = requireNotNull(
+            PushPayload.fromData(
+                mapOf(
+                    PushPayload.KEY_TYPE to "NUEVA_SOLICITUD",
+                    PushPayload.KEY_NOTIFICATION_ID to "notif-1",
+                    PushPayload.KEY_TRIP_ID to "0b7c4f0e-5d1a-4f5a-8a52-7c9e5e0d2b31",
+                ),
             ),
-        )!!
+        )
         val duplicate = first.copy()
         val second = first.copy(notificationId = "notif-2")
 

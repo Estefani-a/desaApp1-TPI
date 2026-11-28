@@ -14,7 +14,6 @@ data class PushPayload(
     val type: NotificationType,
     val tripId: TripId,
     val notificationId: String?,
-    val reservationId: String?,
     val title: String?,
     val body: String?,
 ) {
@@ -26,7 +25,6 @@ data class PushPayload(
         const val KEY_TYPE = "type"
         const val KEY_NOTIFICATION_ID = "notificationId"
         const val KEY_TRIP_ID = "tripId"
-        const val KEY_RESERVATION_ID = "reservationId"
         const val KEY_TITLE = "title"
         const val KEY_BODY = "body"
 
@@ -39,7 +37,6 @@ data class PushPayload(
                 type = type,
                 tripId = TripId(canonicalTripId),
                 notificationId = data[KEY_NOTIFICATION_ID]?.trim()?.takeIf { it.isNotEmpty() },
-                reservationId = data[KEY_RESERVATION_ID]?.trim()?.takeIf { it.isNotEmpty() },
                 title = data[KEY_TITLE]?.trim()?.takeIf { it.isNotEmpty() },
                 body = data[KEY_BODY]?.trim()?.takeIf { it.isNotEmpty() },
             )

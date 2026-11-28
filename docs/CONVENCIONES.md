@@ -398,7 +398,7 @@ Los hace Nicolás en los primeros días y todos los usan. Antes de crear un comp
 
 - Room y Retrofit con `suspend` ya cambian de hilo solos. No envolver sus llamadas en `withContext(Dispatchers.IO)`.
 - Si hace falta un dispatcher (trabajo pesado propio), se inyecta `DispatchersProvider`; no se escribe `Dispatchers.IO` en la clase, para poder testearla.
-- Prohibido `GlobalScope` y `runBlocking` fuera de tests. En un ViewModel se usa `viewModelScope`.
+- Prohibido `GlobalScope` y `runBlocking` fuera de tests (única excepción: callbacks síncronos de `FirebaseMessagingService`, que ya corren fuera del hilo principal y van acotados con `withTimeoutOrNull`). En un ViewModel se usa `viewModelScope`.
 - Las funciones de un repositorio son `suspend` o devuelven `Flow`, nunca callbacks.
 - Hilt: las interfaces se vinculan con `@Binds` en un módulo abstracto; lo que se construye (Room, Retrofit, OkHttp, DataStore) con `@Provides`. Un módulo por área (`DatabaseModule`, `NetworkModule`, `AuthModule`, `TripModule`, `ReservationModule`, `SyncModule`).
 - Las fuentes remotas tienen una implementación real y una `Fake*`. Un flag en `BuildConfig` (`USE_FAKE_BACKEND`) elige cuál se inyecta, para poder trabajar y hacer demos sin servidor.

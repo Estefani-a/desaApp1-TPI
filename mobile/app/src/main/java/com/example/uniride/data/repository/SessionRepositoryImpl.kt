@@ -5,8 +5,10 @@ import com.example.uniride.data.datastore.SessionTokenStore
 import com.example.uniride.data.local.dao.UserDao
 import com.example.uniride.data.mapper.toDomain
 import com.example.uniride.data.mapper.toEntity
+import com.example.uniride.data.push.PushNotifier
 import com.example.uniride.data.remote.datasource.AuthRemoteDataSource
 import com.example.uniride.data.remote.dto.ApiErrorCode
+import com.example.uniride.data.remote.dto.DeviceTokenRequest
 import com.example.uniride.data.remote.dto.LoginRequest
 import com.example.uniride.data.remote.safeApiCall
 import com.example.uniride.data.remote.safeApiCallWithCode
@@ -36,6 +38,7 @@ class SessionRepositoryImpl @Inject constructor(
     private val tokenStore: SessionTokenStore,
     private val userDao: UserDao,
     private val localSessionCleaner: LocalSessionCleaner,
+    private val pushNotifier: PushNotifier,
     @param:ApplicationScope private val appScope: CoroutineScope,
 ) : SessionRepository {
 
@@ -71,6 +74,10 @@ class SessionRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun registerDeviceToken(fcmToken: String): AppResult<Unit> = safeApiCall {
+        remote.updateDeviceToken(DeviceTokenRequest(fcmToken = fcmToken))
+    }
+
     override suspend fun logout() {
         // Best-effort remote device-token cleanup while the JWT is still attached.
         // Logout must always succeed locally even when offline or when the token already expired.
@@ -92,6 +99,13 @@ class SessionRepositoryImpl @Inject constructor(
             throw e
         } catch (_: Exception) {
             // Never crash the application-wide 401 collector.
+        }
+        try {
+            pushNotifier.cancelAll()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Best-effort notification tray cleanup on logout/401.
         }
     }
 }

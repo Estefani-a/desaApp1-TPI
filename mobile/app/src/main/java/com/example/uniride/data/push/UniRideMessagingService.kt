@@ -1,6 +1,5 @@
 package com.example.uniride.data.push
 
-import com.example.uniride.core.dispatcher.DispatchersProvider
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import dagger.hilt.android.AndroidEntryPoint
@@ -12,7 +11,8 @@ import javax.inject.Inject
  * FCM entry point for RF04 data-only push notifications (docs/API.md §9).
  *
  * Delegates all business logic to [PushMessageHandler] and [PushTokenSyncManager] within a bounded
- * timeout so Android does not reclaim the service before Room is refreshed.
+ * timeout so Android does not reclaim the service before Room is refreshed. Synchronous callbacks
+ * of [FirebaseMessagingService] already run off the main thread (CONVENCIONES §8 exception).
  */
 @AndroidEntryPoint
 class UniRideMessagingService : FirebaseMessagingService() {
@@ -23,21 +23,18 @@ class UniRideMessagingService : FirebaseMessagingService() {
     @Inject
     lateinit var pushTokenSyncManager: PushTokenSyncManager
 
-    @Inject
-    lateinit var dispatchers: DispatchersProvider
-
     override fun onMessageReceived(message: RemoteMessage) {
         if (message.data.isEmpty()) return
-        runBlocking(dispatchers.io) {
+        runBlocking {
             withTimeoutOrNull(SERVICE_TIMEOUT_MS) {
                 pushMessageHandler.handleMessage(message.data)
             }
         }
     }
 
-    @Suppress("OVERRIDE_DEPRECATION") // Backend API.md §4.8 uses FCM registration tokens
+    @Suppress("OVERRIDE_DEPRECATION") // Backend API.md §4.6 uses FCM registration tokens
     override fun onNewToken(token: String) {
-        runBlocking(dispatchers.io) {
+        runBlocking {
             withTimeoutOrNull(SERVICE_TIMEOUT_MS) {
                 pushTokenSyncManager.onNewToken(token)
             }

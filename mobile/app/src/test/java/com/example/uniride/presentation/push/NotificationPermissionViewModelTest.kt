@@ -1,6 +1,7 @@
 package com.example.uniride.presentation.push
 
 import app.cash.turbine.test
+import com.example.uniride.R
 import com.example.uniride.data.datastore.NotificationPermissionDataStore
 import com.example.uniride.domain.usecase.push.MarkNotificationPermissionPromptedUseCase
 import com.example.uniride.domain.usecase.push.ObserveNotificationPermissionPromptedUseCase
@@ -17,17 +18,72 @@ class NotificationPermissionViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun `emite false inicialmente y true despues de marcar el aviso como mostrado`() = runTest {
+    fun `confirmar marca el aviso como mostrado y solicita el permiso del sistema`() = runTest {
         val repository = NotificationPermissionDataStore(InMemoryPreferencesDataStore())
         val viewModel = NotificationPermissionViewModel(
             observePrompted = ObserveNotificationPermissionPromptedUseCase(repository),
             markPrompted = MarkNotificationPermissionPromptedUseCase(repository),
         )
 
-        viewModel.hasPrompted.test {
-            assertEquals(false, awaitItem())
-            viewModel.onPromptHandled()
-            assertEquals(true, awaitItem())
+        viewModel.uiState.test {
+            assertEquals(false, awaitItem().hasPrompted)
+            viewModel.effects.test {
+                viewModel.onAction(NotificationPermissionAction.Confirm)
+                assertEquals(NotificationPermissionEffect.LaunchSystemRequest, awaitItem())
+            }
+            assertEquals(true, awaitItem().hasPrompted)
+        }
+    }
+
+    @Test
+    fun `descartar el aviso marca como mostrado y comunica que no llegaran push`() = runTest {
+        val repository = NotificationPermissionDataStore(InMemoryPreferencesDataStore())
+        val viewModel = NotificationPermissionViewModel(
+            observePrompted = ObserveNotificationPermissionPromptedUseCase(repository),
+            markPrompted = MarkNotificationPermissionPromptedUseCase(repository),
+        )
+
+        viewModel.uiState.test {
+            assertEquals(false, awaitItem().hasPrompted)
+            viewModel.effects.test {
+                viewModel.onAction(NotificationPermissionAction.Dismiss)
+                assertEquals(
+                    NotificationPermissionEffect.ShowMessage(R.string.push_permission_declined),
+                    awaitItem(),
+                )
+            }
+            assertEquals(true, awaitItem().hasPrompted)
+        }
+    }
+
+    @Test
+    fun `rechazar en el dialogo del sistema comunica que el estado sigue visible en la app`() = runTest {
+        val repository = NotificationPermissionDataStore(InMemoryPreferencesDataStore())
+        val viewModel = NotificationPermissionViewModel(
+            observePrompted = ObserveNotificationPermissionPromptedUseCase(repository),
+            markPrompted = MarkNotificationPermissionPromptedUseCase(repository),
+        )
+
+        viewModel.effects.test {
+            viewModel.onAction(NotificationPermissionAction.SystemResult(granted = false))
+            assertEquals(
+                NotificationPermissionEffect.ShowMessage(R.string.push_permission_declined),
+                awaitItem(),
+            )
+        }
+    }
+
+    @Test
+    fun `conceder el permiso en el dialogo del sistema no muestra aviso de rechazo`() = runTest {
+        val repository = NotificationPermissionDataStore(InMemoryPreferencesDataStore())
+        val viewModel = NotificationPermissionViewModel(
+            observePrompted = ObserveNotificationPermissionPromptedUseCase(repository),
+            markPrompted = MarkNotificationPermissionPromptedUseCase(repository),
+        )
+
+        viewModel.effects.test {
+            viewModel.onAction(NotificationPermissionAction.SystemResult(granted = true))
+            expectNoEvents()
         }
     }
 
@@ -42,8 +98,8 @@ class NotificationPermissionViewModelTest {
             markPrompted = MarkNotificationPermissionPromptedUseCase(repository),
         )
 
-        viewModel.hasPrompted.test {
-            assertEquals(true, awaitItem())
+        viewModel.uiState.test {
+            assertEquals(true, awaitItem().hasPrompted)
         }
     }
 }

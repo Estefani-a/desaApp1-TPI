@@ -12,8 +12,9 @@ import javax.inject.Singleton
  * Coordinates what the app does upon receiving an FCM data message (docs/API.md §9):
  * 1. Ignores malformed payloads or pushes received while logged out.
  * 2. Displays the notification right away (so slow networks never delay the alert).
- * 3. Refreshes Room in the background (`refreshTripReservations` for `NUEVA_SOLICITUD`,
- *    `refreshTrip` for all three types so accepted trips bring plate and phone).
+ * 3. Refreshes Room in the background (`refreshTripReservations` for `NUEVA_SOLICITUD`;
+ *    `refreshTrip` for `SOLICITUD_ACEPTADA` and `SOLICITUD_RECHAZADA` so accepted trips bring
+ *    plate and phone).
  */
 @Singleton
 class PushMessageHandler @Inject constructor(
@@ -31,7 +32,6 @@ class PushMessageHandler @Inject constructor(
         when (payload.type) {
             NotificationType.NUEVA_SOLICITUD -> {
                 reservationRepository.refreshTripReservations(payload.tripId)
-                tripRepository.refreshTrip(payload.tripId)
             }
             NotificationType.SOLICITUD_ACEPTADA,
             NotificationType.SOLICITUD_RECHAZADA,

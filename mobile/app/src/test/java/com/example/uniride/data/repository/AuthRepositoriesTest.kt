@@ -3,6 +3,8 @@ package com.example.uniride.data.repository
 import app.cash.turbine.test
 import com.example.uniride.core.result.AppResult
 import com.example.uniride.core.result.DataError
+import com.example.uniride.data.push.PushNotifier
+import com.example.uniride.data.push.PushPayload
 import com.example.uniride.data.remote.datasource.AuthRemoteDataSource
 import com.example.uniride.data.remote.datasource.FakeAuthRemoteDataSource
 import com.example.uniride.data.remote.datasource.FakeBackendStore
@@ -29,6 +31,15 @@ import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthRepositoriesTest {
+
+    private class RecordingPushNotifier : PushNotifier {
+        var cancelAllCalls = 0
+        override fun ensureChannel() = Unit
+        override fun show(payload: PushPayload) = Unit
+        override fun cancelAll() {
+            cancelAllCalls++
+        }
+    }
 
     private fun sampleProfile(withVehicle: Boolean = false) = Profile(
         fullName = "Juan Pérez",
@@ -111,7 +122,7 @@ class AuthRepositoriesTest {
         val remote = FakeAuthRemoteDataSource(store)
         val userDao = FakeUserDao()
         val cleaner = LocalSessionCleaner { userDao.clear() }
-        val sessionRepo = SessionRepositoryImpl(remote, tokenStore, userDao, cleaner, backgroundScope)
+        val sessionRepo = SessionRepositoryImpl(remote, tokenStore, userDao, cleaner, RecordingPushNotifier(), backgroundScope)
         val profileRepo = ProfileRepositoryImpl(remote, userDao, tokenStore)
 
         sessionRepo.observeIsLoggedIn().test {
@@ -133,7 +144,7 @@ class AuthRepositoriesTest {
         val remote = FakeAuthRemoteDataSource(store)
         val userDao = FakeUserDao()
         val cleaner = LocalSessionCleaner { userDao.clear() }
-        val sessionRepo = SessionRepositoryImpl(remote, tokenStore, userDao, cleaner, backgroundScope)
+        val sessionRepo = SessionRepositoryImpl(remote, tokenStore, userDao, cleaner, RecordingPushNotifier(), backgroundScope)
 
         val outcome = sessionRepo.login("lfernandez@uade.edu.ar", "ClaveMala99")
 
@@ -150,7 +161,7 @@ class AuthRepositoriesTest {
         val userDao = FakeUserDao()
         val cleaner = LocalSessionCleaner { userDao.clear() }
         val accountRepo = AccountRepositoryImpl(remote, tokenStore, userDao, cleaner)
-        val sessionRepo = SessionRepositoryImpl(remote, tokenStore, userDao, cleaner, backgroundScope)
+        val sessionRepo = SessionRepositoryImpl(remote, tokenStore, userDao, cleaner, RecordingPushNotifier(), backgroundScope)
 
         accountRepo.register("pendiente@uade.edu.ar", "Password1", sampleProfile())
         val outcome = sessionRepo.login("pendiente@uade.edu.ar", "Password1")
@@ -177,7 +188,8 @@ class AuthRepositoriesTest {
             clearCalls++
             userDao.clear()
         }
-        val sessionRepo = SessionRepositoryImpl(remote, tokenStore, userDao, cleaner, backgroundScope)
+        val notifier = RecordingPushNotifier()
+        val sessionRepo = SessionRepositoryImpl(remote, tokenStore, userDao, cleaner, notifier, backgroundScope)
 
         sessionRepo.login("mgomez@uade.edu.ar", FakeBackendStore.DEMO_PASSWORD)
         assertNotNull(tokenStore.currentToken())
@@ -190,11 +202,12 @@ class AuthRepositoriesTest {
         assertNull(tokenStore.currentToken())
         assertNull(userDao.getCurrentUser())
         assertEquals(clearsAfterLogin + 1, clearCalls)
+        assertEquals(1, notifier.cancelAllCalls)
         assertFalse(sessionRepo.observeIsLoggedIn().first())
     }
 
     @Test
-    fun `evento global de 401 dispara limpieza de Room y cierra la sesion automaticamente`() = runTest {
+    fun `evento global de 401 dispara limpieza de Room, cancela notificaciones y cierra la sesion automaticamente`() = runTest {
         val tokenStore = FakeSessionTokenStore()
         val store = FakeBackendStore(tokenProvider = tokenStore::currentToken)
         val remote = FakeAuthRemoteDataSource(store)
@@ -204,7 +217,8 @@ class AuthRepositoriesTest {
             clearCalls++
             userDao.clear()
         }
-        val sessionRepo = SessionRepositoryImpl(remote, tokenStore, userDao, cleaner, backgroundScope)
+        val notifier = RecordingPushNotifier()
+        val sessionRepo = SessionRepositoryImpl(remote, tokenStore, userDao, cleaner, notifier, backgroundScope)
         runCurrent()
 
         sessionRepo.login("lfernandez@uade.edu.ar", FakeBackendStore.DEMO_PASSWORD)
@@ -215,6 +229,7 @@ class AuthRepositoriesTest {
         runCurrent()
 
         assertEquals(clearsAfterLogin + 1, clearCalls)
+        assertEquals(1, notifier.cancelAllCalls)
         assertNull(userDao.getCurrentUser())
         assertFalse(sessionRepo.observeIsLoggedIn().first())
     }
@@ -227,7 +242,7 @@ class AuthRepositoriesTest {
         val userDao = FakeUserDao()
         val cleaner = LocalSessionCleaner { userDao.clear() }
         val recoveryRepo = PasswordRecoveryRepositoryImpl(remote)
-        val sessionRepo = SessionRepositoryImpl(remote, tokenStore, userDao, cleaner, backgroundScope)
+        val sessionRepo = SessionRepositoryImpl(remote, tokenStore, userDao, cleaner, RecordingPushNotifier(), backgroundScope)
 
         assertTrue(recoveryRepo.requestReset("mgomez@uade.edu.ar") is AppResult.Success)
         assertEquals(
@@ -270,7 +285,7 @@ class AuthRepositoriesTest {
             clearCalls++
             userDao.clear()
         }
-        val sessionRepo = SessionRepositoryImpl(remote, tokenStore, userDao, cleaner, backgroundScope)
+        val sessionRepo = SessionRepositoryImpl(remote, tokenStore, userDao, cleaner, RecordingPushNotifier(), backgroundScope)
         val profileRepo = ProfileRepositoryImpl(remote, userDao, tokenStore)
         runCurrent()
 
@@ -293,5 +308,20 @@ class AuthRepositoriesTest {
         assertEquals(1, tokenStore.unauthorizedNotifications)
         assertEquals(clearsAfterLogin + 1, clearCalls)
         assertNull(profileRepo.observeCurrentUser().first())
+    }
+
+    @Test
+    fun `registerDeviceToken delega el PUT al datasource remoto con sesion activa`() = runTest {
+        val tokenStore = FakeSessionTokenStore()
+        val store = FakeBackendStore(tokenProvider = tokenStore::currentToken)
+        val remote = FakeAuthRemoteDataSource(store)
+        val userDao = FakeUserDao()
+        val cleaner = LocalSessionCleaner { userDao.clear() }
+        val sessionRepo = SessionRepositoryImpl(remote, tokenStore, userDao, cleaner, RecordingPushNotifier(), backgroundScope)
+
+        sessionRepo.login("lfernandez@uade.edu.ar", FakeBackendStore.DEMO_PASSWORD)
+        val result = sessionRepo.registerDeviceToken("fcm-token-demo")
+
+        assertEquals(AppResult.Success(Unit), result)
     }
 }

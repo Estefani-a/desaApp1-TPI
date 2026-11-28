@@ -28,7 +28,7 @@ class FirebaseFcmTokenProvider @Inject constructor(
         if (FirebaseApp.getApps(context).isEmpty()) return null
         return try {
             suspendCancellableCoroutine { continuation ->
-                @Suppress("DEPRECATION") // Backend API.md §4.8 uses FCM registration tokens
+                @Suppress("DEPRECATION") // Backend API.md §4.6 uses FCM registration tokens
                 FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
                     if (!continuation.isActive) return@addOnCompleteListener
                     val token = if (task.isSuccessful) {

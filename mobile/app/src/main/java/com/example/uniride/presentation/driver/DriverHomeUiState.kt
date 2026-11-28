@@ -11,6 +11,8 @@ import com.example.uniride.presentation.common.ContentState
 data class DriverHomeUiState(
     val content: ContentState<DriverHomeContent> = ContentState.Loading,
     val isOffline: Boolean = false,
+    /** Becomes `true` only after the driver publishes a new trip from C1 (RNF08). */
+    val shouldPromptNotifications: Boolean = false,
 )
 
 /** What C1 lists: the notices of rejected trips on top and the upcoming trips under them. */

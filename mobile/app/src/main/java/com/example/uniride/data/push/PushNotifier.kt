@@ -13,26 +13,28 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.uniride.R
 import com.example.uniride.domain.model.NotificationType
-import com.example.uniride.presentation.navigation.openFromPushIntent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Displays system notifications for incoming RF04 push messages. */
+/** Displays and clears system notifications for incoming RF04 push messages. */
 interface PushNotifier {
     fun ensureChannel()
     fun show(payload: PushPayload)
+    fun cancelAll()
 }
 
 /**
  * Android notification renderer for RF04 pushes (docs/API.md §9).
  *
- * Uses [openFromPushIntent] so tapping the notification opens C4 (Panel del conductor) or B6
- * (Mi viaje) on top of the Home tab, respecting `POST_NOTIFICATIONS` on Android 13+ (RNF08).
+ * Uses [PushTapIntentFactory] so tapping the notification opens C4 (Panel del conductor) or B6
+ * (Mi viaje) on top of the Home tab without `data` depending on `presentation`, respecting
+ * `POST_NOTIFICATIONS` on Android 13+ (RNF08).
  */
 @Singleton
 class AndroidPushNotifier @Inject constructor(
     @param:ApplicationContext private val context: Context,
+    private val tapIntentFactory: PushTapIntentFactory,
 ) : PushNotifier {
 
     override fun ensureChannel() {
@@ -54,7 +56,7 @@ class AndroidPushNotifier @Inject constructor(
 
         val title = payload.title ?: context.getString(defaultTitleRes(payload.type))
         val body = payload.body ?: context.getString(defaultBodyRes(payload.type))
-        val tapIntent = context.openFromPushIntent(payload.type, payload.tripId)
+        val tapIntent = tapIntentFactory.create(payload.type, payload.tripId)
         val pendingIntent = PendingIntent.getActivity(
             context,
             payload.notificationIntId,
@@ -78,6 +80,10 @@ class AndroidPushNotifier @Inject constructor(
         } catch (_: SecurityException) {
             // Permission revoked right before notify (RNF08): degrade silently.
         }
+    }
+
+    override fun cancelAll() {
+        NotificationManagerCompat.from(context).cancelAll()
     }
 
     private fun canPostNotifications(): Boolean {

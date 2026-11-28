@@ -3,13 +3,26 @@ package com.example.uniride.presentation.navigation
 import android.content.Context
 import android.content.Intent
 import com.example.uniride.MainActivity
+import com.example.uniride.data.push.PushTapIntentFactory
 import com.example.uniride.domain.model.NotificationType
 import com.example.uniride.domain.model.TripId
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /** Keys of the intent extras of a tapped push: the same names as in the FCM data (docs/API.md §9). */
 object PushExtras {
     const val TYPE = "type"
     const val TRIP_ID = "tripId"
+}
+
+/** [PushTapIntentFactory] backed by [openFromPushIntent], bound in `PushModule`. */
+@Singleton
+class ActivityPushTapIntentFactory @Inject constructor(
+    @param:ApplicationContext private val context: Context,
+) : PushTapIntentFactory {
+    override fun create(type: NotificationType, tripId: TripId): Intent =
+        context.openFromPushIntent(type, tripId)
 }
 
 /**

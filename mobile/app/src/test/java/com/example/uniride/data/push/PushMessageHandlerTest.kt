@@ -4,12 +4,9 @@ import com.example.uniride.core.result.AppResult
 import com.example.uniride.core.result.DataError
 import com.example.uniride.domain.model.NotificationType
 import com.example.uniride.domain.model.TripId
-import com.example.uniride.domain.repository.LoginOutcome
-import com.example.uniride.domain.repository.SessionRepository
 import com.example.uniride.fake.FakeReservationRepository
+import com.example.uniride.fake.FakeSessionRepository
 import com.example.uniride.fake.FakeTripRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -25,7 +22,7 @@ class PushMessageHandlerTest {
         val trips = FakeTripRepository()
         val reservations = FakeReservationRepository()
         val handler = PushMessageHandler(
-            sessionRepository = StubSessionRepository(loggedIn = true),
+            sessionRepository = FakeSessionRepository(initialLoggedIn = true),
             tripRepository = trips,
             reservationRepository = reservations,
             notifier = notifier,
@@ -44,7 +41,7 @@ class PushMessageHandlerTest {
         val trips = FakeTripRepository()
         val reservations = FakeReservationRepository()
         val handler = PushMessageHandler(
-            sessionRepository = StubSessionRepository(loggedIn = false),
+            sessionRepository = FakeSessionRepository(initialLoggedIn = false),
             tripRepository = trips,
             reservationRepository = reservations,
             notifier = notifier,
@@ -65,12 +62,12 @@ class PushMessageHandlerTest {
     }
 
     @Test
-    fun `nueva solicitud muestra notificacion y refresca solicitudes y viaje`() = runTest {
+    fun `nueva solicitud muestra notificacion y refresca solo las solicitudes del viaje`() = runTest {
         val notifier = RecordingPushNotifier()
         val trips = FakeTripRepository()
         val reservations = FakeReservationRepository()
         val handler = PushMessageHandler(
-            sessionRepository = StubSessionRepository(loggedIn = true),
+            sessionRepository = FakeSessionRepository(initialLoggedIn = true),
             tripRepository = trips,
             reservationRepository = reservations,
             notifier = notifier,
@@ -88,7 +85,7 @@ class PushMessageHandlerTest {
         assertEquals(1, notifier.shown.size)
         assertEquals(NotificationType.NUEVA_SOLICITUD, notifier.shown.single().type)
         assertEquals(listOf("refresh:${tripId.value}"), reservations.calls)
-        assertEquals(listOf(tripId), trips.refreshedTripIds)
+        assertTrue(trips.refreshedTripIds.isEmpty())
     }
 
     @Test
@@ -97,7 +94,7 @@ class PushMessageHandlerTest {
         val trips = FakeTripRepository()
         val reservations = FakeReservationRepository()
         val handler = PushMessageHandler(
-            sessionRepository = StubSessionRepository(loggedIn = true),
+            sessionRepository = FakeSessionRepository(initialLoggedIn = true),
             tripRepository = trips,
             reservationRepository = reservations,
             notifier = notifier,
@@ -123,7 +120,7 @@ class PushMessageHandlerTest {
         }
         val reservations = FakeReservationRepository()
         val handler = PushMessageHandler(
-            sessionRepository = StubSessionRepository(loggedIn = true),
+            sessionRepository = FakeSessionRepository(initialLoggedIn = true),
             tripRepository = trips,
             reservationRepository = reservations,
             notifier = notifier,
@@ -146,13 +143,6 @@ class PushMessageHandlerTest {
         override fun show(payload: PushPayload) {
             shown += payload
         }
-    }
-
-    private class StubSessionRepository(loggedIn: Boolean) : SessionRepository {
-        private val state = MutableStateFlow(loggedIn)
-        override fun observeIsLoggedIn(): Flow<Boolean> = state
-        override suspend fun login(email: String, password: String): LoginOutcome =
-            error("No se usa en este test")
-        override suspend fun logout() = Unit
+        override fun cancelAll() = Unit
     }
 }

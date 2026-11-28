@@ -81,10 +81,9 @@ fun DriverHomeRoute(
         }
     }
 
-    val hasPublishedTrips = (state.content as? ContentState.Success)?.data?.trips?.isNotEmpty() == true
     NotificationPermissionPrompt(
         rationaleRes = R.string.push_permission_driver_rationale,
-        shouldPrompt = hasPublishedTrips,
+        shouldPrompt = state.shouldPromptNotifications,
     )
 
     DriverHomeScreen(

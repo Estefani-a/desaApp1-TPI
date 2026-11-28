@@ -304,6 +304,7 @@
     <string name="push_permission_driver_rationale">Te avisamos apenas un compañero pida un asiento en alguno de tus viajes.</string>
     <string name="push_permission_allow">Activar</string>
     <string name="push_permission_not_now">Ahora no</string>
+    <string name="push_permission_declined">No vas a recibir avisos; vas a ver el estado al abrir la app.</string>
 
     <!-- Perfil (RF01) -->
     <string name="profile_title">Perfil</string>
