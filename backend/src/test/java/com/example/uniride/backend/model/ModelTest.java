@@ -121,6 +121,43 @@ class ModelTest {
         assertThat(errorOf(() -> trip.requireOpenForRequests(NOW))).isEqualTo(ErrorCode.NO_SEATS_AVAILABLE);
     }
 
+    @Test
+    void finalizarYCancelarCambianElEstadoUnaSolaVez() {
+        Trip finished = trip(driver(), 3);
+        Trip cancelled = trip(driver(), 3);
+
+        assertThat(finished.finish(AFTER_DEPARTURE)).isTrue();
+        assertThat(finished.finish(AFTER_DEPARTURE.plusSeconds(60))).isFalse();
+        assertThat(cancelled.cancel(NOW)).isTrue();
+        assertThat(cancelled.cancel(AFTER_DEPARTURE)).isFalse();
+
+        assertThat(finished.getStatus()).isEqualTo(TripStatus.FINALIZADO);
+        assertThat(finished.getUpdatedAt()).isEqualTo(AFTER_DEPARTURE);
+        assertThat(cancelled.getStatus()).isEqualTo(TripStatus.CANCELADO);
+        assertThat(cancelled.getUpdatedAt()).isEqualTo(NOW);
+        assertThat(errorOf(() -> finished.cancel(NOW))).isEqualTo(ErrorCode.INVALID_STATUS_TRANSITION);
+        assertThat(errorOf(() -> cancelled.finish(NOW))).isEqualTo(ErrorCode.INVALID_STATUS_TRANSITION);
+    }
+
+    @Test
+    void cancelarConElViajeSoloAfectaALasReservasActivas() {
+        Trip trip = trip(driver(), 3);
+        Reservation active = pending(trip);
+        Reservation rejected = pending(trip);
+        rejected.reject(NOW);
+
+        assertThatThrownBy(() -> active.cancelWithTrip(NOW)).isInstanceOf(IllegalStateException.class);
+
+        trip.cancel(NOW);
+        active.cancelWithTrip(AFTER_DEPARTURE);
+        rejected.cancelWithTrip(AFTER_DEPARTURE);
+
+        assertThat(active.getStatus()).isEqualTo(ReservationStatus.CANCELADA);
+        assertThat(active.getUpdatedAt()).isEqualTo(AFTER_DEPARTURE);
+        assertThat(rejected.getStatus()).isEqualTo(ReservationStatus.RECHAZADA);
+        assertThat(rejected.getUpdatedAt()).isEqualTo(NOW);
+    }
+
     // --- Reserva ---
 
     @Test

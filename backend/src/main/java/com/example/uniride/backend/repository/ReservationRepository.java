@@ -25,6 +25,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
     /** Reservations of a passenger on a trip, newest first. */
     List<Reservation> findByTripIdAndPassengerIdOrderByReservedAtDesc(UUID tripId, UUID passengerId);
 
+    /** Reservations of a trip in some statuses: the active ones, to cancel them with the trip (RF02). */
+    List<Reservation> findByTripIdAndStatusIn(UUID tripId, Collection<ReservationStatus> statuses);
+
     boolean existsByTripIdAndPassengerIdAndStatusIn(UUID tripId, UUID passengerId,
                                                     Collection<ReservationStatus> statuses);
 }
