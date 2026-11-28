@@ -90,8 +90,8 @@ fun PendingSyncChip(modifier: Modifier = Modifier) {
 private fun ColorScheme.colorsFor(tone: StatusTone): Pair<Color, Color> = when (tone) {
     StatusTone.NEUTRAL -> surfaceContainerHighest to onSurfaceVariant
     StatusTone.INFO -> secondaryContainer to onSecondaryContainer
-    // The guide marks what is confirmed with the dark ink, like the main actions
-    StatusTone.POSITIVE -> primary to onPrimary
+    // The guide marks what is confirmed with the dark ink, like the selected options
+    StatusTone.POSITIVE -> secondary to onSecondary
     StatusTone.WARNING -> tertiaryContainer to onTertiaryContainer
     StatusTone.NEGATIVE -> errorContainer to onErrorContainer
 }
