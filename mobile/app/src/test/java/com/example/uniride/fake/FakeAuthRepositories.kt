@@ -7,8 +7,12 @@ import com.example.uniride.domain.model.Rating
 import com.example.uniride.domain.model.User
 import com.example.uniride.domain.model.UserId
 import com.example.uniride.domain.repository.AccountRepository
+import com.example.uniride.domain.repository.ActivateOutcome
+import com.example.uniride.domain.repository.ConfirmPasswordResetOutcome
+import com.example.uniride.domain.repository.LoginOutcome
 import com.example.uniride.domain.repository.PasswordRecoveryRepository
 import com.example.uniride.domain.repository.ProfileRepository
+import com.example.uniride.domain.repository.RegisterOutcome
 import com.example.uniride.domain.repository.SessionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,21 +23,23 @@ class FakeAccountRepository : AccountRepository {
     var lastRegisteredEmail: String? = null
     var lastRegisteredProfile: Profile? = null
     var lastActivatedCode: String? = null
+    var activateCalls: Int = 0
     var lastResendEmail: String? = null
 
-    var registerResult: AppResult<Unit> = AppResult.Success(Unit)
-    var activateResult: AppResult<User> = AppResult.Success(sampleUser())
+    var registerOutcome: RegisterOutcome = RegisterOutcome.Registered
+    var activateOutcome: ActivateOutcome = ActivateOutcome.Activated(sampleUser())
     var resendResult: AppResult<Unit> = AppResult.Success(Unit)
 
-    override suspend fun register(email: String, password: String, profile: Profile): AppResult<Unit> {
+    override suspend fun register(email: String, password: String, profile: Profile): RegisterOutcome {
         lastRegisteredEmail = email
         lastRegisteredProfile = profile
-        return registerResult
+        return registerOutcome
     }
 
-    override suspend fun activate(activationCode: String): AppResult<User> {
+    override suspend fun activate(activationCode: String): ActivateOutcome {
+        activateCalls++
         lastActivatedCode = activationCode
-        return activateResult
+        return activateOutcome
     }
 
     override suspend fun resendActivation(email: String): AppResult<Unit> {
@@ -48,16 +54,16 @@ class FakeSessionRepository(
     private val loggedIn = MutableStateFlow(initialLoggedIn)
     var lastLoginEmail: String? = null
     var logoutCalls: Int = 0
-    var loginResult: AppResult<User> = AppResult.Success(sampleUser())
+    var loginOutcome: LoginOutcome = LoginOutcome.Success(sampleUser())
 
     override fun observeIsLoggedIn(): Flow<Boolean> = loggedIn.asStateFlow()
 
-    override suspend fun login(email: String, password: String): AppResult<User> {
+    override suspend fun login(email: String, password: String): LoginOutcome {
         lastLoginEmail = email
-        if (loginResult is AppResult.Success) {
+        if (loginOutcome is LoginOutcome.Success) {
             loggedIn.value = true
         }
-        return loginResult
+        return loginOutcome
     }
 
     override suspend fun logout() {
@@ -71,17 +77,17 @@ class FakePasswordRecoveryRepository : PasswordRecoveryRepository {
     var lastConfirmCode: String? = null
     var lastNewPassword: String? = null
     var requestResult: AppResult<Unit> = AppResult.Success(Unit)
-    var confirmResult: AppResult<Unit> = AppResult.Success(Unit)
+    var confirmOutcome: ConfirmPasswordResetOutcome = ConfirmPasswordResetOutcome.Confirmed
 
     override suspend fun requestReset(email: String): AppResult<Unit> {
         lastResetEmail = email
         return requestResult
     }
 
-    override suspend fun confirmReset(resetCode: String, newPassword: String): AppResult<Unit> {
+    override suspend fun confirmReset(resetCode: String, newPassword: String): ConfirmPasswordResetOutcome {
         lastConfirmCode = resetCode
         lastNewPassword = newPassword
-        return confirmResult
+        return confirmOutcome
     }
 }
 

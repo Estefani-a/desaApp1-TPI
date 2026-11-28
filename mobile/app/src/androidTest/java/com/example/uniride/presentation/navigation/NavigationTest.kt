@@ -2,11 +2,14 @@ package com.example.uniride.presentation.navigation
 
 import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -53,9 +56,19 @@ class NavigationTest {
                     availableModes = modes,
                     onModeChange = { chosenMode = it },
                     navController = navController,
-                    // Both starts have Hilt ViewModels and this test has no Hilt
+                    // Screens with Hilt ViewModels are swapped because this test has no Hilt
                     passengerHome = { _, _ -> },
                     driverHome = { _, _ -> },
+                    loginContent = { _, _, _, _, onLoginSuccess ->
+                        Button(onClick = onLoginSuccess) {
+                            Text(stringResource(R.string.auth_login_submit))
+                        }
+                    },
+                    profileContent = {
+                        Button(onClick = { navController.navigateToAuth() }) {
+                            Text(stringResource(R.string.profile_logout_action))
+                        }
+                    },
                 )
             }
         }
@@ -72,8 +85,8 @@ class NavigationTest {
         navController.currentBackStack.value.any { it.destination.hasRoute(route) }
 
     private fun login() {
-        click(R.string.placeholder_action_login)
-        click(R.string.placeholder_action_enter)
+        click(R.string.auth_welcome_login_action)
+        click(R.string.auth_login_submit)
     }
 
     @Test
@@ -107,7 +120,7 @@ class NavigationTest {
         login()
         click(R.string.nav_profile)
 
-        click(R.string.placeholder_action_logout)
+        click(R.string.profile_logout_action)
 
         assertTrue(isAt(WelcomeRoute::class))
         assertFalse(inBackStack(MainGraphRoute::class))

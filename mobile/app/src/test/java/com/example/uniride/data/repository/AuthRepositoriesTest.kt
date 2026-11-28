@@ -9,6 +9,10 @@ import com.example.uniride.data.remote.datasource.FakeBackendStore
 import com.example.uniride.domain.model.PreferredMode
 import com.example.uniride.domain.model.Profile
 import com.example.uniride.domain.model.Vehicle
+import com.example.uniride.domain.repository.ActivateOutcome
+import com.example.uniride.domain.repository.ConfirmPasswordResetOutcome
+import com.example.uniride.domain.repository.LoginOutcome
+import com.example.uniride.domain.repository.RegisterOutcome
 import com.example.uniride.fake.FakeSessionTokenStore
 import com.example.uniride.fake.FakeUserDao
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -35,50 +39,69 @@ class AuthRepositoriesTest {
     )
 
     @Test
-    fun `registro no inicia sesion y activacion guarda usuario en Room y token cifrado`() = runTest {
+    fun `registro no inicia sesion y activacion limpia sesion previa antes de guardar usuario y token`() = runTest {
         val tokenStore = FakeSessionTokenStore()
         val store = FakeBackendStore(tokenProvider = tokenStore::currentToken)
         val remote = FakeAuthRemoteDataSource(store)
         val userDao = FakeUserDao()
-        val accountRepo = AccountRepositoryImpl(remote, tokenStore, userDao)
+        var clearCalls = 0
+        val cleaner = LocalSessionCleaner {
+            clearCalls++
+            userDao.clear()
+        }
+        val accountRepo = AccountRepositoryImpl(remote, tokenStore, userDao, cleaner)
 
-        val regResult = accountRepo.register(
+        val regOutcome = accountRepo.register(
             email = "jperez@uade.edu.ar",
             password = "Password1",
             profile = sampleProfile(),
         )
-        assertTrue(regResult is AppResult.Success)
+        assertEquals(RegisterOutcome.Registered, regOutcome)
         assertNull(tokenStore.currentToken())
         assertNull(userDao.getCurrentUser())
 
         val resendResult = accountRepo.resendActivation("jperez@uade.edu.ar")
         assertTrue(resendResult is AppResult.Success)
 
-        val activateResult = accountRepo.activate("fake-activate-jperez@uade.edu.ar")
-        assertTrue(activateResult is AppResult.Success)
-        val user = (activateResult as AppResult.Success).data
+        val activateOutcome = accountRepo.activate("fake-activate-jperez@uade.edu.ar")
+        assertTrue(activateOutcome is ActivateOutcome.Activated)
+        val user = (activateOutcome as ActivateOutcome.Activated).user
         assertEquals("jperez@uade.edu.ar", user.email)
+        assertEquals(1, clearCalls)
         assertNotNull(tokenStore.currentToken())
         assertEquals("jperez@uade.edu.ar", userDao.getCurrentUser()?.email)
     }
 
     @Test
-    fun `registro duplicado devuelve CONFLICT y codigo de activacion invalido devuelve VALIDATION`() = runTest {
+    fun `registro duplicado devuelve EmailAlreadyRegistered`() = runTest {
         val tokenStore = FakeSessionTokenStore()
         val store = FakeBackendStore(tokenProvider = tokenStore::currentToken)
         val remote = FakeAuthRemoteDataSource(store)
         val userDao = FakeUserDao()
-        val accountRepo = AccountRepositoryImpl(remote, tokenStore, userDao)
+        val cleaner = LocalSessionCleaner { userDao.clear() }
+        val accountRepo = AccountRepositoryImpl(remote, tokenStore, userDao, cleaner)
 
         val duplicate = accountRepo.register(
             email = "lfernandez@uade.edu.ar",
             password = "Password1",
             profile = sampleProfile(),
         )
-        assertEquals(AppResult.Failure(DataError.CONFLICT), duplicate)
+
+        assertEquals(RegisterOutcome.EmailAlreadyRegistered, duplicate)
+    }
+
+    @Test
+    fun `activacion con codigo inexistente devuelve InvalidOrExpiredCode`() = runTest {
+        val tokenStore = FakeSessionTokenStore()
+        val store = FakeBackendStore(tokenProvider = tokenStore::currentToken)
+        val remote = FakeAuthRemoteDataSource(store)
+        val userDao = FakeUserDao()
+        val cleaner = LocalSessionCleaner { userDao.clear() }
+        val accountRepo = AccountRepositoryImpl(remote, tokenStore, userDao, cleaner)
 
         val invalidCode = accountRepo.activate("token-inexistente")
-        assertEquals(AppResult.Failure(DataError.VALIDATION), invalidCode)
+
+        assertEquals(ActivateOutcome.InvalidOrExpiredCode, invalidCode)
     }
 
     @Test
@@ -94,8 +117,8 @@ class AuthRepositoriesTest {
         sessionRepo.observeIsLoggedIn().test {
             assertFalse(awaitItem())
 
-            val result = sessionRepo.login("lfernandez@uade.edu.ar", FakeBackendStore.DEMO_PASSWORD)
-            assertTrue(result is AppResult.Success)
+            val outcome = sessionRepo.login("lfernandez@uade.edu.ar", FakeBackendStore.DEMO_PASSWORD)
+            assertTrue(outcome is LoginOutcome.Success)
             assertTrue(awaitItem())
             assertEquals("lfernandez@uade.edu.ar", profileRepo.observeCurrentUser().first()?.email)
 
@@ -104,7 +127,7 @@ class AuthRepositoriesTest {
     }
 
     @Test
-    fun `login con clave incorrecta devuelve UNAUTHORIZED sin persistir usuario ni token`() = runTest {
+    fun `login con clave incorrecta devuelve InvalidCredentials sin persistir usuario ni token`() = runTest {
         val tokenStore = FakeSessionTokenStore()
         val store = FakeBackendStore(tokenProvider = tokenStore::currentToken)
         val remote = FakeAuthRemoteDataSource(store)
@@ -112,11 +135,28 @@ class AuthRepositoriesTest {
         val cleaner = LocalSessionCleaner { userDao.clear() }
         val sessionRepo = SessionRepositoryImpl(remote, tokenStore, userDao, cleaner, backgroundScope)
 
-        val result = sessionRepo.login("lfernandez@uade.edu.ar", "ClaveMala99")
+        val outcome = sessionRepo.login("lfernandez@uade.edu.ar", "ClaveMala99")
 
-        assertEquals(AppResult.Failure(DataError.UNAUTHORIZED), result)
+        assertEquals(LoginOutcome.InvalidCredentials, outcome)
         assertNull(tokenStore.currentToken())
         assertNull(userDao.getCurrentUser())
+    }
+
+    @Test
+    fun `login de cuenta pendiente devuelve AccountNotActivated`() = runTest {
+        val tokenStore = FakeSessionTokenStore()
+        val store = FakeBackendStore(tokenProvider = tokenStore::currentToken)
+        val remote = FakeAuthRemoteDataSource(store)
+        val userDao = FakeUserDao()
+        val cleaner = LocalSessionCleaner { userDao.clear() }
+        val accountRepo = AccountRepositoryImpl(remote, tokenStore, userDao, cleaner)
+        val sessionRepo = SessionRepositoryImpl(remote, tokenStore, userDao, cleaner, backgroundScope)
+
+        accountRepo.register("pendiente@uade.edu.ar", "Password1", sampleProfile())
+        val outcome = sessionRepo.login("pendiente@uade.edu.ar", "Password1")
+
+        assertEquals(LoginOutcome.AccountNotActivated, outcome)
+        assertNull(tokenStore.currentToken())
     }
 
     @Test
@@ -142,13 +182,14 @@ class AuthRepositoriesTest {
         sessionRepo.login("mgomez@uade.edu.ar", FakeBackendStore.DEMO_PASSWORD)
         assertNotNull(tokenStore.currentToken())
         assertNotNull(userDao.getCurrentUser())
+        val clearsAfterLogin = clearCalls
 
         failDeleteDeviceToken = true
         sessionRepo.logout()
 
         assertNull(tokenStore.currentToken())
         assertNull(userDao.getCurrentUser())
-        assertEquals(1, clearCalls)
+        assertEquals(clearsAfterLogin + 1, clearCalls)
         assertFalse(sessionRepo.observeIsLoggedIn().first())
     }
 
@@ -167,12 +208,13 @@ class AuthRepositoriesTest {
         runCurrent()
 
         sessionRepo.login("lfernandez@uade.edu.ar", FakeBackendStore.DEMO_PASSWORD)
+        val clearsAfterLogin = clearCalls
         assertTrue(sessionRepo.observeIsLoggedIn().first())
 
         tokenStore.notifyUnauthorized()
         runCurrent()
 
-        assertEquals(1, clearCalls)
+        assertEquals(clearsAfterLogin + 1, clearCalls)
         assertNull(userDao.getCurrentUser())
         assertFalse(sessionRepo.observeIsLoggedIn().first())
     }
@@ -188,15 +230,33 @@ class AuthRepositoriesTest {
         val sessionRepo = SessionRepositoryImpl(remote, tokenStore, userDao, cleaner, backgroundScope)
 
         assertTrue(recoveryRepo.requestReset("mgomez@uade.edu.ar") is AppResult.Success)
-        assertTrue(
-            recoveryRepo.confirmReset("fake-reset-mgomez@uade.edu.ar", "NuevaClave99") is AppResult.Success,
+        assertEquals(
+            ConfirmPasswordResetOutcome.Confirmed,
+            recoveryRepo.confirmReset("fake-reset-mgomez@uade.edu.ar", "NuevaClave99"),
         )
 
         assertEquals(
-            AppResult.Failure(DataError.UNAUTHORIZED),
+            LoginOutcome.InvalidCredentials,
             sessionRepo.login("mgomez@uade.edu.ar", FakeBackendStore.DEMO_PASSWORD),
         )
-        assertTrue(sessionRepo.login("mgomez@uade.edu.ar", "NuevaClave99") is AppResult.Success)
+        assertTrue(sessionRepo.login("mgomez@uade.edu.ar", "NuevaClave99") is LoginOutcome.Success)
+    }
+
+    @Test
+    fun `confirmar recuperacion distingue token vencido de contrasena debil`() = runTest {
+        val tokenStore = FakeSessionTokenStore()
+        val store = FakeBackendStore(tokenProvider = tokenStore::currentToken)
+        val remote = FakeAuthRemoteDataSource(store)
+        val recoveryRepo = PasswordRecoveryRepositoryImpl(remote)
+
+        assertEquals(
+            ConfirmPasswordResetOutcome.InvalidOrExpiredCode,
+            recoveryRepo.confirmReset("token-vencido", "NuevaClave99"),
+        )
+        assertEquals(
+            ConfirmPasswordResetOutcome.WeakPassword,
+            recoveryRepo.confirmReset("fake-reset-mgomez@uade.edu.ar", "corta"),
+        )
     }
 
     @Test
@@ -215,6 +275,7 @@ class AuthRepositoriesTest {
         runCurrent()
 
         sessionRepo.login("mgomez@uade.edu.ar", FakeBackendStore.DEMO_PASSWORD)
+        val clearsAfterLogin = clearCalls
         val updatedProfile = sampleProfile(withVehicle = true)
         val updateResult = profileRepo.update(updatedProfile)
         assertTrue(updateResult is AppResult.Success)
@@ -230,7 +291,7 @@ class AuthRepositoriesTest {
 
         assertEquals(AppResult.Failure(DataError.UNAUTHORIZED), expiredRefresh)
         assertEquals(1, tokenStore.unauthorizedNotifications)
-        assertEquals(1, clearCalls)
+        assertEquals(clearsAfterLogin + 1, clearCalls)
         assertNull(profileRepo.observeCurrentUser().first())
     }
 }

@@ -1,8 +1,8 @@
 package com.example.uniride.domain.usecase.auth
 
-import com.example.uniride.core.result.AppResult
 import com.example.uniride.core.result.DataError
 import com.example.uniride.domain.model.User
+import com.example.uniride.domain.repository.LoginOutcome
 import com.example.uniride.domain.repository.SessionRepository
 import com.example.uniride.domain.validation.EmailValidationError
 import com.example.uniride.domain.validation.EmailValidationResult
@@ -18,6 +18,8 @@ sealed interface LoginResult {
         val passwordBlank: Boolean = false,
     ) : LoginResult
 
+    data object InvalidCredentials : LoginResult
+    data object NotActivated : LoginResult
     data class Failed(val error: DataError) : LoginResult
 }
 
@@ -34,13 +36,15 @@ class LoginUseCase @Inject constructor(
         }
 
         return when (
-            val result = sessionRepository.login(
+            val outcome = sessionRepository.login(
                 email = EmailValidator.normalize(email),
                 password = password,
             )
         ) {
-            is AppResult.Success -> LoginResult.LoggedIn(result.data)
-            is AppResult.Failure -> LoginResult.Failed(result.error)
+            is LoginOutcome.Success -> LoginResult.LoggedIn(outcome.user)
+            LoginOutcome.InvalidCredentials -> LoginResult.InvalidCredentials
+            LoginOutcome.AccountNotActivated -> LoginResult.NotActivated
+            is LoginOutcome.Failed -> LoginResult.Failed(outcome.error)
         }
     }
 }

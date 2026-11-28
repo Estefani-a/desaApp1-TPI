@@ -100,25 +100,41 @@ class ProfileValidatorTest {
     }
 
     @Test
-    fun `rechaza patente con formato invalido`() {
-        val withSpaces = validPassengerProfile().copy(
+    fun `acepta patente escrita con espacios o guiones`() {
+        val profile = validPassengerProfile().copy(
             preferredMode = PreferredMode.CONDUCTOR,
             vehicle = Vehicle("Volkswagen", "Gol Trend", "Gris", "AB 123-CD"),
         )
+
+        assertEquals(ProfileValidationResult.Valid, ProfileValidator.validate(profile))
+    }
+
+    @Test
+    fun `rechaza patente demasiado corta`() {
         val tooShort = validPassengerProfile().copy(
             preferredMode = PreferredMode.CONDUCTOR,
             vehicle = Vehicle("Volkswagen", "Gol Trend", "Gris", "x"),
         )
 
-        val spacesResult = ProfileValidator.validate(withSpaces) as ProfileValidationResult.Invalid
         val shortResult = ProfileValidator.validate(tooShort) as ProfileValidationResult.Invalid
 
-        assertEquals(setOf(ProfileValidationError.VEHICLE_PLATE_INVALID), spacesResult.errors)
         assertEquals(setOf(ProfileValidationError.VEHICLE_PLATE_INVALID), shortResult.errors)
     }
 
     @Test
-    fun `normaliza textos con trim y patente en mayusculas`() {
+    fun `rechaza patente con caracteres no alfanumericos`() {
+        val withSymbols = validPassengerProfile().copy(
+            preferredMode = PreferredMode.CONDUCTOR,
+            vehicle = Vehicle("Volkswagen", "Gol Trend", "Gris", "AB123!@"),
+        )
+
+        val result = ProfileValidator.validate(withSymbols) as ProfileValidationResult.Invalid
+
+        assertEquals(setOf(ProfileValidationError.VEHICLE_PLATE_INVALID), result.errors)
+    }
+
+    @Test
+    fun `normaliza textos con trim y patente en mayusculas sin espacios ni guiones`() {
         val raw = Profile(
             fullName = "  Lucía Fernández  ",
             career = "  Ingeniería en Informática ",
@@ -128,7 +144,7 @@ class ProfileValidatorTest {
                 brand = " Volkswagen ",
                 model = " Gol Trend ",
                 color = " Gris ",
-                plate = " ab123cd ",
+                plate = " ab 123-cd ",
             ),
         )
 

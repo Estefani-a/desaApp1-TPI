@@ -11,7 +11,10 @@ import javax.inject.Singleton
 
 /**
  * Clears all local user-scoped persistence on logout or HTTP 401 (CONVENCIONES §6.4):
- * Room tables (`clearAllTables()`) and non-sensitive DataStore preferences.
+ * - Room tables (`clearAllTables()`), including any pending unsynced trips or reservations
+ *   (`isSync = false`), which are discarded when the session ends or expires.
+ * - Non-sensitive DataStore preferences, including trip refresh/rejection keys, saved feed
+ *   filters and the last selected passenger/driver mode.
  */
 fun interface LocalSessionCleaner {
     suspend fun clearAll()
