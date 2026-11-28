@@ -1,17 +1,39 @@
 package com.example.uniride.presentation.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.example.uniride.R
 
 /*
  * Text styles of the high fidelity guide (Figma, "Tipografía · Plus Jakarta Sans"), mapped to the
  * Material roles. Sizes in sp, so they follow the font size chosen in the system (RNF01). Screens
  * use MaterialTheme.typography, never a TextStyle of their own.
  */
-internal val UniRideFontFamily: FontFamily = FontFamily.Default
+
+/*
+ * Plus Jakarta Sans, bundled so it also works offline (license in mobile/third_party). It is a
+ * variable font: each weight of the guide is the same file with its own wght axis.
+ */
+@OptIn(ExperimentalTextApi::class)
+private fun jakarta(weight: FontWeight) = Font(
+    resId = R.font.plus_jakarta_sans,
+    weight = weight,
+    variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight)),
+)
+
+internal val UniRideFontFamily = FontFamily(
+    jakarta(FontWeight.Normal),
+    jakarta(FontWeight.Medium),
+    jakarta(FontWeight.SemiBold),
+    jakarta(FontWeight.Bold),
+    jakarta(FontWeight.ExtraBold),
+)
 
 private val Base = TextStyle(fontFamily = UniRideFontFamily)
 
