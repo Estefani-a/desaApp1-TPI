@@ -4,7 +4,7 @@ import com.example.uniride.core.result.AppResult
 import com.example.uniride.core.result.DataError
 import com.example.uniride.domain.model.NotificationType
 import com.example.uniride.domain.model.TripId
-import com.example.uniride.domain.model.User
+import com.example.uniride.domain.repository.LoginOutcome
 import com.example.uniride.domain.repository.SessionRepository
 import com.example.uniride.fake.FakeReservationRepository
 import com.example.uniride.fake.FakeTripRepository
@@ -151,7 +151,7 @@ class PushMessageHandlerTest {
     private class StubSessionRepository(loggedIn: Boolean) : SessionRepository {
         private val state = MutableStateFlow(loggedIn)
         override fun observeIsLoggedIn(): Flow<Boolean> = state
-        override suspend fun login(email: String, password: String): AppResult<User> =
+        override suspend fun login(email: String, password: String): LoginOutcome =
             error("No se usa en este test")
         override suspend fun logout() = Unit
     }

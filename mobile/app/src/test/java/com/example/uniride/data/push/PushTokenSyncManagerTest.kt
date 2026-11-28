@@ -1,6 +1,5 @@
 package com.example.uniride.data.push
 
-import com.example.uniride.core.result.AppResult
 import com.example.uniride.data.remote.datasource.AuthRemoteDataSource
 import com.example.uniride.data.remote.dto.ActivateRequest
 import com.example.uniride.data.remote.dto.AuthResponseDto
@@ -13,7 +12,7 @@ import com.example.uniride.data.remote.dto.RegisterRequest
 import com.example.uniride.data.remote.dto.ResendActivationRequest
 import com.example.uniride.data.remote.dto.UpdateProfileRequest
 import com.example.uniride.data.remote.dto.UserDto
-import com.example.uniride.domain.model.User
+import com.example.uniride.domain.repository.LoginOutcome
 import com.example.uniride.domain.repository.SessionRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -129,7 +128,7 @@ class PushTokenSyncManagerTest {
     private class MutableSessionRepository(initialLoggedIn: Boolean) : SessionRepository {
         val loggedIn = MutableStateFlow(initialLoggedIn)
         override fun observeIsLoggedIn(): Flow<Boolean> = loggedIn
-        override suspend fun login(email: String, password: String): AppResult<User> =
+        override suspend fun login(email: String, password: String): LoginOutcome =
             error("No se usa en este test")
         override suspend fun logout() = Unit
     }
