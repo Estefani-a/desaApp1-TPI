@@ -47,6 +47,7 @@ import com.example.uniride.presentation.common.TripCard
 import com.example.uniride.presentation.common.dateLabel
 import com.example.uniride.presentation.common.formatTime
 import com.example.uniride.presentation.common.messageRes
+import com.example.uniride.presentation.push.NotificationPermissionPrompt
 import com.example.uniride.presentation.theme.Dimens
 import com.example.uniride.presentation.theme.UniRideTheme
 
@@ -79,6 +80,11 @@ fun DriverHomeRoute(
             }
         }
     }
+
+    NotificationPermissionPrompt(
+        rationaleRes = R.string.push_permission_driver_rationale,
+        shouldPrompt = state.shouldPromptNotifications,
+    )
 
     DriverHomeScreen(
         state = state,

@@ -55,6 +55,12 @@ class FakeSessionRepository(
     var lastLoginEmail: String? = null
     var logoutCalls: Int = 0
     var loginOutcome: LoginOutcome = LoginOutcome.Success(sampleUser())
+    val registeredDeviceTokens = mutableListOf<String>()
+    var registerDeviceTokenResult: AppResult<Unit> = AppResult.Success(Unit)
+
+    fun setLoggedIn(isLoggedIn: Boolean) {
+        loggedIn.value = isLoggedIn
+    }
 
     override fun observeIsLoggedIn(): Flow<Boolean> = loggedIn.asStateFlow()
 
@@ -64,6 +70,13 @@ class FakeSessionRepository(
             loggedIn.value = true
         }
         return loginOutcome
+    }
+
+    override suspend fun registerDeviceToken(fcmToken: String): AppResult<Unit> {
+        if (registerDeviceTokenResult is AppResult.Success) {
+            registeredDeviceTokens += fcmToken
+        }
+        return registerDeviceTokenResult
     }
 
     override suspend fun logout() {

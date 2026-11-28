@@ -1,5 +1,6 @@
 package com.example.uniride.domain.repository
 
+import com.example.uniride.core.result.AppResult
 import com.example.uniride.core.result.DataError
 import com.example.uniride.domain.model.User
 import kotlinx.coroutines.flow.Flow
@@ -19,6 +20,9 @@ interface SessionRepository {
     fun observeIsLoggedIn(): Flow<Boolean>
 
     suspend fun login(email: String, password: String): LoginOutcome
+
+    /** Registers the current FCM device token for push notifications (docs/API.md §4.6). */
+    suspend fun registerDeviceToken(fcmToken: String): AppResult<Unit>
 
     /** Ends the session and forgets the user's data on this device. Also used when it expires. */
     suspend fun logout()

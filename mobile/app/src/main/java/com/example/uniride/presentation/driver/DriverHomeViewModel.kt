@@ -35,7 +35,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class DriverHomeViewModel @Inject constructor(
-    observeUpcomingTrips: ObserveUpcomingDriverTripsUseCase,
+    private val observeUpcomingTrips: ObserveUpcomingDriverTripsUseCase,
     observeRejectedTrips: ObserveRejectedTripsUseCase,
     observePendingTripIds: ObservePendingTripIdsUseCase,
     observeCampuses: ObserveCampusesUseCase,
@@ -45,6 +45,8 @@ class DriverHomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val refresh = MutableStateFlow(RefreshStatus())
+    private val promptNotifications = MutableStateFlow(false)
+    private var tripIdsBeforePublish: Set<TripId>? = null
 
     private val _effects = Channel<DriverHomeEffect>(Channel.BUFFERED)
     val effects: Flow<DriverHomeEffect> = _effects.receiveAsFlow()
@@ -68,19 +70,29 @@ class DriverHomeViewModel @Inject constructor(
         saved,
         observeConnectivity(),
         refresh,
-    ) { content, isOnline, refreshStatus ->
-        DriverHomeUiState(content = contentFor(content, refreshStatus), isOffline = !isOnline)
+        promptNotifications,
+    ) { content, isOnline, refreshStatus, shouldPromptNotifications ->
+        DriverHomeUiState(
+            content = contentFor(content, refreshStatus),
+            isOffline = !isOnline,
+            shouldPromptNotifications = shouldPromptNotifications,
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DriverHomeUiState())
 
     init {
         refresh()
         refreshWhenConnectionReturns()
+        observeNewPublication()
     }
 
     fun onAction(action: DriverHomeAction) {
         when (action) {
             DriverHomeAction.Refresh -> refresh()
-            DriverHomeAction.PublishTrip -> send(DriverHomeEffect.NavigateToPublish)
+            DriverHomeAction.PublishTrip -> {
+                tripIdsBeforePublish = (uiState.value.content as? ContentState.Success)
+                    ?.data?.trips?.map { it.id }?.toSet().orEmpty()
+                send(DriverHomeEffect.NavigateToPublish)
+            }
             is DriverHomeAction.OpenTrip -> send(DriverHomeEffect.NavigateToPanel(action.tripId))
             is DriverHomeAction.DismissRejection -> viewModelScope.launch {
                 dismissTripRejection(TripId(action.tripId))
@@ -115,6 +127,19 @@ class DriverHomeViewModel @Inject constructor(
             observeConnectivity().distinctUntilChanged().collect { isOnline ->
                 if (isOnline && wasOffline) refresh()
                 wasOffline = !isOnline
+            }
+        }
+    }
+
+    /** Triggers the contextual notification prompt only after the driver actually publishes a trip. */
+    private fun observeNewPublication() {
+        viewModelScope.launch {
+            observeUpcomingTrips().collect { trips ->
+                val previousIds = tripIdsBeforePublish ?: return@collect
+                if (trips.any { it.id !in previousIds }) {
+                    tripIdsBeforePublish = null
+                    promptNotifications.value = true
+                }
             }
         }
     }

@@ -32,6 +32,7 @@ import com.example.uniride.R
 import com.example.uniride.domain.usecase.connectivity.ObserveConnectivityUseCase
 import com.example.uniride.presentation.common.PrimaryButton
 import com.example.uniride.presentation.common.UniRideTopBar
+import com.example.uniride.presentation.push.NotificationPermissionPrompt
 import com.example.uniride.presentation.theme.Dimens
 import com.example.uniride.presentation.theme.UniRideTheme
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -67,6 +68,7 @@ fun SeatRequestedRoute(
     viewModel: SeatRequestedViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    NotificationPermissionPrompt(rationaleRes = R.string.push_permission_passenger_rationale)
     SeatRequestedScreen(
         state = state,
         onAction = { action ->

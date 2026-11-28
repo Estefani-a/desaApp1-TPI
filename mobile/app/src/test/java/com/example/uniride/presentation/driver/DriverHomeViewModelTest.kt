@@ -274,4 +274,29 @@ class DriverHomeViewModelTest {
             assertEquals(DriverHomeEffect.NavigateToPanel("tonight"), awaitItem())
         }
     }
+
+    @Test
+    fun `abrir inicio con viajes ya publicados no pide permiso de notificaciones`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            givenSavedTrips(tonight)
+
+            val viewModel = viewModel()
+
+            assertFalse(viewModel.uiState.value.shouldPromptNotifications)
+        }
+
+    @Test
+    fun `publicar un viaje nuevo desde inicio habilita el pedido contextual de notificaciones`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            givenSavedTrips(tonight)
+            val viewModel = viewModel()
+            assertFalse(viewModel.uiState.value.shouldPromptNotifications)
+
+            viewModel.onAction(DriverHomeAction.PublishTrip)
+            assertFalse(viewModel.uiState.value.shouldPromptNotifications)
+
+            givenSavedTrips(tonight, tomorrow)
+
+            assertTrue(viewModel.uiState.value.shouldPromptNotifications)
+        }
 }

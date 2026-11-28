@@ -293,6 +293,22 @@
     <string name="driver_panel_accepted">Solicitud aceptada</string>
     <string name="driver_panel_rejected">Solicitud rechazada</string>
 
+    <!-- Notificaciones push (RF04, RNF08) -->
+    <string name="push_channel_reservations_name">Reservas y viajes</string>
+    <string name="push_channel_reservations_description">Avisos sobre solicitudes de asiento y respuestas del conductor.</string>
+    <string name="push_default_title_new_request">Nueva solicitud de asiento</string>
+    <string name="push_default_body_new_request">Tenés una solicitud pendiente en tu viaje.</string>
+    <string name="push_default_title_accepted">¡Tenés lugar!</string>
+    <string name="push_default_body_accepted">El conductor aceptó tu solicitud de asiento.</string>
+    <string name="push_default_title_rejected">Solicitud rechazada</string>
+    <string name="push_default_body_rejected">El conductor rechazó tu solicitud. Podés buscar otro viaje.</string>
+    <string name="push_permission_title">¿Activar notificaciones?</string>
+    <string name="push_permission_passenger_rationale">Te avisamos apenas el conductor acepte o rechace tu solicitud de asiento.</string>
+    <string name="push_permission_driver_rationale">Te avisamos apenas un compañero pida un asiento en alguno de tus viajes.</string>
+    <string name="push_permission_allow">Activar</string>
+    <string name="push_permission_not_now">Ahora no</string>
+    <string name="push_permission_declined">No vas a recibir avisos; vas a ver el estado al abrir la app.</string>
+
     <!-- Perfil (RF01) -->
     <string name="profile_title">Perfil</string>
     <string name="profile_verified_email_label">Correo institucional (verificado)</string>
