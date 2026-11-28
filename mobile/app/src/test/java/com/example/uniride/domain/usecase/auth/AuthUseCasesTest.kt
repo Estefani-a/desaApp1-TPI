@@ -5,6 +5,10 @@ import com.example.uniride.core.result.DataError
 import com.example.uniride.domain.model.PreferredMode
 import com.example.uniride.domain.model.Profile
 import com.example.uniride.domain.model.Vehicle
+import com.example.uniride.domain.repository.ActivateOutcome
+import com.example.uniride.domain.repository.ConfirmPasswordResetOutcome
+import com.example.uniride.domain.repository.LoginOutcome
+import com.example.uniride.domain.repository.RegisterOutcome
 import com.example.uniride.domain.validation.EmailValidationError
 import com.example.uniride.domain.validation.PasswordValidationError
 import com.example.uniride.domain.validation.ProfileValidationError
@@ -63,6 +67,28 @@ class AuthUseCasesTest {
     }
 
     @Test
+    fun `registro rechaza confirmacion de contrasena distinta`() = runTest {
+        val repo = FakeAccountRepository()
+        val useCase = RegisterUseCase(repo)
+
+        val result = useCase("lfernandez@uade.edu.ar", "Password1", validProfile(), confirmPassword = "OtraPassword2")
+
+        assertEquals(RegisterResult.Invalid(passwordMismatch = true), result)
+        assertNull(repo.lastRegisteredEmail)
+    }
+
+    @Test
+    fun `registro rechaza confirmacion de contrasena en blanco`() = runTest {
+        val repo = FakeAccountRepository()
+        val useCase = RegisterUseCase(repo)
+
+        val result = useCase("lfernandez@uade.edu.ar", "Password1", validProfile(), confirmPassword = "   ")
+
+        assertEquals(RegisterResult.Invalid(confirmPasswordBlank = true), result)
+        assertNull(repo.lastRegisteredEmail)
+    }
+
+    @Test
     fun `registro rechaza perfil de conductor sin vehiculo`() = runTest {
         val repo = FakeAccountRepository()
         val useCase = RegisterUseCase(repo)
@@ -90,15 +116,27 @@ class AuthUseCasesTest {
     }
 
     @Test
-    fun `registro propaga error CONFLICT del repositorio`() = runTest {
+    fun `registro mapea EmailAlreadyRegistered del repositorio`() = runTest {
         val repo = FakeAccountRepository().apply {
-            registerResult = AppResult.Failure(DataError.CONFLICT)
+            registerOutcome = RegisterOutcome.EmailAlreadyRegistered
         }
         val useCase = RegisterUseCase(repo)
 
         val result = useCase("lfernandez@uade.edu.ar", "Password1", validProfile())
 
-        assertEquals(RegisterResult.Failed(DataError.CONFLICT), result)
+        assertEquals(RegisterResult.EmailAlreadyRegistered, result)
+    }
+
+    @Test
+    fun `registro propaga error de red del repositorio`() = runTest {
+        val repo = FakeAccountRepository().apply {
+            registerOutcome = RegisterOutcome.Failed(DataError.NO_CONNECTION)
+        }
+        val useCase = RegisterUseCase(repo)
+
+        val result = useCase("lfernandez@uade.edu.ar", "Password1", validProfile())
+
+        assertEquals(RegisterResult.Failed(DataError.NO_CONNECTION), result)
     }
 
     @Test
@@ -124,9 +162,19 @@ class AuthUseCasesTest {
     }
 
     @Test
+    fun `activacion traduce codigo invalido o vencido del repositorio`() = runTest {
+        val repo = FakeAccountRepository().apply {
+            activateOutcome = ActivateOutcome.InvalidOrExpiredCode
+        }
+        val useCase = ActivateAccountUseCase(repo)
+
+        assertEquals(ActivateAccountResult.InvalidCode, useCase("tok-vencido"))
+    }
+
+    @Test
     fun `activacion propaga error del repositorio`() = runTest {
         val repo = FakeAccountRepository().apply {
-            activateResult = AppResult.Failure(DataError.NO_CONNECTION)
+            activateOutcome = ActivateOutcome.Failed(DataError.NO_CONNECTION)
         }
         val useCase = ActivateAccountUseCase(repo)
 
@@ -199,13 +247,23 @@ class AuthUseCasesTest {
     }
 
     @Test
-    fun `login propaga UNAUTHORIZED del repositorio`() = runTest {
+    fun `login traduce credenciales invalidas del repositorio`() = runTest {
         val repo = FakeSessionRepository().apply {
-            loginResult = AppResult.Failure(DataError.UNAUTHORIZED)
+            loginOutcome = LoginOutcome.InvalidCredentials
         }
         val useCase = LoginUseCase(repo)
 
-        assertEquals(LoginResult.Failed(DataError.UNAUTHORIZED), useCase("lfernandez@uade.edu.ar", "Mala1234"))
+        assertEquals(LoginResult.InvalidCredentials, useCase("lfernandez@uade.edu.ar", "Mala1234"))
+    }
+
+    @Test
+    fun `login traduce cuenta no activada del repositorio`() = runTest {
+        val repo = FakeSessionRepository().apply {
+            loginOutcome = LoginOutcome.AccountNotActivated
+        }
+        val useCase = LoginUseCase(repo)
+
+        assertEquals(LoginResult.NotActivated, useCase("lfernandez@uade.edu.ar", "Secreta123"))
     }
 
     @Test
@@ -262,6 +320,17 @@ class AuthUseCasesTest {
     }
 
     @Test
+    fun `confirmar recuperacion rechaza confirmacion distinta`() = runTest {
+        val repo = FakePasswordRecoveryRepository()
+        val useCase = ConfirmPasswordResetUseCase(repo)
+
+        val result = useCase("reset-token-1", "NuevaClave1", confirmPassword = "OtraClave2")
+
+        assertEquals(ConfirmPasswordResetResult.Invalid(passwordMismatch = true), result)
+        assertNull(repo.lastConfirmCode)
+    }
+
+    @Test
     fun `confirmar recuperacion recorta token y delega contrasena valida`() = runTest {
         val repo = FakePasswordRecoveryRepository()
         val useCase = ConfirmPasswordResetUseCase(repo)
@@ -274,12 +343,22 @@ class AuthUseCasesTest {
     }
 
     @Test
-    fun `confirmar recuperacion propaga error del repositorio`() = runTest {
+    fun `confirmar recuperacion distingue codigo vencido de contrasena debil del servidor`() = runTest {
         val repo = FakePasswordRecoveryRepository().apply {
-            confirmResult = AppResult.Failure(DataError.VALIDATION)
+            confirmOutcome = ConfirmPasswordResetOutcome.WeakPassword
         }
         val useCase = ConfirmPasswordResetUseCase(repo)
 
-        assertEquals(ConfirmPasswordResetResult.Failed(DataError.VALIDATION), useCase("tok", "NuevaClave1"))
+        assertEquals(ConfirmPasswordResetResult.WeakPassword, useCase("tok", "NuevaClave1"))
+    }
+
+    @Test
+    fun `confirmar recuperacion propaga error de red del repositorio`() = runTest {
+        val repo = FakePasswordRecoveryRepository().apply {
+            confirmOutcome = ConfirmPasswordResetOutcome.Failed(DataError.NO_CONNECTION)
+        }
+        val useCase = ConfirmPasswordResetUseCase(repo)
+
+        assertEquals(ConfirmPasswordResetResult.Failed(DataError.NO_CONNECTION), useCase("tok", "NuevaClave1"))
     }
 }

@@ -67,24 +67,92 @@
     <string name="nav_mode_driver">Conductor</string>
     <string name="nav_mode_selector_description">Modo de uso</string>
 
-    <!-- Placeholders de G3: cada RF los reemplaza por su pantalla -->
-    <string name="placeholder_message">Pantalla en construcción</string>
-    <string name="placeholder_action_login">Iniciar sesión</string>
-    <string name="placeholder_action_register">Crear cuenta</string>
-    <string name="placeholder_action_enter">Entrar</string>
-    <string name="placeholder_action_forgot_password">Olvidé mi contraseña</string>
-    <string name="placeholder_action_create_account">Registrarme</string>
-    <string name="placeholder_action_trip_detail">Ver detalle de un viaje</string>
-    <string name="placeholder_action_logout">Cerrar sesión</string>
-
     <!-- Auth (RF01) -->
-    <string name="auth_welcome_title">Bienvenida</string>
+    <string name="auth_welcome_headline">Compartí tu viaje a UADE</string>
+    <string name="auth_welcome_subtitle">Conectá con estudiantes verificados de tu misma sede para ir y volver de cursar gastando menos.</string>
+    <string name="auth_welcome_badge">Comunidad exclusiva @uade.edu.ar</string>
+    <string name="auth_welcome_login_action">Iniciar sesión</string>
+    <string name="auth_welcome_register_action">Crear cuenta</string>
     <string name="auth_login_title">Iniciar sesión</string>
+    <string name="auth_login_subtitle">Usá tu correo institucional de UADE para entrar.</string>
+    <string name="auth_login_submit">Iniciar sesión</string>
+    <string name="auth_login_forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="auth_login_no_account">¿Todavía no tenés cuenta? Registrate</string>
+    <string name="auth_login_invalid_credentials">Correo o contraseña incorrectos.</string>
+    <string name="auth_login_account_not_activated">Tu cuenta todavía no fue activada. Revisá tu correo @uade.edu.ar para activarla.</string>
+    <string name="auth_login_resend_activation">Reenviar correo de activación</string>
     <string name="auth_register_title">Crear cuenta</string>
+    <string name="auth_register_subtitle">Solo necesitás tu correo @uade.edu.ar para sumarte.</string>
+    <string name="auth_register_submit">Crear cuenta</string>
+    <string name="auth_register_has_account">¿Ya tenés cuenta? Iniciá sesión</string>
+    <string name="auth_register_email_exists">Ya existe una cuenta registrada con ese correo.</string>
+    <string name="auth_field_email_label">Correo institucional</string>
+    <string name="auth_field_email_placeholder">nombre@uade.edu.ar</string>
+    <string name="auth_field_email_supporting">Solo se permiten correos @uade.edu.ar</string>
+    <string name="auth_field_password_label">Contraseña</string>
+    <string name="auth_field_password_supporting">Mínimo 8 caracteres, al menos una letra y un número</string>
+    <string name="auth_field_confirm_password_label">Confirmar contraseña</string>
+    <string name="auth_field_new_password_label">Nueva contraseña</string>
+    <string name="auth_field_full_name_label">Nombre y apellido</string>
+    <string name="auth_field_career_label">Carrera</string>
+    <string name="auth_field_phone_label">Teléfono de contacto</string>
+    <string name="auth_field_phone_supporting">Solo se comparte cuando tenés un viaje confirmado</string>
+    <string name="auth_field_preferred_mode_label">Modo habitual</string>
+    <string name="auth_preferred_mode_passenger">Pasajero</string>
+    <string name="auth_preferred_mode_driver">Conductor</string>
+    <string name="auth_preferred_mode_both">Ambos</string>
+    <string name="auth_vehicle_section_title">Tengo vehículo propio</string>
+    <string name="auth_vehicle_section_subtitle">Necesario si querés ofrecer viajes como conductor</string>
+    <string name="auth_field_vehicle_brand_label">Marca</string>
+    <string name="auth_field_vehicle_model_label">Modelo</string>
+    <string name="auth_field_vehicle_color_label">Color</string>
+    <string name="auth_field_vehicle_plate_label">Patente</string>
+    <string name="auth_password_show">Mostrar contraseña</string>
+    <string name="auth_password_hide">Ocultar contraseña</string>
+    <string name="auth_error_email_blank">Ingresá tu correo institucional.</string>
+    <string name="auth_error_email_format">Ingresá un correo electrónico válido.</string>
+    <string name="auth_error_email_domain">Usá tu correo institucional @uade.edu.ar.</string>
+    <string name="auth_error_password_blank">Ingresá una contraseña.</string>
+    <string name="auth_error_password_short">La contraseña debe tener al menos 8 caracteres.</string>
+    <string name="auth_error_password_long">La contraseña es demasiado larga (máximo 72 bytes).</string>
+    <string name="auth_error_password_letter">La contraseña debe incluir al menos una letra.</string>
+    <string name="auth_error_password_digit">La contraseña debe incluir al menos un número.</string>
+    <string name="auth_error_password_mismatch">Las contraseñas no coinciden.</string>
+    <string name="auth_error_full_name_blank">Ingresá tu nombre y apellido.</string>
+    <string name="auth_error_career_blank">Ingresá tu carrera.</string>
+    <string name="auth_error_phone_blank">Ingresá un teléfono de contacto.</string>
+    <string name="auth_error_phone_invalid">Ingresá un teléfono válido (al menos 6 dígitos).</string>
+    <string name="auth_error_vehicle_required">Para el modo Conductor necesitás cargar los datos de tu vehículo.</string>
+    <string name="auth_error_vehicle_brand_blank">Ingresá la marca del vehículo.</string>
+    <string name="auth_error_vehicle_model_blank">Ingresá el modelo del vehículo.</string>
+    <string name="auth_error_vehicle_color_blank">Ingresá el color del vehículo.</string>
+    <string name="auth_error_vehicle_plate_blank">Ingresá la patente del vehículo.</string>
+    <string name="auth_error_vehicle_plate_invalid">Ingresá una patente válida (6 a 8 letras o números, ej. AB123CD).</string>
     <string name="auth_check_email_title">Revisá tu correo</string>
+    <string name="auth_check_email_message">Te enviamos un enlace a tu correo @uade.edu.ar para activar tu cuenta. Abrilo desde este teléfono para ingresar.</string>
+    <string name="auth_check_email_message_with_address">Te enviamos un enlace a %1$s para activar tu cuenta. Abrilo desde este teléfono para ingresar.</string>
+    <string name="auth_check_email_resend">Reenviar correo de activación</string>
+    <string name="auth_check_email_resent">Si la cuenta está pendiente, te reenviamos el enlace de activación.</string>
+    <string name="auth_check_email_go_login">Ir a iniciar sesión</string>
     <string name="auth_forgot_password_title">Recuperar contraseña</string>
+    <string name="auth_forgot_password_subtitle">Ingresá tu correo institucional y te enviaremos un enlace para elegir una nueva contraseña.</string>
+    <string name="auth_forgot_password_submit">Enviar enlace</string>
+    <string name="auth_forgot_password_sent_title">Revisá tu correo</string>
+    <string name="auth_forgot_password_sent_message">Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña. Tiene validez por 1 hora.</string>
+    <string name="auth_forgot_password_back_login">Volver a iniciar sesión</string>
     <string name="auth_reset_password_title">Nueva contraseña</string>
+    <string name="auth_reset_password_subtitle">Elegí una nueva contraseña para tu cuenta UADE.</string>
+    <string name="auth_reset_password_submit">Guardar nueva contraseña</string>
+    <string name="auth_reset_password_invalid_token">El enlace venció o ya fue usado. Pedí uno nuevo desde Recuperar contraseña.</string>
+    <string name="auth_reset_password_weak_server">La contraseña no cumple con los requisitos de seguridad.</string>
+    <string name="auth_reset_password_success_title">Contraseña actualizada</string>
+    <string name="auth_reset_password_success_message">Ya podés iniciar sesión con tu nueva contraseña.</string>
     <string name="auth_activate_title">Activar cuenta</string>
+    <string name="auth_activate_loading">Activando tu cuenta…</string>
+    <string name="auth_activate_success">Cuenta activada. Ingresando…</string>
+    <string name="auth_activate_invalid_token">El enlace de activación venció o ya fue utilizado.</string>
+    <string name="auth_activate_interrupted">No pudimos confirmar si tu cuenta se activó. Reintentá o probá iniciar sesión.</string>
+    <string name="auth_activate_go_login">Ir a iniciar sesión</string>
 
     <!-- Inicio -->
 
@@ -239,4 +307,16 @@
 
     <!-- Perfil (RF01) -->
     <string name="profile_title">Perfil</string>
+    <string name="profile_verified_email_label">Correo institucional (verificado)</string>
+    <string name="profile_rating_label">Calificación: ★ %1$s (%2$d)</string>
+    <string name="profile_rating_empty">Sin calificaciones todavía</string>
+    <string name="profile_save_action">Guardar cambios</string>
+    <string name="profile_saved_message">Perfil actualizado correctamente.</string>
+    <string name="profile_logout_action">Cerrar sesión</string>
+    <string name="profile_logout_dialog_title">¿Cerrar sesión?</string>
+    <string name="profile_logout_dialog_message">Se van a borrar los datos guardados en este teléfono y vas a tener que volver a iniciar sesión.</string>
+    <string name="profile_logout_confirm">Cerrar sesión</string>
+    <string name="profile_logout_cancel">Cancelar</string>
+    <string name="profile_empty_title">No pudimos cargar tu perfil</string>
+    <string name="profile_empty_message">Conectate a internet y reintentá para sincronizar tus datos.</string>
 </resources>

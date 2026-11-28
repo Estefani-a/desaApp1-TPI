@@ -3,6 +3,7 @@ package com.example.uniride.presentation.common
 import androidx.annotation.StringRes
 import com.example.uniride.R
 import com.example.uniride.domain.model.Direction
+import com.example.uniride.domain.model.PreferredMode
 import com.example.uniride.domain.model.ReservationStatus
 import com.example.uniride.domain.model.Shift
 import com.example.uniride.domain.model.TripStatus
@@ -43,6 +44,14 @@ val ReservationStatus.labelRes: Int
         ReservationStatus.ACEPTADA -> R.string.reservation_status_aceptada
         ReservationStatus.RECHAZADA -> R.string.reservation_status_rechazada
         ReservationStatus.CANCELADA -> R.string.reservation_status_cancelada
+    }
+
+@get:StringRes
+val PreferredMode.labelRes: Int
+    get() = when (this) {
+        PreferredMode.PASAJERO -> R.string.auth_preferred_mode_passenger
+        PreferredMode.CONDUCTOR -> R.string.auth_preferred_mode_driver
+        PreferredMode.AMBOS -> R.string.auth_preferred_mode_both
     }
 
 val TripStatus.tone: StatusTone

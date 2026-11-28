@@ -6,10 +6,12 @@ import com.example.uniride.data.local.dao.UserDao
 import com.example.uniride.data.mapper.toDomain
 import com.example.uniride.data.mapper.toEntity
 import com.example.uniride.data.remote.datasource.AuthRemoteDataSource
+import com.example.uniride.data.remote.dto.ApiErrorCode
 import com.example.uniride.data.remote.dto.LoginRequest
 import com.example.uniride.data.remote.safeApiCall
+import com.example.uniride.data.remote.safeApiCallWithCode
 import com.example.uniride.di.ApplicationScope
-import com.example.uniride.domain.model.User
+import com.example.uniride.domain.repository.LoginOutcome
 import com.example.uniride.domain.repository.SessionRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -50,13 +52,23 @@ class SessionRepositoryImpl @Inject constructor(
     override fun observeIsLoggedIn(): Flow<Boolean> =
         tokenStore.hasToken.distinctUntilChanged()
 
-    override suspend fun login(email: String, password: String): AppResult<User> = safeApiCall {
-        val response = remote.login(LoginRequest(email = email, password = password))
-        val user = response.user.toDomain()
-        userDao.clear()
-        userDao.upsert(user.toEntity())
-        tokenStore.saveToken(response.accessToken)
-        user
+    override suspend fun login(email: String, password: String): LoginOutcome {
+        val call = safeApiCallWithCode {
+            val response = remote.login(LoginRequest(email = email, password = password))
+            val user = response.user.toDomain()
+            localSessionCleaner.clearAll()
+            userDao.upsert(user.toEntity())
+            tokenStore.saveToken(response.accessToken)
+            user
+        }
+        return when (val result = call.result) {
+            is AppResult.Success -> LoginOutcome.Success(result.data)
+            is AppResult.Failure -> when (call.errorCode) {
+                ApiErrorCode.INVALID_CREDENTIALS -> LoginOutcome.InvalidCredentials
+                ApiErrorCode.ACCOUNT_NOT_ACTIVATED -> LoginOutcome.AccountNotActivated
+                else -> LoginOutcome.Failed(result.error)
+            }
+        }
     }
 
     override suspend fun logout() {

@@ -3,6 +3,7 @@ package com.example.uniride.domain.validation
 enum class PasswordValidationError {
     BLANK,
     TOO_SHORT,
+    TOO_LONG,
     MISSING_LETTER,
     MISSING_DIGIT,
 }
@@ -12,7 +13,7 @@ sealed interface PasswordValidationResult {
     data class Invalid(val errors: Set<PasswordValidationError>) : PasswordValidationResult {
         /**
          * First validation error according to the insertion order in [PasswordPolicy.validate]
-         * (BLANK, otherwise TOO_SHORT -> MISSING_LETTER -> MISSING_DIGIT).
+         * (BLANK, otherwise TOO_SHORT -> TOO_LONG -> MISSING_LETTER -> MISSING_DIGIT).
          */
         val primaryError: PasswordValidationError
             get() = errors.first()
@@ -21,11 +22,13 @@ sealed interface PasswordValidationResult {
 
 /**
  * Validates the password strength rules for RF01:
- * minimum 8 characters, at least one letter (Unicode via Char.isLetter) and one ASCII digit.
+ * minimum 8 characters, at most 72 UTF-8 bytes (BCrypt limit), at least one letter
+ * (Unicode via Char.isLetter) and one ASCII digit.
  */
 object PasswordPolicy {
 
     const val MIN_LENGTH = 8
+    const val MAX_UTF8_BYTES = 72
 
     fun validate(password: String): PasswordValidationResult {
         if (password.isBlank()) {
@@ -36,6 +39,9 @@ object PasswordPolicy {
         val errors = buildSet {
             if (password.length < MIN_LENGTH) {
                 add(PasswordValidationError.TOO_SHORT)
+            }
+            if (password.toByteArray(Charsets.UTF_8).size > MAX_UTF8_BYTES) {
+                add(PasswordValidationError.TOO_LONG)
             }
             if (password.none { it.isLetter() }) {
                 add(PasswordValidationError.MISSING_LETTER)

@@ -1,5 +1,8 @@
 package com.example.uniride.presentation.navigation
 
+import android.content.Intent
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,12 +13,14 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.core.util.Consumer
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -27,6 +32,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.uniride.domain.model.AppMode
 import com.example.uniride.presentation.auth.AuthGraphRoute
+import com.example.uniride.presentation.auth.DefaultLoginContent
+import com.example.uniride.presentation.auth.LoginContent
 import com.example.uniride.presentation.common.AppSnackbar
 import com.example.uniride.presentation.common.LocalAppSnackbar
 import com.example.uniride.presentation.home.DefaultDriverHome
@@ -34,6 +41,8 @@ import com.example.uniride.presentation.home.DefaultPassengerHome
 import com.example.uniride.presentation.home.DriverHome
 import com.example.uniride.presentation.home.HomeRoute
 import com.example.uniride.presentation.home.PassengerHome
+import com.example.uniride.presentation.profile.DefaultProfileContent
+import com.example.uniride.presentation.profile.ProfileContent
 
 /**
  * Entry of the app: reads the session and the mode from [AppViewModel] and draws [UniRideApp].
@@ -85,8 +94,8 @@ fun UniRideAppRoute(
  * Shell of the app: the bottom bar with the mode selector around [UniRideNavHost]. Choosing a
  * mode goes back to its Home tab.
  *
- * @param passengerHome start of the passenger mode and [driverHome] C1 of the driver mode. They
- * only exist so instrumented tests, which have no Hilt, can replace them with plain composables;
+ * @param passengerHome, [driverHome], [loginContent] and [profileContent] only exist so
+ * instrumented tests, which have no Hilt, can replace Hilt-backed screens with plain composables;
  * the app uses the defaults.
  */
 @Composable
@@ -99,9 +108,22 @@ fun UniRideApp(
     navController: NavHostController = rememberNavController(),
     passengerHome: PassengerHome = DefaultPassengerHome,
     driverHome: DriverHome = DefaultDriverHome,
+    loginContent: LoginContent = DefaultLoginContent,
+    profileContent: ProfileContent = DefaultProfileContent,
 ) {
     val currentDestination = navController.currentBackStackEntryAsState().value?.destination
     val currentTab = currentDestination?.topLevelDestination(appMode)
+
+    // MainActivity is singleTop (for pushes), so deep links arriving while the app is open
+    // come through onNewIntent and need to be forwarded to NavController explicitly.
+    val activity = LocalActivity.current as? ComponentActivity
+    DisposableEffect(activity, navController) {
+        val listener = Consumer<Intent> { intent ->
+            navController.handleDeepLink(intent)
+        }
+        activity?.addOnNewIntentListener(listener)
+        onDispose { activity?.removeOnNewIntentListener(listener) }
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -135,6 +157,8 @@ fun UniRideApp(
                 startDestination = startDestination,
                 passengerHome = passengerHome,
                 driverHome = driverHome,
+                loginContent = loginContent,
+                profileContent = profileContent,
             )
         }
     }
